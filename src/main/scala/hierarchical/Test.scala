@@ -2,7 +2,7 @@ package hierarchical
 
 import scala.language.implicitConversions
 
-object Object {
+object Test {
   def main(args: Array[String]): Unit = {
     val v: Obj = obj(
       "name" -> "Matt \"Matteo\" Hicks",
