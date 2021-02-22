@@ -8,14 +8,17 @@ sealed trait Value extends Any {
   def modify(path: Path)(f: Value => Value): Value = if (path.isEmpty) {
     f(this)
   } else {
-    val child = this (path())
+    val child = this(path())
     child.modify(path.next())(f) match {
-      case v if v.isNull => Obj(obj.value - path())
+      case Null => Obj(obj.value - path())
+      case v if v == child => this
       case v => Obj(obj.value + (path() -> v))
     }
   }
 
-  def remove(path: Path): Value = modify(path)(_ => Null)
+  def set(path: Path, value: Value): Value = modify(path)(_ => value)
+
+  def remove(path: Path): Value = set(path, Null)
 
   def `type`: ValueType
 
