@@ -10,9 +10,9 @@ sealed trait Value extends Any {
   } else {
     val child = this(path())
     child.modify(path.next())(f) match {
-      case Null => Obj(obj.value - path())
+      case Null => Obj(asObj.value - path())
       case v if v == child => this
-      case v => Obj(obj.value + (path() -> v))
+      case v => Obj(asObj.value + (path() -> v))
     }
   }
 
@@ -29,17 +29,17 @@ sealed trait Value extends Any {
   def isBool: Boolean = `type` == ValueType.Bool
   def isNull: Boolean = `type` == ValueType.Null
 
-  private def as[V <: Value](`type`: ValueType): V = if (this.`type` == `type`) {
+  def asValue[V <: Value](`type`: ValueType): V = if (this.`type` == `type`) {
     this.asInstanceOf[V]
   } else {
     throw new RuntimeException(s"$this is a ${this.`type`}, not a ${`type`}")
   }
 
-  def obj: Obj = as[Obj](ValueType.Obj)
-  def arr: Arr = as[Arr](ValueType.Arr)
-  def str: Str = as[Str](ValueType.Str)
-  def num: Num = as[Num](ValueType.Num)
-  def bool: Bool = as[Bool](ValueType.Bool)
+  def asObj: Obj = asValue[Obj](ValueType.Obj)
+  def asArr: Arr = asValue[Arr](ValueType.Arr)
+  def asStr: Str = asValue[Str](ValueType.Str)
+  def asNum: Num = asValue[Num](ValueType.Num)
+  def asBool: Bool = asValue[Bool](ValueType.Bool)
 }
 
 trait Obj extends Any with Value {
@@ -61,7 +61,7 @@ trait Obj extends Any with Value {
   override def `type`: ValueType = ValueType.Obj
 
   override def toString: String = value.map {
-    case (key, value) => s"$key: $value"
+    case (key, value) => s""""$key": $value"""
   }.mkString("{", ", ", "}")
 }
 
