@@ -20,6 +20,8 @@ sealed trait Value extends Any {
 
   def remove(path: Path): Value = set(path, Null)
 
+  def merge(that: Value): Value = that
+
   def `type`: ValueType
 
   def isObj: Boolean = `type` == ValueType.Obj
@@ -54,6 +56,21 @@ case class Obj(value: Map[String, Value]) extends AnyVal with Value {
   override def apply(lookup: String): Value = value.get(lookup) match {
     case Some(v) => v
     case None => throw new RuntimeException(s"Unable to find: $lookup in $this")
+  }
+
+  override def merge(that: Value): Value = that match {
+    case Obj(thatMap) => {
+      var merged = thatMap
+      value.foreach {
+        case (key, value) => if (merged.contains(key)) {
+          merged += key -> value.merge(merged(key))
+        } else {
+          merged += key -> value
+        }
+      }
+      merged
+    }
+    case _ => that
   }
 
   override def `type`: ValueType = ValueType.Obj
