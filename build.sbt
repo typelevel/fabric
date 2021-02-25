@@ -6,4 +6,7 @@ scalaVersion := "2.13.5"
 
 val scalatestVersion: String = "3.2.5"
 
-libraryDependencies += "org.scalatest" %% "scalatest" % scalatestVersion % Test
+libraryDependencies ++= Seq(
+  "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+  "org.scalatest" %% "scalatest" % scalatestVersion % Test
+)
