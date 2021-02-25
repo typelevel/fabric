@@ -42,10 +42,8 @@ sealed trait Value extends Any {
   def asBool: Bool = asValue[Bool](ValueType.Bool)
 }
 
-trait Obj extends Any with Value {
-  def value: Map[String, Value]
+case class Obj(value: Map[String, Value]) extends AnyVal with Value {
   def keys: Set[String] = value.keySet
-  def isStrict: Boolean
 
   override def apply(path: Path): Value = if (path.isEmpty) {
     this
@@ -63,20 +61,6 @@ trait Obj extends Any with Value {
   override def toString: String = value.map {
     case (key, value) => s""""$key": $value"""
   }.mkString("{", ", ", "}")
-}
-
-case class DynamicObj(value: Map[String, Value]) extends AnyVal with Obj {
-  override def isStrict: Boolean = false
-}
-
-object Obj {
-  def apply(value: Map[String, Value]): Obj = DynamicObj(value)
-  def apply(value: Map[String, Value], keys: Set[String]): Obj = StrictObj(value, keys)
-  def strict(value: Map[String, Value]): Obj = StrictObj(value, value.keySet)
-}
-
-case class StrictObj(value: Map[String, Value], override val keys: Set[String]) extends Obj {
-  override def isStrict: Boolean = true
 }
 
 case class Str(value: String) extends AnyVal with Value {
