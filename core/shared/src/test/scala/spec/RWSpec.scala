@@ -48,7 +48,14 @@ class RWSpec extends AnyWordSpec with Matchers {
       "convert Person to Value and back" in {
         val person = Person("Matt Hicks", 41, Address("San Jose", "California"))
         val value = person.toValue
-        value.toString should be("""{"name": "Matt Hicks", "age": 41.0, "address": {"city": "San Jose", "state": "California"}}""")
+        value should be(obj(
+          "name" -> "Matt Hicks",
+          "age" -> 41.0,
+          "address" -> obj(
+            "city" -> "San Jose",
+            "state" -> "California"
+          )
+        ))
         val back = value.as[Person]
         back should be(person)
       }
