@@ -9,6 +9,8 @@ package object hierarchical {
 
   implicit def ints2Arr(seq: Seq[Int]): Arr = Arr(seq.map(n => num(n.toDouble)).toVector)
 
+  implicit def doubles2Arr(seq: Seq[Double]): Arr = Arr(seq.map(num).toVector)
+
   def obj(params: (String, Value)*): Obj = Obj(Map(params: _*))
 
   def arr(values: Value*): Arr = Arr(values.toVector)

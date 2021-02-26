@@ -12,7 +12,7 @@ val scalaNativeVersions = scala2
 name := "hierarchical"
 organization in ThisBuild := "com.outr"
 version in ThisBuild := "1.0.0-SNAPSHOT"
-scalaVersion in ThisBuild := scala3
+scalaVersion in ThisBuild := scala213
 scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation")
 javacOptions in ThisBuild ++= Seq("-source", "1.8", "-target", "1.8")
 
@@ -64,7 +64,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(
     name := "hierarchical-core",
     libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest" % scalatestVersion % Test
+      "org.scalatest" %%% "scalatest" % scalatestVersion % Test
     ),
     libraryDependencies ++= (
       if (isDotty.value) {
@@ -100,7 +100,7 @@ lazy val json = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     name := "hierarchical-json",
     libraryDependencies ++= Seq(
       "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
-      "org.scalatest" %% "scalatest" % scalatestVersion % Test
+      "org.scalatest" %%% "scalatest" % scalatestVersion % Test
     )
   )
   .jsSettings(
