@@ -31,6 +31,30 @@ trait CompileRW {
   }
 
   inline def fromMap[T <: Product](map: Map[String, Value])(using p: Mirror.ProductOf[T]): T = {
-    ???
+    inline val size = constValue[Tuple.Size[p.MirroredElemTypes]]
+    val arr = new Array[Any](size)
+    fromMapElems[T, p.MirroredElemTypes, p.MirroredElemLabels](map, 0, arr)
+    val product: Product = new Product {
+      override def canEqual(that: Any): Boolean = true
+      override def productArity: Int = arr.size
+      override def productElement(n: Int): Any = arr(n)
+    }
+    p.fromProduct(product)
+  }
+
+  inline def fromMapElems[A <: Product, T <: Tuple, L <: Tuple](map: Map[String, Value], index: Int, arr: Array[Any]): Unit = {
+    inline erasedValue[T] match
+      case _: (hd *: tl) =>
+        inline erasedValue[L] match
+          case _: (hdLabel *: tlLabels) =>
+            import hierarchical.rw.given
+            val hdLabelValue = constValue[hdLabel].asInstanceOf[String]
+            val hdValue = map(hdLabelValue)
+            val hdWritable = summonInline[Writable[hd]]
+            val value = hdWritable.write(hdValue)
+            arr(index) = value
+            fromMapElems[A, tl, tlLabels](map, index + 1, arr)
+          case EmptyTuple => sys.error("Not possible")
+      case EmptyTuple => // Finished
   }
 }
