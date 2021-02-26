@@ -12,7 +12,7 @@ val scalaNativeVersions = scala2
 name := "hierarchical"
 organization in ThisBuild := "com.outr"
 version in ThisBuild := "1.0.0-SNAPSHOT"
-scalaVersion in ThisBuild := scala213
+scalaVersion in ThisBuild := scala3
 scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation")
 javacOptions in ThisBuild ++= Seq("-source", "1.8", "-target", "1.8")
 
@@ -90,6 +90,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     crossScalaVersions := scalaJVMVersions
   )
   .nativeSettings(
+    scalaVersion := scala213,
     crossScalaVersions := scalaNativeVersions
   )
 
@@ -109,6 +110,7 @@ lazy val json = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     crossScalaVersions := scalaJVMVersions
   )
   .nativeSettings(
+    scalaVersion := scala213,
     crossScalaVersions := scalaNativeVersions
   )
   .dependsOn(core)
