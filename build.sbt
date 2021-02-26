@@ -37,6 +37,9 @@ testOptions in ThisBuild += Tests.Argument("-oD")
 val collectionCompatVersion: String = "2.4.2"
 val scalatestVersion: String = "3.2.5"
 
+// JSON module dependencies
+val jacksonVersion: String = "2.12.1"
+
 // set source map paths from local directories to github path
 val sourceMapSettings = List(
   scalacOptions ++= git.gitHeadCommit.value.map { headCommit =>
@@ -48,7 +51,7 @@ val sourceMapSettings = List(
 
 lazy val root = project.in(file("."))
   .aggregate(
-    core.js, core.jvm, core.native
+    core.js, core.jvm, core.native, json.js, json.jvm, json.native
   )
   .settings(
     name := "hierarchical",
@@ -89,3 +92,23 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .nativeSettings(
     crossScalaVersions := scalaNativeVersions
   )
+
+lazy val json = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+  .crossType(CrossType.Full)
+  .settings(
+    name := "hierarchical-json",
+    libraryDependencies ++= Seq(
+      "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
+      "org.scalatest" %% "scalatest" % scalatestVersion % Test
+    )
+  )
+  .jsSettings(
+    crossScalaVersions := scalaJSVersions
+  )
+  .jvmSettings(
+    crossScalaVersions := scalaJVMVersions
+  )
+  .nativeSettings(
+    crossScalaVersions := scalaNativeVersions
+  )
+  .dependsOn(core)

@@ -22,6 +22,8 @@ sealed trait Value extends Any {
 
   def merge(that: Value): Value = that
 
+  def merge(path: Path, value: Value): Value = modify(path)(_.merge(value))
+
   def `type`: ValueType
 
   def isObj: Boolean = `type` == ValueType.Obj
