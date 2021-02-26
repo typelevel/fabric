@@ -1,6 +1,5 @@
 # TODO
 
-- [ ] Scala 3 Macros for RW
 - [ ] Support parsing of XML, YAML, Properties, and HOCON
 - [ ] Platform-specific Json.parse methods (JS, JVM, and Native)
 - [ ] Test with Profig
