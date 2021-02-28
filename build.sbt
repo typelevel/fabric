@@ -40,6 +40,10 @@ val scalatestVersion: String = "3.2.5"
 // JSON module dependencies
 val jacksonVersion: String = "2.12.1"
 
+// Benchmarks
+val circeVersion = "0.13.0"
+val uPickleVersion: String = "1.2.3"
+
 // set source map paths from local directories to github path
 val sourceMapSettings = List(
   scalacOptions ++= git.gitHeadCommit.value.map { headCommit =>
@@ -114,3 +118,15 @@ lazy val json = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     crossScalaVersions := scalaNativeVersions
   )
   .dependsOn(core)
+
+lazy val bench = project.in(file("bench"))
+  .enablePlugins(JmhPlugin)
+  .dependsOn(json.jvm)
+  .settings(
+    name := "hierarchical-benchmarks",
+    libraryDependencies ++= Seq(
+      "io.circe" %% "circe-generic" % circeVersion,
+      "io.circe" %% "circe-parser" % circeVersion,
+      "com.lihaoyi" %% "upickle" % uPickleVersion
+    )
+  )
