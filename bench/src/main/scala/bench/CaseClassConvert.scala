@@ -7,11 +7,11 @@ import org.openjdk.jmh.annotations._
 import java.util.concurrent.TimeUnit
 
 @State(Scope.Thread)
-@BenchmarkMode(Array(Mode.All))
+@BenchmarkMode(Array(Mode.Throughput))
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@OperationsPerInvocation(100)
+@OperationsPerInvocation(1000)
 class CaseClassConvert {
-  private val count: Int = 100
+  private val count: Int = 1000
 
   private val smallJson =
     """{

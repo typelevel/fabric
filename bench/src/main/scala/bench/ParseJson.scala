@@ -6,11 +6,11 @@ import java.util.concurrent.TimeUnit
 
 // jmh:run -i 3 -wi 3 -f1 -t1 -rf JSON -rff benchmarks.json
 @State(Scope.Thread)
-@BenchmarkMode(Array(Mode.All))
+@BenchmarkMode(Array(Mode.Throughput))
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@OperationsPerInvocation(100)
+@OperationsPerInvocation(1000)
 class ParseJson {
-  private val count: Int = 100
+  private val count: Int = 1000
   private val smallJsonString: String = """{"name": "Sample", "age": 123}"""
   private val mediumJsonString: String =
     """{
