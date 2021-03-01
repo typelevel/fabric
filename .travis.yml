@@ -4,8 +4,10 @@ scala:
   - 2.13.5
 jdk:
   - openjdk8
-node_js:
-  - 14
+install:
+  - . $HOME/.nvm/nvm.sh
+  - nvm install 14
+  - nvm use 14
 cache:
   directories:
     - $HOME/.ivy2/cache
