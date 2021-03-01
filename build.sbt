@@ -55,7 +55,7 @@ val sourceMapSettings = List(
 
 lazy val root = project.in(file("."))
   .aggregate(
-    core.js, core.jvm, core.native, json.js, json.jvm, json.native
+    core.js, core.jvm, core.native, json.js, json.jvm
   )
   .settings(
     name := "hierarchical",
@@ -98,12 +98,11 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     crossScalaVersions := scalaNativeVersions
   )
 
-lazy val json = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+lazy val json = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Full)
   .settings(
     name := "hierarchical-json",
     libraryDependencies ++= Seq(
-      "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
       "org.scalatest" %%% "scalatest" % scalatestVersion % Test
     )
   )
@@ -111,11 +110,10 @@ lazy val json = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     crossScalaVersions := scalaJSVersions
   )
   .jvmSettings(
-    crossScalaVersions := scalaJVMVersions
-  )
-  .nativeSettings(
-    scalaVersion := scala213,
-    crossScalaVersions := scalaNativeVersions
+    crossScalaVersions := scalaJVMVersions,
+    libraryDependencies ++= Seq(
+      "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion
+    )
   )
   .dependsOn(core)
 

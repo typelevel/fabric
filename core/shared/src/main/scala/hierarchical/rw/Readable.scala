@@ -2,6 +2,9 @@ package hierarchical.rw
 
 import hierarchical._
 
+/**
+ * Readable provides a simple T => Value wrapper functionality
+ */
 trait Readable[T] {
   def read(t: T): Value
 }

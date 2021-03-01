@@ -2,28 +2,24 @@ package hierarchical.json
 
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import com.fasterxml.jackson.core.{JsonFactory, JsonGenerator, JsonParser, JsonToken}
-import hierarchical._
+import hierarchical.{Arr, Bool, Null, Num, Obj, Str, Value}
 
-import java.io.ByteArrayOutputStream
+import java.io.{ByteArrayOutputStream, File}
+import java.nio.file.Path
 import scala.annotation.tailrec
+import scala.io.Source
 
 /**
- * Json provides support for parsing and formatting hierarchical Values from/to JSON
+ * Json provides convenience functionality to parse and format JSON to/from hierarchical Values
  */
-object Json {
+object Json extends AbstractJson {
   private lazy val factory = new JsonFactory()
     .enable(JsonParser.Feature.ALLOW_COMMENTS)
     .enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES)
     .enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
     .enable(JsonParser.Feature.ALLOW_YAML_COMMENTS)
 
-  /**
-   * Formats the supplied value for pretty output.
-   *
-   * @param value the value to format
-   * @return formatted String
-   */
-  def format(value: Value): String = {
+  override def format(value: Value): String = {
     val output = new ByteArrayOutputStream
     try {
       val gen = factory.createGenerator(output)
@@ -43,13 +39,7 @@ object Json {
     }
   }
 
-  /**
-   * Parses the JSON string into a hierarchical Value.
-   *
-   * @param s the JSON string to parse
-   * @return Value
-   */
-  def parse(s: String): Value = {
+  override def parse(s: String): Value = {
     val parser = factory.createParser(s)
     try {
       parse(parser)
@@ -57,6 +47,9 @@ object Json {
       parser.close()
     }
   }
+
+  def parse(file: File): Value = parse(Source.fromFile(file, "UTF-8"))
+  def parse(path: Path): Value = parse(Source.fromFile(path.toFile, "UTF-8"))
 
   protected def format(gen: JsonGenerator, value: Value): Unit = value match {
     case Obj(map) => {
@@ -77,7 +70,7 @@ object Json {
       gen.writeEndArray()
     }
     case Bool(b) => gen.writeBoolean(b)
-    case Num(n) => gen.writeNumber(n)
+    case Num(n) => gen.writeNumber(n.underlying())
     case Str(s) => gen.writeString(s)
     case Null => gen.writeNull()
   }

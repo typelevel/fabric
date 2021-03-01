@@ -2,6 +2,9 @@ package hierarchical.rw
 
 import hierarchical._
 
+/**
+ * Writable provides a simple Value => T wrapper functionality
+ */
 trait Writable[T] {
   def write(value: Value): T
 }

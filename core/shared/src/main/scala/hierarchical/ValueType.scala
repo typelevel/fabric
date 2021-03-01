@@ -1,5 +1,8 @@
 package hierarchical
 
+/**
+ * ValueType represents the possible types of Value
+ */
 sealed trait ValueType
 
 case object ValueType {
