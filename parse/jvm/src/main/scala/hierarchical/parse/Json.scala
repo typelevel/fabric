@@ -1,4 +1,4 @@
-package hierarchical.json
+package hierarchical.parse
 
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import com.fasterxml.jackson.core.{JsonFactory, JsonGenerator, JsonParser, JsonToken}

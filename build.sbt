@@ -55,7 +55,7 @@ val sourceMapSettings = List(
 
 lazy val root = project.in(file("."))
   .aggregate(
-    core.js, core.jvm, core.native, json.js, json.jvm
+    core.js, core.jvm, core.native, parse.js, parse.jvm
   )
   .settings(
     name := "hierarchical",
@@ -98,10 +98,10 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     crossScalaVersions := scalaNativeVersions
   )
 
-lazy val json = crossProject(JSPlatform, JVMPlatform)
+lazy val parse = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Full)
   .settings(
-    name := "hierarchical-json",
+    name := "hierarchical-parse",
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % scalatestVersion % Test
     )
@@ -119,7 +119,7 @@ lazy val json = crossProject(JSPlatform, JVMPlatform)
 
 lazy val bench = project.in(file("bench"))
   .enablePlugins(JmhPlugin)
-  .dependsOn(json.jvm)
+  .dependsOn(parse.jvm)
   .settings(
     name := "hierarchical-benchmarks",
     libraryDependencies ++= Seq(

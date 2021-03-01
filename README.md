@@ -42,8 +42,8 @@ The focus of this project is minimalism and flexibility. To that end, the featur
 For SBT simply include:
 `libraryDependencies += "com.outr" %%% "hierarchical" % "x.y.z"`
 
-For JSON parsing support include:
-`libraryDependencies += "com.outr" %%% "hierarchical-json" % "x.y.z"`
+For parsing support include:
+`libraryDependencies += "com.outr" %%% "hierarchical-parse" % "x.y.z"`
 
 ### Create
 
@@ -105,7 +105,7 @@ object Person {
 
 ### Parse
 
-Parsing from existing JSON requires the use of the `hierarchical-json` module:
+Parsing from existing JSON requires the use of the `hierarchical-parse` module:
 
 ```scala
 import hierarchical._

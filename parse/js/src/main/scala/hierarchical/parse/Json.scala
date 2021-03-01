@@ -1,4 +1,4 @@
-package hierarchical.json
+package hierarchical.parse
 
 import hierarchical._
 

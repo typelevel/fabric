@@ -1,7 +1,7 @@
 package spec
 
 import hierarchical._
-import hierarchical.json._
+import hierarchical.parse._
 
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
