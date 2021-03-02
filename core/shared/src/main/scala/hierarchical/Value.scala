@@ -61,21 +61,40 @@ sealed trait Value extends Any {
   def remove(path: Path): Value = set(path, Null)
 
   /**
-   * Merges two Value instances with `that` replacing values of the same name in `this`.
+   * Merges a Value at the specified path
    *
-   * @param that the Value to merge into this
-   * @return merged Value
-   */
-  def merge(that: Value): Value = that
-
-  /**
-   * Merges a Value at the specified path.
-   *
-   * @param path the path to merge into the specified path
    * @param value the value to merge
+   * @param path the path (defaults to Path.empty)
+   * @param `type` the merge type (defaults to MergeType.Overwrite)
    * @return root Value after merge
    */
-  def merge(path: Path, value: Value): Value = modify(path)(_.merge(value))
+  def merge(value: Value,
+            path: Path = Path.empty,
+            `type`: MergeType = MergeType.Overwrite): Value = modify(path) {
+    case Obj(thisMap) => value match {
+      case Obj(thatMap) => {
+        var merged = thatMap
+        thisMap.foreach {
+          case (k, v) => if (merged.contains(k)) {
+            `type` match {
+              case MergeType.Overwrite => merged += k -> v.merge(merged(k))
+              case MergeType.Add => merged += k -> merged(k).merge(v)
+              case MergeType.ErrorOnDuplicate => throw new RuntimeException(s"Duplicate found: $k, existing: ${merged(k)}, new: $v")
+            }
+          } else {
+            merged += k -> v
+          }
+        }
+        merged
+      }
+      case _ => `type` match {
+        case MergeType.Overwrite => value
+        case MergeType.Add => Obj(thisMap)
+        case MergeType.ErrorOnDuplicate => throw new RuntimeException(s"Duplicate found at $path, existing: ${Obj(thisMap)}, new: $value")
+      }
+    }
+    case _ => value
+  }
 
   /**
    * The type of value
@@ -183,26 +202,35 @@ case class Obj(value: Map[String, Value]) extends AnyVal with Value {
     case None => obj()
   }
 
-  override def merge(that: Value): Value = that match {
-    case Obj(thatMap) => {
-      var merged = thatMap
-      value.foreach {
-        case (key, value) => if (merged.contains(key)) {
-          merged += key -> value.merge(merged(key))
-        } else {
-          merged += key -> value
-        }
-      }
-      merged
-    }
-    case _ => that
-  }
-
   override def `type`: ValueType = ValueType.Obj
 
   override def toString: String = value.map {
     case (key, value) => s""""$key": $value"""
   }.mkString("{", ", ", "}")
+}
+
+object Obj {
+  /**
+   * Processes the supplied map creating an Obj for it. If `parsePath` is set, the key will be extracted as
+   * as a path based on the `parsePath` separation character. If it is not set, the key will be set as-is.
+   *
+   * @param map the map to parse into an Obj
+   * @param parsePath the optional separation character to parse the keys into paths (defaults to Some('.'))
+   * @return Obj
+   */
+  def process(map: Map[String, String], parsePath: Option[Char] = Some('.')): Obj = {
+    var o = obj()
+    map.foreach {
+      case (key, value) => parsePath match {
+        case Some(sep) => {
+          val path = Path.parse(key, sep)
+          o = o.merge(str(value), path).asObj
+        }
+        case None => o = o.merge(str(value), Path(key)).asObj
+      }
+    }
+    o
+  }
 }
 
 /**

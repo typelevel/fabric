@@ -1,6 +1,6 @@
 package bench
 
-import hierarchical.json.Json
+import hierarchical.parse.Json
 import hierarchical.rw._
 import org.openjdk.jmh.annotations._
 
@@ -73,19 +73,19 @@ class CaseClassConvert {
 
   case class Person(name: String, age: Int)
   object Person {
-    implicit val hRW: ReadableWritable[Person] = ccRW[Person]
+    implicit val hRW: ReaderWriter[Person] = ccRW[Person]
     implicit val cDecoder: io.circe.Decoder[Person] = io.circe.generic.semiauto.deriveDecoder[Person]
     implicit val uRW: uPickle.ReadWriter[Person] = uPickle.macroRW[Person]
   }
   case class Address(city: String, state: String)
   object Address {
-    implicit val hRW: ReadableWritable[Address] = ccRW[Address]
+    implicit val hRW: ReaderWriter[Address] = ccRW[Address]
     implicit val cDecoder: io.circe.Decoder[Address] = io.circe.generic.semiauto.deriveDecoder[Address]
     implicit val uRW: uPickle.ReadWriter[Address] = uPickle.macroRW[Address]
   }
   case class User(username: String, password: String, fullName: Option[String], addresses: List[Address])
   object User {
-    implicit val hRW: ReadableWritable[User] = ccRW[User]
+    implicit val hRW: ReaderWriter[User] = ccRW[User]
     implicit val cDecoder: io.circe.Decoder[User] = io.circe.generic.semiauto.deriveDecoder[User]
     implicit val uRW: uPickle.ReadWriter[User] = uPickle.macroRW[User]
   }

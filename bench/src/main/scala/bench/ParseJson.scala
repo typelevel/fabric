@@ -43,7 +43,7 @@ class ParseJson {
   def uJsonMedium(): Unit = parseUJson(mediumJsonString)
 
   private def parseHierarchical(jsonString: String): Unit = {
-    import hierarchical.json._
+    import hierarchical.parse._
 
     (0 until count).foreach { _ =>
       val value = Json.parse(jsonString)

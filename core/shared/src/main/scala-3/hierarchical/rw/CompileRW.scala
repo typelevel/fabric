@@ -6,7 +6,7 @@ import scala.deriving.*
 import scala.compiletime.*
 
 trait CompileRW {
-  inline def ccRW[T <: Product](using Mirror.ProductOf[T]): ReadableWritable[T] = new ClassRW[T] {
+  inline def ccRW[T <: Product](using Mirror.ProductOf[T]): ReaderWriter[T] = new ClassRW[T] {
     override protected def t2Map(t: T): Map[String, Value] = toMap(t)
     override protected def map2T(map: Map[String, Value]): T = fromMap[T](map)
   }
@@ -23,8 +23,8 @@ trait CompileRW {
             import hierarchical.rw.given
             val hdLabelValue = constValue[hdLabel].asInstanceOf[String]
             val hdValue = a.productElement(index).asInstanceOf[hd]
-            val hdReadable = summonInline[Readable[hd]]
-            val value = hdReadable.read(hdValue)
+            val hdReader = summonInline[Reader[hd]]
+            val value = hdReader.read(hdValue)
             toMapElems[A, tl, tlLabels](a, index + 1) ++ Map(hdLabelValue -> value)
           case EmptyTuple => sys.error("Not possible")
       case EmptyTuple => Map.empty
@@ -50,7 +50,7 @@ trait CompileRW {
             import hierarchical.rw.given
             val hdLabelValue = constValue[hdLabel].asInstanceOf[String]
             val hdValue = map(hdLabelValue)
-            val hdWritable = summonInline[Writable[hd]]
+            val hdWritable = summonInline[Writer[hd]]
             val value = hdWritable.write(hdValue)
             arr(index) = value
             fromMapElems[A, tl, tlLabels](map, index + 1, arr)

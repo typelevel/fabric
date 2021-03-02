@@ -4,7 +4,7 @@ import scala.reflect.macros.blackbox
 
 object RWMacros {
   def caseClass[T](context: blackbox.Context)
-                  (implicit t: context.WeakTypeTag[T]): context.Expr[ReadableWritable[T]] = {
+                  (implicit t: context.WeakTypeTag[T]): context.Expr[ReaderWriter[T]] = {
     import context.universe._
 
     val tpe = t.tpe
@@ -21,7 +21,7 @@ object RWMacros {
           val fromMap = q"$name = map($key).as[$returnType]"
           (toMap, fromMap)
         }.unzip
-        context.Expr[ReadableWritable[T]](
+        context.Expr[ReaderWriter[T]](
           q"""
             import _root_.hierarchical._
             import _root_.hierarchical.rw._

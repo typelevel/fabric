@@ -13,16 +13,5 @@ object Properties extends Parser {
     parse(p)
   }
 
-  // TODO: Should I extract this out?
-  def parse(properties: java.util.Properties): Value = {
-    var v: Value = obj()
-
-    properties.asScala.foreach {
-      case (key, value) => {
-        val path = new Path(key.split('.').toList)
-        v = v.merge(path, str(value))
-      }
-    }
-    v
-  }
+  def parse(properties: java.util.Properties): Value = Obj.process(properties.asScala.toMap)
 }

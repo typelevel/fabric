@@ -6,9 +6,9 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class RWSpec extends AnyWordSpec with Matchers {
-  "ReadableWritable" when {
+  "ReaderWriter" when {
     "converting manually" should {
-      implicit val addressRW: ReadableWritable[Address] = new ClassRW[Address] {
+      implicit val addressRW: ReaderWriter[Address] = new ClassRW[Address] {
         override protected def t2Map(t: Address): Map[String, Value] = Map(
           "city" -> t.city.toValue,
           "state" -> t.state.toValue
@@ -19,7 +19,7 @@ class RWSpec extends AnyWordSpec with Matchers {
           state = map("state").as[String]
         )
       }
-      implicit val personRW: ReadableWritable[Person] = new ClassRW[Person] {
+      implicit val personRW: ReaderWriter[Person] = new ClassRW[Person] {
         override protected def t2Map(t: Person): Map[String, Value] = Map(
           "name" -> t.name.toValue,
           "age" -> t.age.toValue,
@@ -49,8 +49,8 @@ class RWSpec extends AnyWordSpec with Matchers {
       }
     }
     "converting automatically via macro" should {
-      implicit val addressRW: ReadableWritable[Address] = ccRW[Address]
-      implicit val personRW: ReadableWritable[Person] = ccRW[Person]
+      implicit val addressRW: ReaderWriter[Address] = ccRW[Address]
+      implicit val personRW: ReaderWriter[Person] = ccRW[Person]
 
       "convert Person to Value and back" in {
         val person = Person("Matt Hicks", 41, Address("San Jose", "California"))
