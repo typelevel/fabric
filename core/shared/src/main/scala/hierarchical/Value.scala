@@ -5,23 +5,44 @@ package hierarchical
  */
 sealed trait Value extends Any {
   /**
-   * Looks up a Value based on Path
-   *
-   * Example: `val v = someValue("first" \ "second" \ "third")`
-   */
-  def apply(path: Path): Value = if (path.isEmpty) this else throw new RuntimeException(s"$this is not an Obj. Can't lookup: $path")
-
-  /**
    * Looks up a Value by name in the children.
    *
    * Throws an exception if invoked on anything except `Obj`
    */
-  def apply(lookup: String): Value = throw new RuntimeException(s"$this is not an Obj. Can't lookup: $lookup")
+  final def apply(lookup: String): Value = get(lookup).getOrElse(throw new RuntimeException(s"Lookup not found: $lookup"))
+
+  /**
+   * Looks up a Value by name in the children.
+   */
+  final def get(lookup: String): Option[Value] = this match {
+    case Obj(map) => map.get(lookup)
+    case _ => throw new RuntimeException(s"$this is not an Obj. Can't look up: $lookup")
+  }
+
+  /**
+   * Looks up a Value based on Path
+   *
+   * Example: val o: Option[Value] = someValue("first" \ "second" \ "third")
+   */
+  final def get(path: Path): Option[Value] = if (path.isEmpty) {
+    Some(this)
+  } else {
+    val lookup = path()
+    val next = path.next()
+    get(lookup).flatMap(_.get(next))
+  }
+
+  /**
+   * Looks up a Value based on Path
+   *
+   * Example: `val v = someValue("first" \ "second" \ "third")`
+   */
+  final def apply(path: Path): Value = get(path).getOrElse(s"Path not found: $path")
 
   /**
    * Looks up a Value by name in the children or creates a new Obj if it doesn't exist.
    */
-  def getOrCreate(lookup: String): Value = throw new RuntimeException(s"$this is not an Obj. Can't lookup: $lookup")
+  final def getOrCreate(lookup: String): Value = get(lookup).getOrElse(obj())
 
   /**
    * Modifies the value at the specified path and returns back a new root Value with the modified path.
@@ -185,22 +206,6 @@ object Value {
  */
 case class Obj(value: Map[String, Value]) extends AnyVal with Value {
   def keys: Set[String] = value.keySet
-
-  override def apply(path: Path): Value = if (path.isEmpty) {
-    this
-  } else {
-    val child = this(path())
-    child(path.next())
-  }
-  override def apply(lookup: String): Value = value.get(lookup) match {
-    case Some(v) => v
-    case None => throw new RuntimeException(s"Unable to find: $lookup in $this")
-  }
-
-  override def getOrCreate(lookup: String): Value = value.get(lookup) match {
-    case Some(v) => v
-    case None => obj()
-  }
 
   override def `type`: ValueType = ValueType.Obj
 
