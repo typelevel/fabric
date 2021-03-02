@@ -19,6 +19,11 @@ sealed trait Value extends Any {
   def apply(lookup: String): Value = throw new RuntimeException(s"$this is not an Obj. Can't lookup: $lookup")
 
   /**
+   * Looks up a Value by name in the children or creates a new Obj if it doesn't exist.
+   */
+  def getOrCreate(lookup: String): Value = throw new RuntimeException(s"$this is not an Obj. Can't lookup: $lookup")
+
+  /**
    * Modifies the value at the specified path and returns back a new root Value with the modified path.
    *
    * Note: We use the term "modify" here from an immutable standpoint. The original Value will not change.
@@ -30,7 +35,7 @@ sealed trait Value extends Any {
   def modify(path: Path)(f: Value => Value): Value = if (path.isEmpty) {
     f(this)
   } else {
-    val child = this(path())
+    val child = this.getOrCreate(path())
     child.modify(path.next())(f) match {
       case Null => Obj(asObj.value - path())
       case v if v == child => this
@@ -171,6 +176,11 @@ case class Obj(value: Map[String, Value]) extends AnyVal with Value {
   override def apply(lookup: String): Value = value.get(lookup) match {
     case Some(v) => v
     case None => throw new RuntimeException(s"Unable to find: $lookup in $this")
+  }
+
+  override def getOrCreate(lookup: String): Value = value.get(lookup) match {
+    case Some(v) => v
+    case None => obj()
   }
 
   override def merge(that: Value): Value = that match {

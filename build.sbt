@@ -37,11 +37,13 @@ testOptions in ThisBuild += Tests.Argument("-oD")
 val collectionCompatVersion: String = "2.4.2"
 val scalatestVersion: String = "3.2.5"
 
-// JSON module dependencies
+// Parse module dependencies
 val jacksonVersion: String = "2.12.1"
+val scalaXMLVersion: String = "2.0.0-M5"
+val typesafeConfig: String = "1.4.1"
 
 // Benchmarks
-val circeVersion = "0.13.0"
+val circeVersion: String = "0.13.0"
 val uPickleVersion: String = "1.2.3"
 
 // set source map paths from local directories to github path
@@ -112,7 +114,10 @@ lazy val parse = crossProject(JSPlatform, JVMPlatform)
   .jvmSettings(
     crossScalaVersions := scalaJVMVersions,
     libraryDependencies ++= Seq(
-      "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion
+      "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
+      "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonVersion,
+      "org.scala-lang.modules" %% "scala-xml" % scalaXMLVersion,
+      "com.typesafe" % "config" % typesafeConfig
     )
   )
   .dependsOn(core)

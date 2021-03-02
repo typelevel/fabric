@@ -1,6 +1,6 @@
 # hierarchical
 
-[![Build Status](https://travis-ci.com/outr/hierarchical.svg?branch=master)](https://travis-ci.com/outr/hierarchical)
+[![Build Status](https://www.travis-ci.com/outr/hierarchical.svg?branch=master)](https://www.travis-ci.com/outr/hierarchical)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/outr/hierarchical)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.outr/hierarchical_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.outr/hierarchical_2.13)
 [![Latest version](https://index.scala-lang.org/outr/hierarchical/hierarchical/latest.svg)](https://index.scala-lang.org/outr/hierarchical)
