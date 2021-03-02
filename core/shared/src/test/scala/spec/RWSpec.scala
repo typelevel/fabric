@@ -67,8 +67,25 @@ class RWSpec extends AnyWordSpec with Matchers {
         back should be(person)
       }
     }
+    "converting automatically via macro with defaults" should {
+      implicit val rw: ReaderWriter[Defaults] = ccRW
+
+      "convert from empty obj to Defaults" in {
+        val v = obj()
+        val d = v.as[Defaults]
+        d.name should be("John Doe")
+        d.age should be(21)
+      }
+      "convert from single argument to Defaults" in {
+        val v = obj("name" -> "Jane Doe")
+        val d = v.as[Defaults]
+        d.name should be("Jane Doe")
+        d.age should be(21)
+      }
+    }
   }
 
   case class Person(name: String, age: Int, address: Address)
   case class Address(city: String, state: String)
+  case class Defaults(name: String = "John Doe", age: Int = 21)
 }

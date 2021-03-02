@@ -36,7 +36,7 @@ The focus of this project is minimalism and flexibility. To that end, the featur
 - AST for representation of `Map`, `Array`, `Numeric`, `String`, `Boolean`, and `null` in a type-safe and immutable way
 - Clean DSL to create tree structures
 - Deep merging support
-- Compile-time generation of conversions to/from case classes
+- Compile-time generation of conversions to/from case classes with support for default arguments
 - Easy and convenient extensibility support
 - Parsing support for JSON on JVM and Scala.js
 

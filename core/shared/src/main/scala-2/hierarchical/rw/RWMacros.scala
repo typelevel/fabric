@@ -9,17 +9,30 @@ object RWMacros {
 
     val tpe = t.tpe
     val companion = tpe.typeSymbol.companion
+    val DefaultRegex = """apply[$]default[$](\d+)""".r
+    val defaults: Map[Int, context.universe.MethodSymbol] = companion.typeSignature.decls.collect {
+      case m: MethodSymbol => m.name.toString match {
+        case DefaultRegex(position) => Some((position.toInt - 1) -> m)
+        case _ => None
+      }
+    }.flatten.toMap
     tpe.decls.collectFirst {
       case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
     } match {
       case Some(fields) => {
-        val (toMap, fromMap) = fields.map { field =>
-          val name = field.asTerm.name
-          val key = name.decodedName.toString
-          val returnType = tpe.decl(name).typeSignature
-          val toMap = q"$key -> t.$name.toValue"
-          val fromMap = q"$name = map($key).as[$returnType]"
-          (toMap, fromMap)
+        val (toMap, fromMap) = fields.zipWithIndex.map {
+          case (field, index) => {
+            val name = field.asTerm.name
+            val key = name.decodedName.toString
+            val returnType = tpe.decl(name).typeSignature
+            val default = defaults.get(index) match {
+              case Some(m) => q"$companion.$m"
+              case None => q"""throw new RuntimeException("Unable to find field " + ${tpe.toString} + "." + $key + " (and no defaults set) in " + Obj(map))"""
+            }
+            val toMap = q"$key -> t.$name.toValue"
+            val fromMap = q"""$name = map.get($key).map(_.as[$returnType]).getOrElse($default)"""
+            (toMap, fromMap)
+          }
         }.unzip
         context.Expr[ReaderWriter[T]](
           q"""
