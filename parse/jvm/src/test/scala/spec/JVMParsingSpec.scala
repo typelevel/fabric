@@ -1,7 +1,7 @@
 package spec
 
-import hierarchical._
-import hierarchical.parse.{Hocon, Properties, XML, Yaml}
+import fabric._
+import fabric.parse.{Hocon, Properties, XML, Yaml}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

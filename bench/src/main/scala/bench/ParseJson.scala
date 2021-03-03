@@ -25,10 +25,10 @@ class ParseJson {
       |}""".stripMargin
 
   @Benchmark
-  def hierarchicalSmall(): Unit = parseHierarchical(smallJsonString)
+  def fabricSmall(): Unit = parseFabric(smallJsonString)
 
   @Benchmark
-  def hierarchicalMedium(): Unit = parseHierarchical(mediumJsonString)
+  def fabricMedium(): Unit = parseFabric(mediumJsonString)
 
   @Benchmark
   def circeSmall(): Unit = parseCirce(smallJsonString)
@@ -42,8 +42,8 @@ class ParseJson {
   @Benchmark
   def uJsonMedium(): Unit = parseUJson(mediumJsonString)
 
-  private def parseHierarchical(jsonString: String): Unit = {
-    import hierarchical.parse._
+  private def parseFabric(jsonString: String): Unit = {
+    import fabric.parse._
 
     (0 until count).foreach { _ =>
       val value = Json.parse(jsonString)

@@ -1,12 +1,12 @@
 package spec
 
-import hierarchical._
+import fabric._
 
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class HierarchicalSpec extends AnyWordSpec with Matchers {
-  "Hierarchical" when {
+class FabricSpec extends AnyWordSpec with Matchers {
+  "Fabric" when {
     "creating objects" should {
       val v: Obj = obj(
         "name" -> "Matt \"Matteo\" Hicks",

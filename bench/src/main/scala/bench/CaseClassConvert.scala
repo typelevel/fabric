@@ -1,7 +1,7 @@
 package bench
 
-import hierarchical.parse.Json
-import hierarchical.rw._
+import fabric.parse.Json
+import fabric.rw._
 import org.openjdk.jmh.annotations._
 
 import java.util.concurrent.TimeUnit
@@ -28,21 +28,21 @@ class CaseClassConvert {
       |     {"city": "Norman", "state": "Oklahoma"}
       |   ]
       |}""".stripMargin
-  private lazy val hSmallJson: hierarchical.Value = Json.parse(smallJson)
-  private lazy val hMediumJson: hierarchical.Value = Json.parse(mediumJson)
+  private lazy val hSmallJson: fabric.Value = Json.parse(smallJson)
+  private lazy val hMediumJson: fabric.Value = Json.parse(mediumJson)
   private lazy val cSmallJson: io.circe.Json = io.circe.parser.parse(smallJson).getOrElse(throw new RuntimeException("Parse Error"))
   private lazy val cMediumJson: io.circe.Json = io.circe.parser.parse(mediumJson).getOrElse(throw new RuntimeException("Parse Error"))
   private lazy val uSmallJson: ujson.Value = ujson.read(smallJson)
   private lazy val uMediumJson: ujson.Value = ujson.read(mediumJson)
 
   @Benchmark
-  def hierarchicalSmall(): Unit = (0 until count).foreach { _ =>
+  def fabricSmall(): Unit = (0 until count).foreach { _ =>
     val person = hSmallJson.as[Person]
     assert(person.age == 123)
   }
 
   @Benchmark
-  def hierarchicalMedium(): Unit = (0 until count).foreach { _ =>
+  def fabricMedium(): Unit = (0 until count).foreach { _ =>
     val user = hMediumJson.as[User]
     assert(user.fullName.contains("A Person"))
   }

@@ -1,9 +1,9 @@
-# hierarchical
+# fabric
 
-[![Build Status](https://www.travis-ci.com/outr/hierarchical.svg?branch=master)](https://www.travis-ci.com/outr/hierarchical)
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/outr/hierarchical)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.outr/hierarchical_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.outr/hierarchical_2.13)
-[![Latest version](https://index.scala-lang.org/outr/hierarchical/hierarchical/latest.svg)](https://index.scala-lang.org/outr/hierarchical)
+[![Build Status](https://www.travis-ci.com/outr/fabric.svg?branch=master)](https://www.travis-ci.com/outr/fabric)
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/outr/fabric)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.outr/fabric_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.outr/fabric_2.13)
+[![Latest version](https://index.scala-lang.org/outr/fabric/fabric/latest.svg)](https://index.scala-lang.org/outr/fabric)
 
 Abstract Syntax Tree (AST) based on JSON concepts, but more abstract for parsing and application.
 
@@ -16,7 +16,7 @@ concerning and problematic when doing things like merges. Both of them suffer fr
 so I ultimately decided to try my hand at accomplishing the same and incorporate some of my own crazy ideas in
 the process.
 
-I won't say that hierarchical is a better library than either of those great projects, but it was inspired by
+I won't say that fabric is a better library than either of those great projects, but it was inspired by
 both of them and customized to suit my particular needs. If you find it useful as well, please use it and offer
 some feedback.
 
@@ -25,7 +25,7 @@ some feedback.
 I wrote a performance benchmark with every expectation to be slower than the alternatives as I've done very
 little tuning, and I'm just one person versus the many developers that have worked on the others for years.
 However, I was shocked to see how well my little library performed compared to the alternatives:
-https://jmh.morethan.io/?source=https://raw.githubusercontent.com/outr/hierarchical/master/bench/results/benchmarks-1.0.0.json
+https://jmh.morethan.io/?source=https://raw.githubusercontent.com/outr/fabric/master/bench/results/benchmarks-1.0.0.json
 
 ## Features
 
@@ -45,17 +45,17 @@ The focus of this project is minimalism and flexibility. To that end, the featur
 ### Setup
 
 For SBT simply include:
-`libraryDependencies += "com.outr" %%% "hierarchical" % "x.y.z"`
+`libraryDependencies += "com.outr" %%% "fabric" % "x.y.z"`
 
 For parsing support include:
-`libraryDependencies += "com.outr" %%% "hierarchical-parse" % "x.y.z"`
+`libraryDependencies += "com.outr" %%% "fabric-parse" % "x.y.z"`
 
 ### Create
 
-Creating hierarchical structures with the DSL is very easy:
+Creating fabric structures with the DSL is very easy:
 
 ```scala
-import hierarchical._
+import fabric._
 
 val v1 = obj(
   "name" -> "John Doe",
@@ -73,7 +73,7 @@ val v1 = obj(
 Deep-merging is trivial:
 
 ```scala
-import hierarchical._
+import fabric._
 
 val v2 = obj(
   "age" -> 23,
@@ -93,8 +93,8 @@ It is worth mentioning that because values are immutable, `v1` and `v2` remain u
 Conversion to other types is very easy with the built-in compile-time conversions:
 
 ```scala
-import hierarchical._
-import hierarchical.rw._
+import fabric._
+import fabric.rw._
 
 val person = obj(
   "name" -> "John Doe",
@@ -110,11 +110,11 @@ object Person {
 
 ### Parse
 
-Parsing from existing JSON requires the use of the `hierarchical-parse` module:
+Parsing from existing JSON requires the use of the `fabric-parse` module:
 
 ```scala
-import hierarchical._
-import hierarchical.json._
+import fabric._
+import fabric.json._
 
 val value = Json.parse("""{"name": "John Doe", "age": 21}""")
 ```

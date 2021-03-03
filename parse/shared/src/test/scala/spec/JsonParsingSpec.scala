@@ -1,7 +1,7 @@
 package spec
 
-import hierarchical._
-import hierarchical.parse._
+import fabric._
+import fabric.parse._
 
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec

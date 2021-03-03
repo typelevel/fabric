@@ -8,7 +8,7 @@ val scalaJVMVersions = allScalaVersions
 val scalaJSVersions = allScalaVersions
 val scalaNativeVersions = scala2
 
-name := "hierarchical"
+name := "fabric"
 organization in ThisBuild := "com.outr"
 version in ThisBuild := "1.0.0-SNAPSHOT"
 scalaVersion in ThisBuild := scala213
@@ -17,13 +17,13 @@ javacOptions in ThisBuild ++= Seq("-source", "1.8", "-target", "1.8")
 
 publishTo in ThisBuild := sonatypePublishTo.value
 sonatypeProfileName in ThisBuild := "com.outr"
-licenses in ThisBuild := Seq("MIT" -> url("https://github.com/outr/hierarchical/blob/master/LICENSE"))
-sonatypeProjectHosting in ThisBuild := Some(xerial.sbt.Sonatype.GitHubHosting("outr", "hierarchical", "matt@outr.com"))
-homepage in ThisBuild := Some(url("https://github.com/outr/hierarchical"))
+licenses in ThisBuild := Seq("MIT" -> url("https://github.com/outr/fabric/blob/master/LICENSE"))
+sonatypeProjectHosting in ThisBuild := Some(xerial.sbt.Sonatype.GitHubHosting("outr", "fabric", "matt@outr.com"))
+homepage in ThisBuild := Some(url("https://github.com/outr/fabric"))
 scmInfo in ThisBuild := Some(
   ScmInfo(
-    url("https://github.com/outr/hierarchical"),
-    "scm:git@github.com:outr/hierarchical.git"
+    url("https://github.com/outr/fabric"),
+    "scm:git@github.com:outr/fabric.git"
   )
 )
 developers in ThisBuild := List(
@@ -49,7 +49,7 @@ val uPickleVersion: String = "1.2.3"
 val sourceMapSettings = List(
   scalacOptions ++= git.gitHeadCommit.value.map { headCommit =>
     val local = baseDirectory.value.toURI
-    val remote = s"https://raw.githubusercontent.com/outr/hierarchical/$headCommit/"
+    val remote = s"https://raw.githubusercontent.com/outr/fabric/$headCommit/"
     s"-P:scalajs:mapSourceURI:$local->$remote"
   }
 )
@@ -59,7 +59,7 @@ lazy val root = project.in(file("."))
     core.js, core.jvm, core.native, parse.js, parse.jvm
   )
   .settings(
-    name := "hierarchical",
+    name := "fabric",
     publish := {},
     publishLocal := {}
   )
@@ -67,7 +67,7 @@ lazy val root = project.in(file("."))
 lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .crossType(CrossType.Full)
   .settings(
-    name := "hierarchical-core",
+    name := "fabric-core",
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % scalatestVersion % Test
     ),
@@ -102,7 +102,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 lazy val parse = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Full)
   .settings(
-    name := "hierarchical-parse",
+    name := "fabric-parse",
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % scalatestVersion % Test
     )
@@ -125,7 +125,7 @@ lazy val bench = project.in(file("bench"))
   .enablePlugins(JmhPlugin)
   .dependsOn(parse.jvm)
   .settings(
-    name := "hierarchical-benchmarks",
+    name := "fabric-benchmarks",
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-generic" % circeVersion,
       "io.circe" %% "circe-parser" % circeVersion,
