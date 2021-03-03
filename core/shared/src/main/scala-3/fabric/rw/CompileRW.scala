@@ -4,6 +4,7 @@ import fabric.*
 
 import scala.deriving.*
 import scala.compiletime.*
+import scala.quoted.{ given, _ }
 
 trait CompileRW {
   inline def ccRW[T <: Product](using Mirror.ProductOf[T]): ReaderWriter[T] = new ClassRW[T] {
@@ -32,8 +33,9 @@ trait CompileRW {
 
   inline def fromMap[T <: Product](map: Map[String, Value])(using p: Mirror.ProductOf[T]): T = {
     inline val size = constValue[Tuple.Size[p.MirroredElemTypes]]
+    val defaults = getDefaultParams[T]
     val arr = new Array[Any](size)
-    fromMapElems[T, p.MirroredElemTypes, p.MirroredElemLabels](map, 0, arr)
+    fromMapElems[T, p.MirroredElemTypes, p.MirroredElemLabels](map, 0, arr, defaults)
     val product: Product = new Product {
       override def canEqual(that: Any): Boolean = true
       override def productArity: Int = arr.size
@@ -42,19 +44,58 @@ trait CompileRW {
     p.fromProduct(product)
   }
 
-  inline def fromMapElems[A <: Product, T <: Tuple, L <: Tuple](map: Map[String, Value], index: Int, arr: Array[Any]): Unit = {
+  inline def fromMapElems[A <: Product, T <: Tuple, L <: Tuple](map: Map[String, Value], index: Int, arr: Array[Any], defaults: Map[String, Any]): Unit = {
     inline erasedValue[T] match
       case _: (hd *: tl) =>
         inline erasedValue[L] match
           case _: (hdLabel *: tlLabels) =>
             import fabric.rw.given
             val hdLabelValue = constValue[hdLabel].asInstanceOf[String]
-            val hdValue = map(hdLabelValue)
+            val hdValueOption = map.get(hdLabelValue)
             val hdWritable = summonInline[Writer[hd]]
-            val value = hdWritable.write(hdValue)
+            val valueOption = hdValueOption.map(hdWritable.write)
+            def default = defaults.getOrElse(hdLabelValue, sys.error(s"Unable to find field ${getClassName[A]}.$hdLabelValue (and no defaults set) in ${Obj(map)}"))
+            val value = valueOption.getOrElse(default)
             arr(index) = value
-            fromMapElems[A, tl, tlLabels](map, index + 1, arr)
+            fromMapElems[A, tl, tlLabels](map, index + 1, arr, defaults)
           case EmptyTuple => sys.error("Not possible")
       case EmptyTuple => // Finished
   }
+
+  inline def getDefaultParams[T]: Map[String, AnyRef] = ${ CompileRW.getDefaultParmasImpl[T] }
+
+  inline def getClassName[T]: String = ${ CompileRW.getClassNameImpl[T] }
+}
+
+object CompileRW {
+  def getDefaultParmasImpl[T](using Quotes, Type[T]): Expr[Map[String, AnyRef]] =
+    import quotes.reflect._
+    val sym = TypeTree.of[T].symbol
+
+    if (sym.isClassDef) {
+      val comp = if (sym.isClassDef) sym.companionClass else sym
+      val names =
+        for p <- sym.caseFields if p.flags.is(Flags.HasDefault)
+        yield p.name
+      val namesExpr: Expr[List[String]] = Expr.ofList(names.map(Expr(_)))
+
+      val body = comp.tree.asInstanceOf[ClassDef].body
+      val idents: List[Ref] =
+        for case deff @ DefDef(name, _, _, _) <- body
+        if name.startsWith("$lessinit$greater$default")
+        yield Ref(deff.symbol)
+      val identsExpr: Expr[List[Any]] =
+        Expr.ofList(idents.map(_.asExpr))
+
+      '{ $namesExpr.zip($identsExpr.map(_.asInstanceOf[AnyRef])).toMap }
+    } else {
+      '{ Map.empty }
+    }
+  end getDefaultParmasImpl
+
+  def getClassNameImpl[T](using Quotes, Type[T]): Expr[String] =
+    import quotes.reflect._
+
+    Expr(TypeTree.of[T].symbol.companionClass.fullName)
+  end getClassNameImpl
 }

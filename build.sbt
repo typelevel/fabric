@@ -3,7 +3,7 @@ val scala213 = "2.13.5"
 val scala212 = "2.12.13"
 val scala3 = "3.0.0-RC1"
 val scala2 = List(scala213, scala212)
-val allScalaVersions = scala2 //scala3 :: scala2      // Re-enable when ScalaTest support Scala.js + 3.0.0-RC1
+val allScalaVersions = scala3 :: scala2
 val scalaJVMVersions = allScalaVersions
 val scalaJSVersions = allScalaVersions
 val scalaNativeVersions = scala2
@@ -34,7 +34,7 @@ testOptions in ThisBuild += Tests.Argument("-oD")
 
 // Dependency versions
 val collectionCompatVersion: String = "2.4.2"
-val scalatestVersion: String = "3.2.5"
+val munitVersion: String = "0.7.22"
 
 // Parse module dependencies
 val jacksonVersion: String = "2.12.1"
@@ -69,8 +69,9 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(
     name := "fabric-core",
     libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % scalatestVersion % Test
+      "org.scalameta" %%% "munit" % munitVersion % Test
     ),
+    testFrameworks += new TestFramework("munit.Framework"),
     libraryDependencies ++= (
       if (isDotty.value) {
         Nil
@@ -89,7 +90,8 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     }
   )
   .jsSettings(
-    crossScalaVersions := scalaJSVersions
+    crossScalaVersions := scalaJSVersions,
+    Test / scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) }
   )
   .jvmSettings(
     crossScalaVersions := scalaJVMVersions
@@ -104,11 +106,13 @@ lazy val parse = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "fabric-parse",
     libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % scalatestVersion % Test
-    )
+      "org.scalameta" %%% "munit" % munitVersion % Test
+    ),
+    testFrameworks += new TestFramework("munit.Framework")
   )
   .jsSettings(
-    crossScalaVersions := scalaJSVersions
+    crossScalaVersions := scalaJSVersions,
+    Test / scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) }
   )
   .jvmSettings(
     crossScalaVersions := scalaJVMVersions,

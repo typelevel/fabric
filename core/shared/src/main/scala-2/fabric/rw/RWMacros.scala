@@ -9,13 +9,13 @@ object RWMacros {
 
     val tpe = t.tpe
     val companion = tpe.typeSymbol.companion
-    val DefaultRegex = """apply[$]default[$](\d+)""".r
+    val DefaultRegexString = """apply[$]default[$](\d+)"""
+    val DefaultRegex = DefaultRegexString.r
     val defaults: Map[Int, context.universe.MethodSymbol] = companion.typeSignature.decls.collect {
-      case m: MethodSymbol => m.name.toString match {
-        case DefaultRegex(position) => Some((position.toInt - 1) -> m)
-        case _ => None
+      case m: MethodSymbol if m.name.toString.matches(DefaultRegexString) => m.name.toString match {
+        case DefaultRegex(position) => (position.toInt - 1) -> m
       }
-    }.flatten.toMap
+    }.toMap
     tpe.decls.collectFirst {
       case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
     } match {
@@ -27,7 +27,7 @@ object RWMacros {
             val returnType = tpe.decl(name).typeSignature
             val default = defaults.get(index) match {
               case Some(m) => q"$companion.$m"
-              case None => q"""throw new RuntimeException("Unable to find field " + ${tpe.toString} + "." + $key + " (and no defaults set) in " + Obj(map))"""
+              case None => q"""sys.error("Unable to find field " + ${tpe.toString} + "." + $key + " (and no defaults set) in " + Obj(map))"""
             }
             val toMap = q"$key -> t.$name.toValue"
             val fromMap = q"""$name = map.get($key).map(_.as[$returnType]).getOrElse($default)"""
