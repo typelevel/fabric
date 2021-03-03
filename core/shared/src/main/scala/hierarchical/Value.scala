@@ -16,7 +16,7 @@ sealed trait Value extends Any {
    */
   final def get(lookup: String): Option[Value] = this match {
     case Obj(map) => map.get(lookup)
-    case _ => throw new RuntimeException(s"$this is not an Obj. Can't look up: $lookup")
+    case _ => None
   }
 
   /**
@@ -37,7 +37,7 @@ sealed trait Value extends Any {
    *
    * Example: `val v = someValue("first" \ "second" \ "third")`
    */
-  final def apply(path: Path): Value = get(path).getOrElse(s"Path not found: $path")
+  final def apply(path: Path): Value = get(path).getOrElse(throw new RuntimeException(s"Path not found: $path"))
 
   /**
    * Looks up a Value by name in the children or creates a new Obj if it doesn't exist.
@@ -60,7 +60,8 @@ sealed trait Value extends Any {
     child.modify(path.next())(f) match {
       case Null => Obj(asObj.value - path())
       case v if v == child => this
-      case v => Obj(asObj.value + (path() -> v))
+      case v if isObj => Obj(asObj.value + (path() -> v))
+      case v => obj(path() -> v)
     }
   }
 
