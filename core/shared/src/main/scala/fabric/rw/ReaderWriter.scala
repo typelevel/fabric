@@ -21,6 +21,12 @@ object ReaderWriter {
 
   implicit lazy val stringRW: ReaderWriter[String] = apply[String](str, _.asStr.value)
 
+  implicit lazy val stringMapRW: ReaderWriter[Map[String, String]] = apply[Map[String, String]](_.map {
+    case (key, value) => key -> str(value)
+  }, v => v.asObj.value.map {
+    case (key, value) => key -> value.asStr.value
+  })
+
   def apply[T](r: T => Value, w: Value => T): ReaderWriter[T] = new ReaderWriter[T] {
     override def write(value: Value): T = w(value)
 
