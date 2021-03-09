@@ -2,7 +2,7 @@
 
 [![Build Status](https://www.travis-ci.com/outr/fabric.svg?branch=master)](https://www.travis-ci.com/outr/fabric)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/outr/fabric)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.outr/fabric_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.outr/fabric_2.13)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.outr/fabric-core_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.outr/fabric-core_2.13)
 [![Latest version](https://index.scala-lang.org/outr/fabric/fabric/latest.svg)](https://index.scala-lang.org/outr/fabric)
 
 Abstract Syntax Tree (AST) based on JSON concepts, but more abstract for parsing and application.
