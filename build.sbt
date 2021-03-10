@@ -1,8 +1,9 @@
 // Scala versions
 val scala213 = "2.13.5"
 val scala212 = "2.12.13"
+val scala211 = "2.11.12"
 val scala3 = "3.0.0-RC1"
-val scala2 = List(scala213, scala212)
+val scala2 = List(scala213, scala212, scala211)
 val allScalaVersions = scala3 :: scala2
 val scalaJVMVersions = allScalaVersions
 val scalaJSVersions = allScalaVersions
@@ -38,7 +39,6 @@ val munitVersion: String = "0.7.22"
 
 // Parse module dependencies
 val jacksonVersion: String = "2.12.1"
-val scalaXMLVersion: String = "2.0.0-M5"
 val typesafeConfig: String = "1.4.1"
 
 // Benchmarks
@@ -119,7 +119,7 @@ lazy val parse = crossProject(JSPlatform, JVMPlatform)
     libraryDependencies ++= Seq(
       "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonVersion,
-      "org.scala-lang.modules" %% "scala-xml" % scalaXMLVersion,
+      "com.fasterxml.jackson.dataformat" % "jackson-dataformat-xml" % jacksonVersion,
       "com.typesafe" % "config" % typesafeConfig
     )
   )
