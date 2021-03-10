@@ -32,7 +32,7 @@ https://jmh.morethan.io/?source=https://raw.githubusercontent.com/outr/fabric/ma
 The focus of this project is minimalism and flexibility. To that end, the features are somewhat sparse:
 
 - Support for JVM, Scala.js, and Scala Native
-- Support for Scala 2.12, 2.13, and 3.0
+- Support for Scala 2.11, 2.12, 2.13, and 3.0
 - AST for representation of `Map`, `Array`, `Numeric`, `String`, `Boolean`, and `null` in a type-safe and immutable way
 - Clean DSL to create tree structures
 - Deep merging support
