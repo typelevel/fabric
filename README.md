@@ -45,7 +45,7 @@ The focus of this project is minimalism and flexibility. To that end, the featur
 ### Setup
 
 For SBT simply include:
-`libraryDependencies += "com.outr" %%% "fabric" % "x.y.z"`
+`libraryDependencies += "com.outr" %%% "fabric-core" % "x.y.z"`
 
 For parsing support include:
 `libraryDependencies += "com.outr" %%% "fabric-parse" % "x.y.z"`
