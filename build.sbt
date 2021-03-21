@@ -38,7 +38,7 @@ val collectionCompatVersion: String = "2.4.2"
 val munitVersion: String = "0.7.22"
 
 // Parse module dependencies
-val jacksonVersion: String = "2.12.1"
+val jacksonVersion: String = "2.12.2"
 val typesafeConfig: String = "1.4.1"
 
 // Benchmarks
