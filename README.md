@@ -2,7 +2,7 @@
 
 [![Build Status](https://www.travis-ci.com/outr/fabric.svg?branch=master)](https://www.travis-ci.com/outr/fabric)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/outr/fabric)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.outr/fabric_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.outr/fabric_2.13)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.outr/fabric-core_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.outr/fabric-core_2.13)
 [![Latest version](https://index.scala-lang.org/outr/fabric/fabric/latest.svg)](https://index.scala-lang.org/outr/fabric)
 
 Abstract Syntax Tree (AST) based on JSON concepts, but more abstract for parsing and application.
@@ -32,7 +32,7 @@ https://jmh.morethan.io/?source=https://raw.githubusercontent.com/outr/fabric/ma
 The focus of this project is minimalism and flexibility. To that end, the features are somewhat sparse:
 
 - Support for JVM, Scala.js, and Scala Native
-- Support for Scala 2.12, 2.13, and 3.0
+- Support for Scala 2.11, 2.12, 2.13, and 3.0
 - AST for representation of `Map`, `Array`, `Numeric`, `String`, `Boolean`, and `null` in a type-safe and immutable way
 - Clean DSL to create tree structures
 - Deep merging support
@@ -45,7 +45,7 @@ The focus of this project is minimalism and flexibility. To that end, the featur
 ### Setup
 
 For SBT simply include:
-`libraryDependencies += "com.outr" %%% "fabric" % "x.y.z"`
+`libraryDependencies += "com.outr" %%% "fabric-core" % "x.y.z"`
 
 For parsing support include:
 `libraryDependencies += "com.outr" %%% "fabric-parse" % "x.y.z"`
