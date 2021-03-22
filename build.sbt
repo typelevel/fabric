@@ -11,7 +11,7 @@ val scalaNativeVersions = scala2
 
 name := "fabric"
 organization in ThisBuild := "com.outr"
-version in ThisBuild := "1.0.2-SNAPSHOT"
+version in ThisBuild := "1.0.2"
 scalaVersion in ThisBuild := scala213
 scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation")
 javacOptions in ThisBuild ++= Seq("-source", "1.8", "-target", "1.8")
@@ -35,7 +35,7 @@ testOptions in ThisBuild += Tests.Argument("-oD")
 
 // Dependency versions
 val collectionCompatVersion: String = "2.4.2"
-val munitVersion: String = "0.7.22"
+val testyVersion: String = "1.0.1"
 
 // Parse module dependencies
 val jacksonVersion: String = "2.12.2"
@@ -69,7 +69,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(
     name := "fabric-core",
     libraryDependencies ++= Seq(
-      "org.scalameta" %%% "munit" % munitVersion % Test
+      "com.outr" %%% "testy" % testyVersion % Test
     ),
     testFrameworks += new TestFramework("munit.Framework"),
     libraryDependencies ++= (
@@ -106,7 +106,7 @@ lazy val parse = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "fabric-parse",
     libraryDependencies ++= Seq(
-      "org.scalameta" %%% "munit" % munitVersion % Test
+      "com.outr" %%% "testy" % testyVersion % Test
     ),
     testFrameworks += new TestFramework("munit.Framework")
   )
