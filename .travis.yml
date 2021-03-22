@@ -5,18 +5,15 @@ import: scala/scala-dev:travis/default.yml
 language: scala
 
 scala:
-  - 3.0.0-RC1
-  - 2.11.12
-  - 2.12.13
   - 2.13.5
 
 env:
   - ADOPTOPENJDK=8     SCALAJS_VERSION=1.5.0  CACHE_WORKAROUND=see-PR-335
 
-matrix:
-  include:
-    - scala: 2.13.5
-      env: ADOPTOPENJDK=8     SCALANATIVE_VERSION=0.4.0
+#matrix:
+#  include:
+#    - scala: 2.13.5
+#      env: ADOPTOPENJDK=8     SCALANATIVE_VERSION=0.4.0
 
 install:
   - . $HOME/.nvm/nvm.sh
