@@ -230,7 +230,11 @@ object Obj {
       case (key, value) => parsePath match {
         case Some(sep) => {
           val path = Path.parse(key, sep)
-          o = o.merge(str(value), path).asObj
+          if (path.nonEmpty) {
+            o = o.merge(str(value), path).asObj
+          } else {
+            o = o.merge(str(value), "value").asObj
+          }
         }
         case None => o = o.merge(str(value), Path(key)).asObj
       }
