@@ -9,11 +9,16 @@ object RWMacros {
 
     val tpe = t.tpe
     val companion = tpe.typeSymbol.companion
+    val Default211RegexString = """[$]lessinit[$]greater[$]default[$](\d+)"""
     val DefaultRegexString = """apply[$]default[$](\d+)"""
+    val Default211Regex = Default211RegexString.r
     val DefaultRegex = DefaultRegexString.r
     val defaults: Map[Int, context.universe.MethodSymbol] = companion.typeSignature.decls.collect {
       case m: MethodSymbol if m.name.toString.matches(DefaultRegexString) => m.name.toString match {
         case DefaultRegex(position) => (position.toInt - 1) -> m
+      }
+      case m: MethodSymbol if m.name.toString.matches(Default211RegexString) => m.name.toString match {
+        case Default211Regex(position) => (position.toInt - 1) -> m
       }
     }.toMap
     tpe.decls.collectFirst {

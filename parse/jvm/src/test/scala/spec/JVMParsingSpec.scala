@@ -17,10 +17,10 @@ class JVMParsingSpec extends munit.FunSuite {
     ))
   }
   test("parse basic XML") {
-    val v = XML.parse("<test><yaml>yes</yaml></test>")
+    val v = XML.parse("<test><xml>yes</xml></test>")
     assertEquals(v, obj(
       "test" -> obj(
-        "yaml" -> "yes"
+        "xml" -> "yes"
       )
     ))
   }

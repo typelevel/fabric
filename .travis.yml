@@ -1,17 +1,37 @@
-sudo: false
+version: ~> 1.0 # needed for imports
+
+import: scala/scala-dev:travis/default.yml
+
 language: scala
+
 scala:
   - 2.13.5
-jdk:
-  - openjdk8
+
+env:
+  - ADOPTOPENJDK=8     SCALAJS_VERSION=1.5.0  CACHE_WORKAROUND=see-PR-335
+
+#matrix:
+#  include:
+#    - scala: 2.13.5
+#      env: ADOPTOPENJDK=8     SCALANATIVE_VERSION=0.4.0
+
 install:
   - . $HOME/.nvm/nvm.sh
   - nvm install 14
   - nvm use 14
+  - git fetch --tags # get all tags for sbt-dynver
+
+script: sbt +clean +test
+
+notifications:
+  email:
+    - matt@matthicks.com
+
 cache:
   directories:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot
+
 before_cache:
   - find $HOME/.ivy2 -name "ivydata-*.properties" -delete
   - find $HOME/.sbt -name "*.lock" -delete
