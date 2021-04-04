@@ -34,7 +34,7 @@ developers in ThisBuild := List(
 testOptions in ThisBuild += Tests.Argument("-oD")
 
 // Dependency versions
-val collectionCompatVersion: String = "2.4.2"
+val collectionCompatVersion: String = "2.4.3"
 val testyVersion: String = "1.0.1"
 
 // Parse module dependencies
