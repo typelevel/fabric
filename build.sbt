@@ -10,28 +10,26 @@ val scalaJSVersions = allScalaVersions
 val scalaNativeVersions = scala2
 
 name := "fabric"
-organization in ThisBuild := "com.outr"
-version in ThisBuild := "1.0.2"
-scalaVersion in ThisBuild := scala213
-scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation")
-javacOptions in ThisBuild ++= Seq("-source", "1.8", "-target", "1.8")
+ThisBuild / organization := "com.outr"
+ThisBuild / version := "1.0.2"
+ThisBuild / scalaVersion := scala213
+ThisBuild / scalacOptions ++= Seq("-unchecked", "-deprecation")
+ThisBuild / javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
 
-publishTo in ThisBuild := sonatypePublishTo.value
-sonatypeProfileName in ThisBuild := "com.outr"
-licenses in ThisBuild := Seq("MIT" -> url("https://github.com/outr/fabric/blob/master/LICENSE"))
-sonatypeProjectHosting in ThisBuild := Some(xerial.sbt.Sonatype.GitHubHosting("outr", "fabric", "matt@outr.com"))
-homepage in ThisBuild := Some(url("https://github.com/outr/fabric"))
-scmInfo in ThisBuild := Some(
+ThisBuild / publishTo := sonatypePublishTo.value
+ThisBuild / sonatypeProfileName := "com.outr"
+ThisBuild / licenses := Seq("MIT" -> url("https://github.com/outr/fabric/blob/master/LICENSE"))
+ThisBuild / sonatypeProjectHosting := Some(xerial.sbt.Sonatype.GitHubHosting("outr", "fabric", "matt@outr.com"))
+ThisBuild / homepage := Some(url("https://github.com/outr/fabric"))
+ThisBuild / scmInfo := Some(
   ScmInfo(
     url("https://github.com/outr/fabric"),
     "scm:git@github.com:outr/fabric.git"
   )
 )
-developers in ThisBuild := List(
+ThisBuild / developers := List(
   Developer(id="darkfrog", name="Matt Hicks", email="matt@matthicks.com", url=url("http://matthicks.com"))
 )
-
-testOptions in ThisBuild += Tests.Argument("-oD")
 
 // Dependency versions
 val collectionCompatVersion: String = "2.4.3"
