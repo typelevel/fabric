@@ -12,6 +12,9 @@ trait Writer[T] {
 object Writer {
   import ReaderWriter._
 
+  implicit def unitW: Writer[Unit] = unitRW
+  implicit def valueW: Writer[Value] = valueRW
+
   implicit def boolW: Writer[Boolean] = boolRW
 
   implicit def shortR: Writer[Short] = shortRW
@@ -23,6 +26,7 @@ object Writer {
   implicit def bigDecimalW: Writer[BigDecimal] = bigDecimalRW
 
   implicit def stringW: Writer[String] = stringRW
+  implicit def stringMapW: Writer[Map[String, String]] = stringMapRW
 
   implicit def listW[T](implicit w: Writer[T]): Writer[List[T]] = apply[List[T]] {
     case Arr(vector) => vector.toList.map(w.write)

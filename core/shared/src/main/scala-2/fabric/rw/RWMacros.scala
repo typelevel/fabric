@@ -32,6 +32,7 @@ object RWMacros {
             val returnType = tpe.decl(name).typeSignature
             val default = defaults.get(index) match {
               case Some(m) => q"$companion.$m"
+              case None if returnType.resultType <:< typeOf[Option[_]] => q"""None"""
               case None => q"""sys.error("Unable to find field " + ${tpe.toString} + "." + $key + " (and no defaults set) in " + Obj(map))"""
             }
             val toMap = q"$key -> t.$name.toValue"
