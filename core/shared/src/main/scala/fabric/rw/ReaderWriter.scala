@@ -9,6 +9,9 @@ import fabric.rw._
 trait ReaderWriter[T] extends Reader[T] with Writer[T]
 
 object ReaderWriter {
+  implicit lazy val unitRW: ReaderWriter[Unit] = apply(_ => Null, _ => ())
+  implicit lazy val valueRW: ReaderWriter[Value] = apply(identity, identity)
+
   implicit lazy val boolRW: ReaderWriter[Boolean] = apply[Boolean](bool, _.asBool.value)
 
   implicit lazy val shortRW: ReaderWriter[Short] = apply[Short](s => num(s.toDouble), _.asNum.asShort)

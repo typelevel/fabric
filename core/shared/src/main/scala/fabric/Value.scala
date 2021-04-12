@@ -123,6 +123,10 @@ sealed trait Value extends Any {
    */
   def `type`: ValueType
 
+  def isEmpty: Boolean
+
+  def nonEmpty: Boolean = !isEmpty
+
   /**
    * True if this is an Obj
    */
@@ -208,6 +212,8 @@ object Value {
 case class Obj(value: Map[String, Value]) extends AnyVal with Value {
   def keys: Set[String] = value.keySet
 
+  override def isEmpty: Boolean = value.isEmpty
+
   override def `type`: ValueType = ValueType.Obj
 
   override def toString: String = value.map {
@@ -249,6 +255,8 @@ object Obj {
 case class Str(value: String) extends AnyVal with Value {
   override def `type`: ValueType = ValueType.Str
 
+  override def isEmpty: Boolean = value.isEmpty
+
   override def toString: String = s""""${Str.escape(value)}""""
 }
 
@@ -277,6 +285,8 @@ case class Num(value: BigDecimal) extends AnyVal with Value {
   def asBigInt: BigInt = value.toBigInt
   def asBigDecimal: BigDecimal = value
 
+  override def isEmpty: Boolean = false
+
   override def `type`: ValueType = ValueType.Num
 
   override def toString: String = value.toString
@@ -288,6 +298,8 @@ case class Num(value: BigDecimal) extends AnyVal with Value {
 case class Bool(value: Boolean) extends AnyVal with Value {
   override def `type`: ValueType = ValueType.Bool
 
+  override def isEmpty: Boolean = false
+
   override def toString: String = value.toString
 }
 
@@ -297,6 +309,8 @@ case class Bool(value: Boolean) extends AnyVal with Value {
 case class Arr(value: Vector[Value]) extends AnyVal with Value {
   override def `type`: ValueType = ValueType.Arr
 
+  override def isEmpty: Boolean = value.isEmpty
+
   override def toString: String = value.mkString("[", ", ", "]")
 }
 
@@ -305,6 +319,8 @@ case class Arr(value: Vector[Value]) extends AnyVal with Value {
  */
 object Null extends Value {
   override def `type`: ValueType = ValueType.Null
+
+  override def isEmpty: Boolean = true
 
   override def toString: String = "null"
 }

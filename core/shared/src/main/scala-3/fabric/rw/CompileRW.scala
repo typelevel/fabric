@@ -54,7 +54,10 @@ trait CompileRW {
             val hdValueOption = map.get(hdLabelValue)
             val hdWritable = summonInline[Writer[hd]]
             val valueOption = hdValueOption.map(hdWritable.write)
-            def default = defaults.getOrElse(hdLabelValue, sys.error(s"Unable to find field ${getClassName[A]}.$hdLabelValue (and no defaults set) in ${Obj(map)}"))
+            def defaultAlternative = inline erasedValue[hd] match
+              case _: Option[optHd] => None
+              case _ => sys.error(s"Unable to find field ${getClassName[A]}.$hdLabelValue (and no defaults set) in ${Obj(map)}")
+            def default = defaults.getOrElse(hdLabelValue, defaultAlternative)
             val value = valueOption.getOrElse(default)
             arr(index) = value
             fromMapElems[A, tl, tlLabels](map, index + 1, arr, defaults)

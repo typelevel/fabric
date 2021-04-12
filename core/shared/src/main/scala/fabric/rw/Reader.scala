@@ -12,6 +12,9 @@ trait Reader[T] {
 object Reader {
   import ReaderWriter._
 
+  implicit def unitR: Reader[Unit] = unitRW
+  implicit def valueR: Reader[Value] = valueRW
+
   implicit def boolR: Reader[Boolean] = boolRW
 
   implicit def shortR: Reader[Short] = shortRW
@@ -23,6 +26,7 @@ object Reader {
   implicit def bigDecimalR: Reader[BigDecimal] = bigDecimalRW
 
   implicit def stringR: Reader[String] = stringRW
+  implicit def stringMapR: Reader[Map[String, String]] = stringMapRW
 
   implicit def listR[T](implicit r: Reader[T]): Reader[List[T]] = apply[List[T]] { list =>
     Arr(list.map(r.read).toVector)
