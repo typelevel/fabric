@@ -2,7 +2,7 @@
 val scala213 = "2.13.5"
 val scala212 = "2.12.13"
 val scala211 = "2.11.12"
-val scala3 = List("3.0.0-RC1", "3.0.0-RC2")
+val scala3 = List("3.0.0-RC2", "3.0.0-RC3")
 val scala2 = List(scala213, scala212, scala211)
 val allScalaVersions = scala3 ::: scala2
 val scalaJVMVersions = allScalaVersions
@@ -11,7 +11,7 @@ val scalaNativeVersions = scala2
 
 name := "fabric"
 ThisBuild / organization := "com.outr"
-ThisBuild / version := "1.0.4"
+ThisBuild / version := "1.0.5-SNAPSHOT"
 ThisBuild / scalaVersion := scala213
 ThisBuild / scalacOptions ++= Seq("-unchecked", "-deprecation")
 ThisBuild / javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
@@ -33,15 +33,15 @@ ThisBuild / developers := List(
 
 // Dependency versions
 val collectionCompatVersion: String = "2.4.3"
-val testyVersion: String = "1.0.3"
+val testyVersion: String = "1.0.5"
 
 // Parse module dependencies
-val jacksonVersion: String = "2.12.2"
+val jacksonVersion: String = "2.12.3"
 val typesafeConfig: String = "1.4.1"
 
 // Benchmarks
 val circeVersion: String = "0.13.0"
-val uPickleVersion: String = "1.2.3"
+val uPickleVersion: String = "1.3.12"
 
 // set source map paths from local directories to github path
 val sourceMapSettings = List(
