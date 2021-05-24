@@ -98,7 +98,19 @@ class FabricSpec extends Spec {
       val s = obj().as[Special]
       s.name should be(None)
       s.age should be(21)
-//      s.data should be(None)
+      s.data should be(None)
+    }
+    "use polymorphic values" in {
+      val json1 = obj("type" -> "blank")
+      val json2 = obj("type" -> "polyValue", "s" -> "Hello, World!")
+
+      val p1 = json1.as[Polymorphic]
+      p1 should be(Polymorphic.Blank)
+      p1.toValue should be(json1)
+
+      val p2 = json2.as[Polymorphic]
+      p2 should be(Polymorphic.PolyValue("Hello, World!"))
+      p2.toValue should be(json2)
     }
   }
 }
@@ -107,4 +119,21 @@ case class Special(name: Option[String], age: Int = 21, data: Option[Value])
 
 object Special {
   implicit val rw: ReaderWriter[Special] = ccRW
+}
+
+sealed trait Polymorphic
+
+object Polymorphic {
+  implicit val rw: ReaderWriter[Polymorphic] = polyRW[Polymorphic]() {
+    case "blank" => staticRW(Blank)
+    case "polyValue" => PolyValue.rw
+  }
+
+  case object Blank extends Polymorphic
+
+  case class PolyValue(s: String) extends Polymorphic
+
+  object PolyValue {
+    implicit val rw: ReaderWriter[PolyValue] = ccRW
+  }
 }
