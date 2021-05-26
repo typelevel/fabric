@@ -32,6 +32,10 @@ object Writer {
     case Arr(vector) => vector.toList.map(w.write)
     case v => throw new RuntimeException(s"Unsupported list: $v")
   }
+  implicit def setW[T](implicit w: Writer[T]): Writer[Set[T]] = apply[Set[T]] {
+    case Arr(vector) => vector.toSet.map(w.write)
+    case v => throw new RuntimeException(s"Unsupported set: $v")
+  }
   implicit def optionW[T](implicit w: Writer[T]): Writer[Option[T]] = apply[Option[T]] {
     case Null => None
     case v => Option(w.write(v))

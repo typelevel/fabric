@@ -31,6 +31,9 @@ object Reader {
   implicit def listR[T](implicit r: Reader[T]): Reader[List[T]] = apply[List[T]] { list =>
     Arr(list.map(r.read).toVector)
   }
+  implicit def setR[T](implicit r: Reader[T]): Reader[Set[T]] = apply[Set[T]] { set =>
+    Arr(set.map(r.read).toVector)
+  }
   implicit def optionR[T](implicit r: Reader[T]): Reader[Option[T]] = apply[Option[T]] {
     case Some(t) => r.read(t)
     case None => Null
