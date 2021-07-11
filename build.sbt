@@ -32,7 +32,7 @@ ThisBuild / developers := List(
 )
 
 // Dependency versions
-val collectionCompatVersion: String = "2.4.4"
+val collectionCompatVersion: String = "2.5.0"
 val testyVersion: String = "1.0.7"
 
 // Parse module dependencies
