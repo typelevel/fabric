@@ -36,7 +36,7 @@ val collectionCompatVersion: String = "2.4.4"
 val testyVersion: String = "1.0.7"
 
 // Parse module dependencies
-val jacksonVersion: String = "2.12.3"
+val jacksonVersion: String = "2.12.4"
 val typesafeConfig: String = "1.4.1"
 
 // Benchmarks
