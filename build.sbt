@@ -2,7 +2,7 @@
 val scala213 = "2.13.5"
 val scala212 = "2.12.13"
 val scala211 = "2.11.12"
-val scala3 = List("3.0.0")
+val scala3 = List("3.0.1")
 val scala2 = List(scala213, scala212, scala211)
 val allScalaVersions = scala3 ::: scala2
 val scalaJVMVersions = allScalaVersions
@@ -32,11 +32,11 @@ ThisBuild / developers := List(
 )
 
 // Dependency versions
-val collectionCompatVersion: String = "2.4.4"
+val collectionCompatVersion: String = "2.5.0"
 val testyVersion: String = "1.0.7"
 
 // Parse module dependencies
-val jacksonVersion: String = "2.12.3"
+val jacksonVersion: String = "2.12.4"
 val typesafeConfig: String = "1.4.1"
 
 // Benchmarks
