@@ -253,6 +253,50 @@ sealed trait Value extends Any {
    * Convenience method for asNum.value
    */
   def asBigDecimal: BigDecimal = asNum.value
+
+  def asByte: Byte = asNum.asByte
+  def asShort: Short = asNum.asShort
+  def asInt: Int = asNum.asInt
+  def asLong: Long = asNum.asLong
+  def asFloat: Float = asNum.asFloat
+  def asDouble: Double = asNum.asDouble
+
+  /**
+   * Convenience method for asBool.value
+   */
+  def asBoolean: Boolean = asBool.value
+
+  /**
+   * Convenience method for getObj.map(_.value)
+   */
+  def getMap: Option[Map[String, Value]] = getObj.map(_.value)
+
+  /**
+   * Convenience method for getArr.map(_.value)
+   */
+  def getVector: Option[Vector[Value]] = getArr.map(_.value)
+
+  /**
+   * Convenience method for getStr.map(_.value)
+   */
+  def getString: Option[String] = getStr.map(_.value)
+
+  /**
+   * Convenience method for getNum.map(_.value)
+   */
+  def getBigDecimal: Option[BigDecimal] = getNum.map(_.value)
+
+  def getByte: Option[Byte] = getNum.map(_.asByte)
+  def getShort: Option[Short] = getNum.map(_.asShort)
+  def getInt: Option[Int] = getNum.map(_.asInt)
+  def getLong: Option[Long] = getNum.map(_.asLong)
+  def getFloat: Option[Float] = getNum.map(_.asFloat)
+  def getDouble: Option[Double] = getNum.map(_.asDouble)
+
+  /**
+   * Convenience method for getBool.map(_.value)
+   */
+  def getBoolean: Option[Boolean] = getBool.map(_.value)
 }
 
 object Value {
@@ -343,11 +387,12 @@ object Str {
 case class Num(value: BigDecimal) extends AnyVal with Value {
   override type Type = Num
 
-  def asShort: Short = value.toShort
-  def asInt: Int = value.toInt
-  def asLong: Long = value.toLong
-  def asFloat: Float = value.toFloat
-  def asDouble: Double = value.toDouble
+  override def asByte: Byte = value.toByte
+  override def asShort: Short = value.toShort
+  override def asInt: Int = value.toInt
+  override def asLong: Long = value.toLong
+  override def asFloat: Float = value.toFloat
+  override def asDouble: Double = value.toDouble
   def asBigInt: BigInt = value.toBigInt
 
   override def isEmpty: Boolean = false
