@@ -31,6 +31,16 @@ class FabricSpec extends Spec {
         )
       ))
     }
+    "verify type getting works as expected" in {
+      val s: fabric.Value = Str("Hello, World!")
+      s.getValue(ValueType.Str) should be(Some(Str("Hello, World!")))
+      s.getStr should be(Some(Str("Hello, World!")))
+      s.getValue(ValueType.Obj) should be(None)
+      s.getValue(ValueType.Bool) should be(None)
+      s.getValue(ValueType.Arr) should be(None)
+      s.getValue(ValueType.Num) should be(None)
+      s.getValue(ValueType.Null) should be(None)
+    }
     "extract the state" in {
       val state = v("address" \ "state")
       assertEquals(state, str("California"))

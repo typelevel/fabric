@@ -4,6 +4,8 @@ package fabric
  * Value represents the base sealed trait for all representable types in fabric.
  */
 sealed trait Value extends Any {
+  type Type
+
   /**
    * Looks up a Value by name in the children.
    *
@@ -121,7 +123,7 @@ sealed trait Value extends Any {
   /**
    * The type of value
    */
-  def `type`: ValueType
+  def `type`: ValueType[Type]
 
   def isEmpty: Boolean
 
@@ -163,10 +165,23 @@ sealed trait Value extends Any {
    * @param `type` the type to cast this ValueType as
    * @tparam V the return type
    */
-  def asValue[V <: Value](`type`: ValueType): V = if (this.`type` == `type`) {
+  final def asValue[V <: Value](`type`: ValueType[V]): V = if (this.`type` == `type`) {
     this.asInstanceOf[V]
   } else {
     throw new RuntimeException(s"$this is a ${this.`type`}, not a ${`type`}")
+  }
+
+  /**
+   * Safely casts this Value as the specified ValueType. Returns None if it's a different type.
+   *
+   * @param `type` the value type of value you want.
+   * @tparam V the value type
+   * @return Option[V]
+   */
+  final def getValue[V <: Value](`type`: ValueType[V]): Option[V] = if (this.`type` == `type`) {
+    Some(this.asInstanceOf[V])
+  } else {
+    None
   }
 
   /**
@@ -193,6 +208,31 @@ sealed trait Value extends Any {
    * Casts to Bool or throws an exception if not a Bool
    */
   def asBool: Bool = asValue[Bool](ValueType.Bool)
+
+  /**
+   * Casts to Obj if it's of Obj type or returns None
+   */
+  def getObj: Option[Obj] = getValue(ValueType.Obj)
+
+  /**
+   * Casts to Arr if it's of Arr type or returns None
+   */
+  def getArr: Option[Arr] = getValue(ValueType.Arr)
+
+  /**
+   * Casts to Str if it's of Str type or returns None
+   */
+  def getStr: Option[Str] = getValue(ValueType.Str)
+
+  /**
+   * Casts to Num if it's of Num type or returns None
+   */
+  def getNum: Option[Num] = getValue(ValueType.Num)
+
+  /**
+   * Casts to Bool if it's of Bool type or returns None
+   */
+  def getBool: Option[Bool] = getValue(ValueType.Bool)
 }
 
 object Value {
@@ -210,11 +250,13 @@ object Value {
  * Obj represents a Map of key-value pairs (String, Value)
  */
 case class Obj(value: Map[String, Value]) extends AnyVal with Value {
+  override type Type = Obj
+
   def keys: Set[String] = value.keySet
 
   override def isEmpty: Boolean = value.isEmpty
 
-  override def `type`: ValueType = ValueType.Obj
+  override def `type`: ValueType[Obj] = ValueType.Obj
 
   override def toString: String = value.map {
     case (key, value) => s""""$key": $value"""
@@ -253,7 +295,9 @@ object Obj {
  * Str represents a String
  */
 case class Str(value: String) extends AnyVal with Value {
-  override def `type`: ValueType = ValueType.Str
+  override type Type = Str
+
+  override def `type`: ValueType[Str] = ValueType.Str
 
   override def isEmpty: Boolean = value.isEmpty
 
@@ -277,6 +321,8 @@ object Str {
  * Num represents a numeric value and wraps a BigDecimal
  */
 case class Num(value: BigDecimal) extends AnyVal with Value {
+  override type Type = Num
+
   def asShort: Short = value.toShort
   def asInt: Int = value.toInt
   def asLong: Long = value.toLong
@@ -287,7 +333,7 @@ case class Num(value: BigDecimal) extends AnyVal with Value {
 
   override def isEmpty: Boolean = false
 
-  override def `type`: ValueType = ValueType.Num
+  override def `type`: ValueType[Num] = ValueType.Num
 
   override def toString: String = value.toString
 }
@@ -296,7 +342,9 @@ case class Num(value: BigDecimal) extends AnyVal with Value {
  * Bool represents a boolean value
  */
 case class Bool(value: Boolean) extends AnyVal with Value {
-  override def `type`: ValueType = ValueType.Bool
+  override type Type = Bool
+
+  override def `type`: ValueType[Bool] = ValueType.Bool
 
   override def isEmpty: Boolean = false
 
@@ -307,18 +355,24 @@ case class Bool(value: Boolean) extends AnyVal with Value {
  * Arr represents an array (Vector[Value])
  */
 case class Arr(value: Vector[Value]) extends AnyVal with Value {
-  override def `type`: ValueType = ValueType.Arr
+  override type Type = Arr
+
+  override def `type`: ValueType[Arr] = ValueType.Arr
 
   override def isEmpty: Boolean = value.isEmpty
 
   override def toString: String = value.mkString("[", ", ", "]")
 }
 
+sealed trait Null extends Value
+
 /**
  * Null represents a null Value
  */
-object Null extends Value {
-  override def `type`: ValueType = ValueType.Null
+object Null extends Null {
+  override type Type = Null
+
+  override def `type`: ValueType[Null] = ValueType.Null
 
   override def isEmpty: Boolean = true
 
