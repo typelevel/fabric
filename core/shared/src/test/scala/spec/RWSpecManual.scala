@@ -2,8 +2,9 @@ package spec
 
 import fabric._
 import fabric.rw._
+import testy.Spec
 
-class RWSpecManual extends munit.FunSuite {
+class RWSpecManual extends Spec {
   implicit val addressRW: ReaderWriter[Address] = new ClassRW[Address] {
     override protected def t2Map(t: Address): Map[String, Value] = Map(
       "city" -> t.city.toValue,
@@ -29,18 +30,20 @@ class RWSpecManual extends munit.FunSuite {
     )
   }
 
-  test("convert Person to Value and back") {
-    val person = Person("Matt Hicks", 41, Address("San Jose", "California"))
-    val value = person.toValue
-    assertEquals(value, obj(
-      "name" -> "Matt Hicks",
-      "age" -> 41.0,
-      "address" -> obj(
-        "city" -> "San Jose",
-        "state" -> "California"
-      )
-    ))
-    val back = value.as[Person]
-    assertEquals(back, person)
+  "manual conversion" should {
+    "convert Person to Value and back" in {
+      val person = Person("Matt Hicks", 41, Address("San Jose", "California"))
+      val value = person.toValue
+      assertEquals(value, obj(
+        "name" -> "Matt Hicks",
+        "age" -> 41.0,
+        "address" -> obj(
+          "city" -> "San Jose",
+          "state" -> "California"
+        )
+      ))
+      val back = value.as[Person]
+      assertEquals(back, person)
+    }
   }
 }

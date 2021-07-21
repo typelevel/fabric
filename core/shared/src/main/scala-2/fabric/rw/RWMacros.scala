@@ -29,7 +29,7 @@ object RWMacros {
           case (field, index) => {
             val name = field.asTerm.name
             val key = name.decodedName.toString
-            val returnType = tpe.decl(name).typeSignature
+            val returnType = tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
             val default = defaults.get(index) match {
               case Some(m) => q"$companion.$m"
               case None if returnType.resultType <:< typeOf[Option[_]] => q"""None"""
