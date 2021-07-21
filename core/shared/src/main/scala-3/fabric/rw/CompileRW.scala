@@ -4,11 +4,19 @@ import fabric.*
 
 import scala.deriving.*
 import scala.compiletime.*
-import scala.quoted.{ given, _ }
+import scala.quoted.{given, _}
 
 trait CompileRW {
   inline def ccRW[T <: Product](using Mirror.ProductOf[T]): ReaderWriter[T] = new ClassRW[T] {
     override protected def t2Map(t: T): Map[String, Value] = toMap(t)
+    override protected def map2T(map: Map[String, Value]): T = fromMap[T](map)
+  }
+
+  inline def ccR[T <: Product](using Mirror.ProductOf[T]): Reader[T] = new ClassR[T] {
+    override protected def t2Map(t: T): Map[String, Value] = toMap(t)
+  }
+
+  inline def ccW[T <: Product](using Mirror.ProductOf[T]): Writer[T] = new ClassW[T] {
     override protected def map2T(map: Map[String, Value]): T = fromMap[T](map)
   }
 
