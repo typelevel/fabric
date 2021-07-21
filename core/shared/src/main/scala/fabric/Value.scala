@@ -349,7 +349,6 @@ case class Num(value: BigDecimal) extends AnyVal with Value {
   def asFloat: Float = value.toFloat
   def asDouble: Double = value.toDouble
   def asBigInt: BigInt = value.toBigInt
-  def asBigDecimal: BigDecimal = value
 
   override def isEmpty: Boolean = false
 
