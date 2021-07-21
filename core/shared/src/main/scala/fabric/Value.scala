@@ -233,6 +233,26 @@ sealed trait Value extends Any {
    * Casts to Bool if it's of Bool type or returns None
    */
   def getBool: Option[Bool] = getValue(ValueType.Bool)
+
+  /**
+   * Convenience method for asObj.value
+   */
+  def asMap: Map[String, Value] = asObj.value
+
+  /**
+   * Convenience method for asArr.value
+   */
+  def asVector: Vector[Value] = asArr.value
+
+  /**
+   * Convenience method for asStr.value
+   */
+  def asString: String = asStr.value
+
+  /**
+   * Convenience method for asNum.value
+   */
+  def asBigDecimal: BigDecimal = asNum.value
 }
 
 object Value {
