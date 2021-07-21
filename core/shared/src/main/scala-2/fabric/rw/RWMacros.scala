@@ -3,8 +3,34 @@ package fabric.rw
 import scala.reflect.macros.blackbox
 
 object RWMacros {
-  def caseClass[T](context: blackbox.Context)
-                  (implicit t: context.WeakTypeTag[T]): context.Expr[ReaderWriter[T]] = {
+  def caseClassR[T](context: blackbox.Context)(implicit t: context.WeakTypeTag[T]): context.Expr[Reader[T]] = {
+    import context.universe._
+
+    val tpe = t.tpe
+    tpe.decls.collectFirst {
+      case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
+    } match {
+      case Some(fields) => {
+        val toMap = fields.map { field =>
+          val name = field.asTerm.name
+          val key = name.decodedName.toString
+          q"$key -> t.$name.toValue"
+        }
+        context.Expr[Reader[T]](
+          q"""
+            import _root_.fabric._
+            import _root_.fabric.rw._
+
+            new ClassR[$tpe] {
+              override protected def t2Map(t: $tpe): Map[String, Value] = Map(..$toMap)
+            }
+           """)
+      }
+      case None => context.abort(context.enclosingPosition, s"$t is not a valid case class (no primary constructor found)")
+    }
+  }
+
+  def caseClassW[T](context: blackbox.Context)(implicit t: context.WeakTypeTag[T]): context.Expr[Writer[T]] = {
     import context.universe._
 
     val tpe = t.tpe
@@ -25,7 +51,7 @@ object RWMacros {
       case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
     } match {
       case Some(fields) => {
-        val (toMap, fromMap) = fields.zipWithIndex.map {
+        val fromMap = fields.zipWithIndex.map {
           case (field, index) => {
             val name = field.asTerm.name
             val key = name.decodedName.toString
@@ -35,23 +61,43 @@ object RWMacros {
               case None if returnType.resultType <:< typeOf[Option[_]] => q"""None"""
               case None => q"""sys.error("Unable to find field " + ${tpe.toString} + "." + $key + " (and no defaults set) in " + Obj(map))"""
             }
-            val toMap = q"$key -> t.$name.toValue"
-            val fromMap = q"""$name = map.get($key).map(_.as[$returnType]).getOrElse($default)"""
-            (toMap, fromMap)
+            q"""$name = map.get($key).map(_.as[$returnType]).getOrElse($default)"""
           }
-        }.unzip
-        context.Expr[ReaderWriter[T]](
+        }
+        context.Expr[Writer[T]](
           q"""
             import _root_.fabric._
             import _root_.fabric.rw._
 
-            new ClassRW[$tpe] {
-              override protected def t2Map(t: $tpe): Map[String, Value] = Map(..$toMap)
+            new ClassW[$tpe] {
               override protected def map2T(map: Map[String, Value]): $tpe = $companion(..$fromMap)
             }
            """)
       }
       case None => context.abort(context.enclosingPosition, s"$t is not a valid case class (no primary constructor found)")
     }
+  }
+
+  def caseClassRW[T](context: blackbox.Context)
+                  (implicit t: context.WeakTypeTag[T]): context.Expr[ReaderWriter[T]] = {
+    import context.universe._
+
+    val tpe = t.tpe
+    val reader = caseClassR[T](context)
+    val writer = caseClassW[T](context)
+    context.Expr[ReaderWriter[T]](
+      q"""
+         import _root_.fabric._
+         import _root_.fabric.rw._
+
+         new ReaderWriter[$tpe] {
+            private val r = $reader
+            private val w = $writer
+
+            override def read(t: $tpe): Value = r.read(t)
+            override def write(value: Value): $tpe = w.write(value)
+         }
+       """
+    )
   }
 }
