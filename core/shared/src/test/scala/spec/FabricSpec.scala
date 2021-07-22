@@ -122,6 +122,29 @@ class FabricSpec extends Spec {
       p2 should be(Polymorphic.PolyValue("Hello, World!"))
       p2.toValue should be(json2)
     }
+    "include or exclude null fields" in {
+      val json1 = obj(
+        "one" -> Null,
+        "two" -> 2,
+        "three" -> "three"
+      )
+      Obj.ExcludeNullValues = true
+      val json2 = obj(
+        "one" -> Null,
+        "two" -> 2,
+        "three" -> "three"
+      )
+      Obj.ExcludeNullValues = false
+      json1 should be(obj(
+        "one" -> Null,
+        "two" -> 2,
+        "three" -> "three"
+      ))
+      json2 should be(obj(
+        "two" -> 2,
+        "three" -> "three"
+      ))
+    }
   }
 }
 

@@ -328,6 +328,20 @@ case class Obj(value: Map[String, Value]) extends AnyVal with Value {
 }
 
 object Obj {
+  var ExcludeNullValues: Boolean = false
+
+  val empty: Obj = Obj(Map.empty)
+
+  private def clean(map: Map[String, Value]): Map[String, Value] = if (ExcludeNullValues) {
+    map.filter {
+      case (_, value) => value != Null
+    }
+  } else {
+    map
+  }
+
+  def apply(value: Map[String, Value]): Obj = new Obj(clean(value))
+
   /**
    * Processes the supplied map creating an Obj for it. If `parsePath` is set, the key will be extracted as
    * as a path based on the `parsePath` separation character. If it is not set, the key will be set as-is.
