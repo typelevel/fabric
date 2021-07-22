@@ -313,7 +313,7 @@ object Value {
 /**
  * Obj represents a Map of key-value pairs (String, Value)
  */
-case class Obj(value: Map[String, Value]) extends AnyVal with Value {
+final class Obj private(val value: Map[String, Value]) extends AnyVal with Value {
   override type Type = Obj
 
   def keys: Set[String] = value.keySet
@@ -341,6 +341,8 @@ object Obj {
   }
 
   def apply(value: Map[String, Value]): Obj = new Obj(clean(value))
+
+  def unapply(obj: Obj): Option[Map[String, Value]] = Some(obj.value)
 
   /**
    * Processes the supplied map creating an Obj for it. If `parsePath` is set, the key will be extracted as
