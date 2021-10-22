@@ -1,10 +1,9 @@
 package fabric.parse
 
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
-import com.fasterxml.jackson.core.{JsonFactory, JsonGenerator, JsonParser, JsonToken}
+import com.fasterxml.jackson.core.{JsonFactory, JsonParser, JsonToken}
 import fabric.{Arr, Bool, Null, Num, Obj, Str, Value}
 
-import java.io.{ByteArrayOutputStream, File}
+import java.io.File
 import java.nio.file.Path
 import scala.annotation.tailrec
 import scala.io.Source
@@ -19,26 +18,6 @@ object Json extends AbstractJson {
     .enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
     .enable(JsonParser.Feature.ALLOW_YAML_COMMENTS)
 
-  override def format(value: Value): String = {
-    val output = new ByteArrayOutputStream
-    try {
-      val gen = factory.createGenerator(output)
-      try {
-        gen.setPrettyPrinter(new DefaultPrettyPrinter {
-          _objectFieldValueSeparatorWithSpaces = ": "
-        })
-        format(gen, value)
-        gen.flush()
-      } finally {
-        gen.close()
-      }
-      output.flush()
-      output.toString("UTF-8")
-    } finally {
-      output.close()
-    }
-  }
-
   override def parse(s: String): Value = {
     val parser = factory.createParser(s)
     try {
@@ -50,30 +29,6 @@ object Json extends AbstractJson {
 
   def parse(file: File): Value = parse(Source.fromFile(file, "UTF-8"))
   def parse(path: Path): Value = parse(Source.fromFile(path.toFile, "UTF-8"))
-
-  protected def format(gen: JsonGenerator, value: Value): Unit = value match {
-    case Obj(map) => {
-      gen.writeStartObject()
-      map.foreach {
-        case (key, value) => {
-          gen.writeFieldName(key)
-          format(gen, value)
-        }
-      }
-      gen.writeEndObject()
-    }
-    case Arr(vec) => {
-      gen.writeStartArray()
-      vec.foreach { value =>
-        format(gen, value)
-      }
-      gen.writeEndArray()
-    }
-    case Bool(b) => gen.writeBoolean(b)
-    case Num(n) => gen.writeNumber(n.underlying())
-    case Str(s) => gen.writeString(s)
-    case Null => gen.writeNull()
-  }
 
   protected def parse(parser: JsonParser): Value = parseToken(parser, parser.nextToken())
 

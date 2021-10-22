@@ -9,8 +9,6 @@ import scala.scalajs.js.JSON
  * Json provides convenience functionality to parse and format JSON to/from fabric Values
  */
 object Json extends AbstractJson {
-  override def format(value: Value): String = value.toString    // TODO: support formatting
-
   override def parse(s: String): Value = parse(JSON.parse(s))
 
   def parse(value: js.Any): Value = value.asInstanceOf[Any] match {
