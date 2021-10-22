@@ -12,9 +12,11 @@ trait AbstractJson {
    * Formats the supplied value for pretty output.
    *
    * @param value the value to format
+   * @param writer the JsonWriter to use (defaults to JsonWriter.Default)
    * @return formatted String
    */
-  def format(value: Value): String
+  def format(value: Value,
+             writer: JsonWriter = JsonWriter.Default): String = writer(value)
 
   /**
    * Parses the JSON string into a fabric Value.
