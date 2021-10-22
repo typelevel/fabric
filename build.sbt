@@ -71,7 +71,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     ),
     testFrameworks += new TestFramework("munit.Framework"),
     libraryDependencies ++= (
-      if (scalaVersion.value.startsWith("3.0")) {
+      if (scalaVersion.value.startsWith("3")) {
         Nil
       } else {
         Seq(
@@ -81,7 +81,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       }
     ),
     Compile / unmanagedSourceDirectories ++= {
-      val major = if (scalaVersion.value.startsWith("3.0")) "-3" else "-2"
+      val major = if (scalaVersion.value.startsWith("3")) "-3" else "-2"
       List(CrossType.Pure, CrossType.Full).flatMap(
         _.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + major))
       )

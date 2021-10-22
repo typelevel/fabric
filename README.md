@@ -1,6 +1,6 @@
 # fabric
 
-[![Build Status](https://www.travis-ci.com/outr/fabric.svg?branch=master)](https://www.travis-ci.com/outr/fabric)
+[![CI](https://github.com/outr/fabric/actions/workflows/ci.yml/badge.svg)](https://github.com/outr/fabric/actions/workflows/ci.yml)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/outr/fabric)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.outr/fabric-core_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.outr/fabric-core_2.13)
 [![Latest version](https://index.scala-lang.org/outr/fabric/fabric/latest.svg)](https://index.scala-lang.org/outr/fabric)
