@@ -2,9 +2,10 @@ package spec
 
 import fabric._
 import fabric.rw._
-import testy.Spec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class FabricSpec extends Spec {
+class FabricSpec extends AnyWordSpec with Matchers {
   val v: Obj = obj(
     "name" -> "Matt \"Matteo\" Hicks",
     "age" -> 41,
@@ -19,7 +20,7 @@ class FabricSpec extends Spec {
 
   "Fabric" should {
     "represent AST properly" in {
-      assertEquals(v, obj(
+      v should be(obj(
         "name" -> "Matt \"Matteo\" Hicks",
         "age" -> 41.0,
         "numbers" -> List(1, 2, 3),
@@ -43,13 +44,13 @@ class FabricSpec extends Spec {
     }
     "extract the state" in {
       val state = v("address" \ "state")
-      assertEquals(state, str("California"))
+      state should be(str("California"))
     }
     "update the hierarchy" in {
       val updated = v.modify("address" \ "state") { value =>
         str("Tennessee")
       }
-      assertEquals(updated, obj(
+      updated should be(obj(
         "name" -> "Matt \"Matteo\" Hicks",
         "age" -> 41.0,
         "numbers" -> List(1, 2, 3),
@@ -63,7 +64,7 @@ class FabricSpec extends Spec {
     }
     "remove from the hierarchy" in {
       val removed = v.remove("address" \ "state")
-      assertEquals(removed, obj(
+      removed should be(obj(
         "name" -> "Matt \"Matteo\" Hicks",
         "age" -> 41.0,
         "numbers" -> List(1, 2, 3),
@@ -102,7 +103,7 @@ class FabricSpec extends Spec {
           "state" -> "California"
         )
       )
-      assertEquals(merged, expected)
+      merged should be(expected)
     }
     "convert to/from Special" in {
       val s = obj().as[Special]
