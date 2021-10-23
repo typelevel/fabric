@@ -2,9 +2,10 @@ package spec
 
 import fabric._
 import fabric.rw._
-import testy.Spec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class RWSpecManual extends Spec {
+class RWSpecManual extends AnyWordSpec with Matchers {
   implicit val addressRW: ReaderWriter[Address] = new ClassRW[Address] {
     override protected def t2Map(t: Address): Map[String, Value] = Map(
       "city" -> t.city.toValue,
@@ -34,7 +35,7 @@ class RWSpecManual extends Spec {
     "convert Person to Value and back" in {
       val person = Person("Matt Hicks", 41, Address("San Jose", "California"))
       val value = person.toValue
-      assertEquals(value, obj(
+      value should be(obj(
         "name" -> "Matt Hicks",
         "age" -> 41.0,
         "address" -> obj(
@@ -43,7 +44,7 @@ class RWSpecManual extends Spec {
         )
       ))
       val back = value.as[Person]
-      assertEquals(back, person)
+      back should be(person)
     }
   }
 }

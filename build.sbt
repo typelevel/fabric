@@ -33,7 +33,7 @@ ThisBuild / developers := List(
 
 // Dependency versions
 val collectionCompatVersion: String = "2.5.0"
-val testyVersion: String = "1.0.7"
+val scalaTestVersion: String = "3.2.10"
 
 // Parse module dependencies
 val jacksonVersion: String = "2.13.0"
@@ -67,9 +67,8 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(
     name := "fabric-core",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "testy" % testyVersion % Test
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
     ),
-    testFrameworks += new TestFramework("munit.Framework"),
     libraryDependencies ++= (
       if (scalaVersion.value.startsWith("3")) {
         Nil
@@ -88,8 +87,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     }
   )
   .jsSettings(
-    crossScalaVersions := scalaJSVersions,
-    Test / scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) }
+    crossScalaVersions := scalaJSVersions
   )
   .jvmSettings(
     crossScalaVersions := scalaJVMVersions
@@ -104,13 +102,11 @@ lazy val parse = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "fabric-parse",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "testy" % testyVersion % Test
-    ),
-    testFrameworks += new TestFramework("munit.Framework")
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
+    )
   )
   .jsSettings(
-    crossScalaVersions := scalaJSVersions,
-    Test / scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) }
+    crossScalaVersions := scalaJSVersions
   )
   .jvmSettings(
     crossScalaVersions := scalaJVMVersions,

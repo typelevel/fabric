@@ -2,9 +2,10 @@ package spec
 
 import fabric._
 import fabric.rw._
-import testy.Spec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class RWSpecAuto extends Spec {
+class RWSpecAuto extends AnyWordSpec with Matchers {
   implicit val addressRW: ReaderWriter[Address] = ccRW[Address]
   implicit val personRW: ReaderWriter[Person] = ccRW[Person]
 
@@ -12,7 +13,7 @@ class RWSpecAuto extends Spec {
     "convert Person to Value and back" in {
       val person = Person("Matt Hicks", 41, Address("San Jose", "California"))
       val value = person.toValue
-      assertEquals(value, obj(
+      value should be(obj(
         "name" -> "Matt Hicks",
         "age" -> 41.0,
         "address" -> obj(
@@ -21,24 +22,24 @@ class RWSpecAuto extends Spec {
         )
       ))
       val back = value.as[Person]
-      assertEquals(back, person)
+      back should be(person)
     }
     "convert from empty obj to Defaults" in {
       val v = obj()
       val d = v.as[Defaults]
-      assertEquals(d.name, "John Doe")
-      assertEquals(d.age, 21)
+      d.name should be("John Doe")
+      d.age should be(21)
     }
     "convert from single argument to Defaults" in {
       val v = obj("name" -> "Jane Doe")
       val d = v.as[Defaults]
-      assertEquals(d.name, "Jane Doe")
-      assertEquals(d.age, 21)
+      d.name should be("Jane Doe")
+      d.age should be(21)
     }
     "supporting generic type on case class" in {
       val w = Wrapper("Test1", Address("San Jose", "California"), Some(Address("Norman", "Oklahoma")))
       val value = w.toValue
-      assertEquals(value, obj(
+      value should be(obj(
         "name" -> "Test1",
         "value" -> obj(
           "city" -> "San Jose",
