@@ -1,6 +1,7 @@
 package spec
 
 import fabric._
+import fabric.filter.{ChainedFilter, RemoveEmptyFilter, RemoveNullsFilter}
 import fabric.parse.{Hocon, JsonWriter, Properties, XML, Yaml}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -60,11 +61,12 @@ class JVMParsingSpec extends AnyWordSpec with Matchers {
             """This
               |is
               |multi-line""".stripMargin,
-          "test5" -> "This is \"quoted\" text."
+          "test5" -> "This is \"quoted\" text.",
+          "test6" -> arr(Null)
         )
       )
-      val result = JsonWriter(compact = true)(v)
-      val expected = """{"one":1.0,"two":false,"three":3.5,"four":{"test1":"Testing 1","test3":[1.0,2.0,3.0],"test4":"This\nis\nmulti-line","test5":"This is \"quoted\" text.","test2":null}}"""
+      val result = JsonWriter.Compact(v)
+      val expected = """{"one":1.0,"two":false,"three":3.5,"four":{"test6":[null],"test1":"Testing 1","test3":[1.0,2.0,3.0],"test4":"This\nis\nmulti-line","test5":"This is \"quoted\" text.","test2":null}}"""
       result should be(expected)
     }
   }

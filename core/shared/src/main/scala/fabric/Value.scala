@@ -1,5 +1,7 @@
 package fabric
 
+import fabric.filter.ValueFilter
+
 /**
  * Value represents the base sealed trait for all representable types in fabric.
  */
@@ -66,6 +68,14 @@ sealed trait Value extends Any {
       case v => obj(path() -> v)
     }
   }
+
+  /**
+   * Applies the filter recursively to this value beginning on the leafs working backward up the tree back to the root.
+   *
+   * @param filter the filter to apply
+   * @return Option[Value]
+   */
+  def filter(filter: ValueFilter): Option[Value] = filter(this)
 
   /**
    * Convenience functionality for #modify to set a specific value at a path.
@@ -318,6 +328,13 @@ final class Obj private(val value: Map[String, Value]) extends AnyVal with Value
 
   def keys: Set[String] = value.keySet
 
+  override def filter(filter: ValueFilter): Option[Value] = {
+    val mutated = value.map {
+      case (key, value) => value.filter(filter).map(v => key -> v)
+    }.flatten.toMap
+    filter(Obj(mutated))
+  }
+
   override def isEmpty: Boolean = value.isEmpty
 
   override def `type`: ValueType[Obj] = ValueType.Obj
@@ -438,6 +455,11 @@ case class Arr(value: Vector[Value]) extends AnyVal with Value {
   override type Type = Arr
 
   override def `type`: ValueType[Arr] = ValueType.Arr
+
+  override def filter(filter: ValueFilter): Option[Value] = {
+    val mutated = value.flatMap(v => v.filter(filter))
+    filter(Arr(mutated))
+  }
 
   override def isEmpty: Boolean = value.isEmpty
 

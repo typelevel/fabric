@@ -2,76 +2,57 @@ package fabric.parse
 
 import fabric._
 
-case class JsonWriter(indent: Int = 2,
-                      excludeNullValues: Boolean = false,
-                      includeNewLines: Boolean = true,
-                      compact: Boolean = false) { w =>
-  private implicit class SBExtras(val b: StringBuilder) {
-    def newLine(): Unit = if (includeNewLines && !compact) b.append('\n')
-    def indent(depth: Int): Unit = if (includeNewLines && !compact) {
-      b.append("".padTo(depth * w.indent, ' '))
-    } else if (!compact) {
-      b.append(' ')
-    }
+trait JsonWriterConfig {
+  def newLine(): String
+  def indent(depth: Int): String
+  def keyValueSeparator(): String = ": "
 
-    def encoded(s: String): Unit = {
-      b.append('"')
-      val e = s
-        .replace("\n", "\\n")
-        .replace("\"", "\\\"")
-      b.append(e)
-      b.append('"')
-    }
+  def encodeString(s: String): String = {
+    val e = s
+      .replace("\n", "\\n")
+      .replace("\"", "\\\"")
+    s""""$e""""
+  }
+}
+
+object JsonWriterConfig {
+  case class Standard(indent: Int = 2) extends JsonWriterConfig {
+    override def newLine(): String = "\n"
+    override def indent(depth: Int): String = "".padTo(depth * this.indent, ' ')
   }
 
+  case object Compact extends JsonWriterConfig {
+    override def newLine(): String = ""
+    override def indent(depth: Int): String = ""
+    override def keyValueSeparator(): String = ":"
+  }
+}
+
+case class JsonWriter(config: JsonWriterConfig) { w =>
   def apply(value: Value): String = {
-    val b = new StringBuilder
-    write(value, 0, b)
-    b.toString()
+    write(value, 0)
   }
 
-  private def write(value: Value, depth: Int, sb: StringBuilder): Unit = value match {
+  private def write(value: Value, depth: Int): String = value match {
     case Arr(v) =>
-      sb.append('[')
-      var first = true
-      v.foreach { value =>
-        if (!first) sb.append(',')
-        first = false
-        sb.newLine()
-        sb.indent(depth + 1)
-        write(value, depth + 1, sb)
-      }
-      sb.newLine()
-      sb.indent(depth)
-      sb.append(']')
-    case Bool(b) => sb.append(b)
-    case Null => sb.append("null")
-    case Num(n) => sb.append(n)
+      val content = v.map { value =>
+        s"${config.newLine()}${config.indent(depth + 1)}${write(value, depth + 1)}"
+      }.mkString(",")
+      s"[$content${config.newLine()}${config.indent(depth)}]"
+    case Bool(b) => b.toString
+    case Null => "null"
+    case Num(n) => n.toString()
     case Obj(map) =>
-      sb.append('{')
-      var first = true
-      map.foreach {
+      val content = map.toList.map {
         case (key, value) =>
-          if (value.isNull && excludeNullValues) {
-            // Excluding null values
-          } else {
-            if (!first) sb.append(',')
-            first = false
-            sb.newLine()
-            sb.indent(depth + 1)
-            sb.encoded(key)
-            sb.append(':')
-            if (!compact) sb.append(' ')
-            write(value, depth + 1, sb)
-          }
-      }
-      sb.newLine()
-      sb.indent(depth)
-      sb.append('}')
-    case Str(s) => sb.encoded(s)
+          s"${config.newLine()}${config.indent(depth + 1)}${config.encodeString(key)}${config.keyValueSeparator()}${write(value, depth + 1)}"
+      }.mkString(",")
+      s"{$content${config.newLine()}${config.indent(depth)}}"
+    case Str(s) => config.encodeString(s)
   }
 }
 
 object JsonWriter {
-  lazy val Default: JsonWriter = JsonWriter()
+  lazy val Default: JsonWriter = JsonWriter(JsonWriterConfig.Standard())
+  lazy val Compact: JsonWriter = JsonWriter(JsonWriterConfig.Compact)
 }
