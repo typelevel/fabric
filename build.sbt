@@ -11,7 +11,7 @@ val scalaNativeVersions = scala2
 
 name := "fabric"
 ThisBuild / organization := "com.outr"
-ThisBuild / version := "1.1.0"
+ThisBuild / version := "1.1.1"
 ThisBuild / scalaVersion := scala213
 ThisBuild / scalacOptions ++= Seq("-unchecked", "-deprecation")
 ThisBuild / javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
