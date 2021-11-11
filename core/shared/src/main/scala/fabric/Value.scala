@@ -359,7 +359,7 @@ object Obj {
 
   def apply(value: Map[String, Value]): Obj = new Obj(clean(value))
 
-  def unapply(obj: Obj): Option[Map[String, Value]] = Some(obj.value)
+  def unapply(obj: Obj): Some[Map[String, Value]] = Some(obj.value)
 
   /**
    * Processes the supplied map creating an Obj for it. If `parsePath` is set, the key will be extracted as
