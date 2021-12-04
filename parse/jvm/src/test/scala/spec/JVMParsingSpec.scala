@@ -66,7 +66,7 @@ class JVMParsingSpec extends AnyWordSpec with Matchers {
         )
       )
       val result = JsonWriter.Compact(v)
-      val expected = """{"one":1.0,"two":false,"three":3.5,"four":{"test6":[null],"test1":"Testing 1","test3":[1.0,2.0,3.0],"test4":"This\nis\nmulti-line","test5":"This is \"quoted\" text.","test2":null}}"""
+      val expected = """{"one":1,"two":false,"three":3.5,"four":{"test6":[null],"test1":"Testing 1","test3":[1,2,3],"test4":"This\nis\nmulti-line","test5":"This is \"quoted\" text.","test2":null}}"""
       result should be(expected)
     }
   }

@@ -157,7 +157,11 @@ sealed trait Value extends Any {
   /**
    * True if this is a Num
    */
-  def isNum: Boolean = `type` == ValueType.Num
+  def isNum: Boolean = isNumInt || isNumDec
+
+  def isNumInt: Boolean = `type` == ValueType.NumInt
+
+  def isNumDec: Boolean = `type` == ValueType.NumDec
 
   /**
    * True if this is a Bool
@@ -175,7 +179,7 @@ sealed trait Value extends Any {
    * @param `type` the type to cast this ValueType as
    * @tparam V the return type
    */
-  final def asValue[V <: Value](`type`: ValueType[V]): V = if (this.`type` == `type`) {
+  final def asValue[V <: Value](`type`: ValueType[V]): V = if (this.`type`.is(`type`)) {
     this.asInstanceOf[V]
   } else {
     throw new RuntimeException(s"$this is a ${this.`type`}, not a ${`type`}")
@@ -213,6 +217,16 @@ sealed trait Value extends Any {
    * Casts to Num or throws an exception if not a Num
    */
   def asNum: Num = asValue[Num](ValueType.Num)
+
+  /**
+   * Casts to NumInt or throws an exception if not a NumInt
+   */
+  def asNumInt: NumInt = asValue[NumInt](ValueType.NumInt)
+
+  /**
+   * Casts to NumDec or throws an exception if not a NumDec
+   */
+  def asNumDec: NumDec = asValue[NumDec](ValueType.NumDec)
 
   /**
    * Casts to Bool or throws an exception if not a Bool
@@ -262,7 +276,7 @@ sealed trait Value extends Any {
   /**
    * Convenience method for asNum.value
    */
-  def asBigDecimal: BigDecimal = asNum.value
+  def asBigDecimal: BigDecimal = asNum.asBigDecimal
 
   def asByte: Byte = asNum.asByte
   def asShort: Short = asNum.asShort
@@ -294,7 +308,7 @@ sealed trait Value extends Any {
   /**
    * Convenience method for getNum.map(_.value)
    */
-  def getBigDecimal: Option[BigDecimal] = getNum.map(_.value)
+  def getBigDecimal: Option[BigDecimal] = getNum.map(_.asBigDecimal)
 
   def getByte: Option[Byte] = getNum.map(_.asByte)
   def getShort: Option[Short] = getNum.map(_.asShort)
@@ -414,25 +428,49 @@ object Str {
   }.mkString
 }
 
-/**
- * Num represents a numeric value and wraps a BigDecimal
- */
-case class Num(value: BigDecimal) extends AnyVal with Value {
-  override type Type = Num
+sealed trait Num extends Any with Value {
+  def asInt: Int
+  def asLong: Long
+  def asFloat: Float
+  def asDouble: Double
+  def asBigInt: BigInt
+  def asBigDecimal: BigDecimal
+}
 
-  override def asByte: Byte = value.toByte
-  override def asShort: Short = value.toShort
+/**
+ * NumInt represents a numeric value and wraps a Long
+ */
+case class NumInt(value: Long) extends AnyVal with Num {
+  override type Type = NumInt
+
+  override def `type`: ValueType[NumInt] = ValueType.NumInt
+
+  override def asInt: Int = value.toInt
+  override def asLong: Long = value
+  override def asFloat: Float = value.toFloat
+  override def asDouble: Double = value.toDouble
+  override def asBigInt: BigInt = BigInt(value)
+  override def asBigDecimal: BigDecimal = BigDecimal(value)
+
+  override def isEmpty: Boolean = false
+}
+
+/**
+ * NumDec represents a numeric value and wraps a BigDecimal
+ */
+case class NumDec(value: BigDecimal) extends AnyVal with Num {
+  override type Type = NumDec
+
+  override def `type`: ValueType[NumDec] = ValueType.NumDec
+
   override def asInt: Int = value.toInt
   override def asLong: Long = value.toLong
   override def asFloat: Float = value.toFloat
   override def asDouble: Double = value.toDouble
-  def asBigInt: BigInt = value.toBigInt
+  override def asBigInt: BigInt = value.toBigInt
+  override def asBigDecimal: BigDecimal = value
 
   override def isEmpty: Boolean = false
-
-  override def `type`: ValueType[Num] = ValueType.Num
-
-  override def toString: String = value.toString
 }
 
 /**

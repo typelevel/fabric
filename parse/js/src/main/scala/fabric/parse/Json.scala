@@ -14,13 +14,14 @@ object Json extends AbstractJson {
   def parse(value: js.Any): Value = value.asInstanceOf[Any] match {
     case null => Null
     case v: js.Array[_] => Arr(v.toVector.map(a => parse(a.asInstanceOf[js.Any])))
+    case v: Int => num(v)
+    case v: Long => num(v)
     case v: js.BigInt => num(v.toString())
-    case v: js.Object => {
+    case v: js.Object =>
       val d = v.asInstanceOf[js.Dictionary[js.Any]]
       d.toMap.map {
         case (key, value) => key -> parse(value)
       }
-    }
     case v: String => str(v)
     case v: Boolean => bool(v)
     case v: Byte => num(v.doubleValue())
