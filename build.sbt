@@ -32,7 +32,7 @@ ThisBuild / developers := List(
 )
 
 // Dependency versions
-val collectionCompatVersion: String = "2.5.0"
+val collectionCompatVersion: String = "2.6.0"
 val scalaTestVersion: String = "3.2.10"
 
 // Parse module dependencies
