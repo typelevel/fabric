@@ -453,6 +453,8 @@ case class NumInt(value: Long) extends AnyVal with Num {
   override def asBigDecimal: BigDecimal = BigDecimal(value)
 
   override def isEmpty: Boolean = false
+
+  override def toString: String = value.toString
 }
 
 /**
@@ -471,6 +473,8 @@ case class NumDec(value: BigDecimal) extends AnyVal with Num {
   override def asBigDecimal: BigDecimal = value
 
   override def isEmpty: Boolean = false
+
+  override def toString: String = value.toString()
 }
 
 /**
