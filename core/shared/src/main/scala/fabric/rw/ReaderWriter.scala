@@ -15,8 +15,8 @@ object ReaderWriter {
   implicit lazy val boolRW: ReaderWriter[Boolean] = apply[Boolean](bool, _.asBool.value)
 
   implicit lazy val shortRW: ReaderWriter[Short] = apply[Short](s => num(s.toDouble), _.asNum.asShort)
-  implicit lazy val intRW: ReaderWriter[Int] = apply[Int](i => num(i.toDouble), _.asNum.asInt)
-  implicit lazy val longRW: ReaderWriter[Long] = apply[Long](l => num(l.toDouble), _.asNum.asLong)
+  implicit lazy val intRW: ReaderWriter[Int] = apply[Int](i => num(i), _.asNum.asInt)
+  implicit lazy val longRW: ReaderWriter[Long] = apply[Long](l => num(l), _.asNum.asLong)
   implicit lazy val floatRW: ReaderWriter[Float] = apply[Float](f => num(f.toDouble), _.asNum.asFloat)
   implicit lazy val doubleRW: ReaderWriter[Double] = apply[Double](num, _.asNum.asDouble)
   implicit lazy val bigIntRW: ReaderWriter[BigInt] = apply[BigInt](i => num(BigDecimal(i)), _.asNum.asBigInt)

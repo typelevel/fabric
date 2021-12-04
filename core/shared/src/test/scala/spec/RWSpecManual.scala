@@ -37,7 +37,7 @@ class RWSpecManual extends AnyWordSpec with Matchers {
       val value = person.toValue
       value should be(obj(
         "name" -> "Matt Hicks",
-        "age" -> 41.0,
+        "age" -> 41,
         "address" -> obj(
           "city" -> "San Jose",
           "state" -> "California"

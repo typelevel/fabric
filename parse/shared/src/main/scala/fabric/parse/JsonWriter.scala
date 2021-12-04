@@ -41,7 +41,8 @@ case class JsonWriter(config: JsonWriterConfig) { w =>
       s"[$content${config.newLine()}${config.indent(depth)}]"
     case Bool(b) => b.toString
     case Null => "null"
-    case Num(n) => n.toString()
+    case NumInt(n) => n.toString
+    case NumDec(n) => n.toString()
     case Obj(map) =>
       val content = map.toList.map {
         case (key, value) =>

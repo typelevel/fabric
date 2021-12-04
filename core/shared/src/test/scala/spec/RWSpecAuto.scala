@@ -6,16 +6,13 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class RWSpecAuto extends AnyWordSpec with Matchers {
-  implicit val addressRW: ReaderWriter[Address] = ccRW[Address]
-  implicit val personRW: ReaderWriter[Person] = ccRW[Person]
-
   "automatic conversion" should {
     "convert Person to Value and back" in {
       val person = Person("Matt Hicks", 41, Address("San Jose", "California"))
       val value = person.toValue
       value should be(obj(
         "name" -> "Matt Hicks",
-        "age" -> 41.0,
+        "age" -> 41,
         "address" -> obj(
           "city" -> "San Jose",
           "state" -> "California"
@@ -54,10 +51,4 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       w2 should be(w)
     }
   }
-}
-
-case class Wrapper[T](name: String, value: T, other: Option[T])
-
-object Wrapper {
-  implicit def rw[T](implicit trw: ReaderWriter[T]): ReaderWriter[Wrapper[T]] = ccRW[Wrapper[T]]
 }

@@ -22,13 +22,13 @@ class FabricSpec extends AnyWordSpec with Matchers {
     "represent AST properly" in {
       v should be(obj(
         "name" -> "Matt \"Matteo\" Hicks",
-        "age" -> 41.0,
+        "age" -> 41,
         "numbers" -> List(1, 2, 3),
         "address" -> obj(
           "street" -> "123 Somewhere Rd.\nBox 123",
           "city" -> "San Jose",
           "state" -> "California",
-          "zipcode" -> 95136.0
+          "zipcode" -> 95136
         )
       ))
     }
@@ -52,13 +52,13 @@ class FabricSpec extends AnyWordSpec with Matchers {
       }
       updated should be(obj(
         "name" -> "Matt \"Matteo\" Hicks",
-        "age" -> 41.0,
+        "age" -> 41,
         "numbers" -> List(1, 2, 3),
         "address" -> obj(
           "street" -> "123 Somewhere Rd.\nBox 123",
           "city" -> "San Jose",
           "state" -> "Tennessee",
-          "zipcode" -> 95136.0
+          "zipcode" -> 95136
         )
       ))
     }
@@ -66,12 +66,12 @@ class FabricSpec extends AnyWordSpec with Matchers {
       val removed = v.remove("address" \ "state")
       removed should be(obj(
         "name" -> "Matt \"Matteo\" Hicks",
-        "age" -> 41.0,
+        "age" -> 41,
         "numbers" -> List(1, 2, 3),
         "address" -> obj(
           "street" -> "123 Somewhere Rd.\nBox 123",
           "city" -> "San Jose",
-          "zipcode" -> 95136.0
+          "zipcode" -> 95136
         )
       ))
     }

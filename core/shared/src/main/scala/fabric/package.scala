@@ -29,17 +29,21 @@ package object fabric {
   /**
    * Create a Num from the supplied String
    */
-  def num(value: String): Num = Num(BigDecimal(value))
+  def num(value: String): Num = NumDec(BigDecimal(value))
 
   /**
    * Create a Num from the supplied Double
    */
-  implicit def num(value: Double): Num = Num(BigDecimal(value))
+  implicit def num(value: Double): Num = NumDec(BigDecimal(value))
 
   /**
    * Create a Num from the supplied BigDecimal
    */
-  implicit def num(value: BigDecimal): Num = Num(value)
+  implicit def num(value: BigDecimal): Num = NumDec(value)
+
+  implicit def num(value: Int): Num = NumInt(value.toLong)
+
+  implicit def num(value: Long): Num = NumInt(value)
 
   /**
    * Create a Bool from the supplied Boolean

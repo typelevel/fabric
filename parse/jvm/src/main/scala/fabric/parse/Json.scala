@@ -1,7 +1,7 @@
 package fabric.parse
 
 import com.fasterxml.jackson.core.{JsonFactory, JsonParser, JsonToken}
-import fabric.{Arr, Bool, Null, Num, Obj, Str, Value}
+import fabric.{Arr, Bool, Null, Num, NumDec, NumInt, Obj, Str, Value}
 
 import java.io.File
 import java.nio.file.Path
@@ -36,7 +36,8 @@ object Json extends AbstractJson {
     case JsonToken.START_OBJECT => parseObj(parser, Map.empty)
     case JsonToken.START_ARRAY => parseArr(parser, Nil)
     case JsonToken.VALUE_STRING => Str(parser.getValueAsString)
-    case JsonToken.VALUE_NUMBER_FLOAT | JsonToken.VALUE_NUMBER_INT => Num(parser.getValueAsDouble)
+    case JsonToken.VALUE_NUMBER_FLOAT => NumDec(BigDecimal(parser.getValueAsDouble))
+    case JsonToken.VALUE_NUMBER_INT => NumInt(parser.getValueAsLong)
     case JsonToken.VALUE_NULL => Null
     case JsonToken.VALUE_TRUE => Bool(true)
     case JsonToken.VALUE_FALSE => Bool(false)
