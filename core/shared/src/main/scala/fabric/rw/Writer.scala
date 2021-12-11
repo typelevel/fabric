@@ -14,6 +14,7 @@ object Writer {
 
   implicit def unitW: Writer[Unit] = unitRW
   implicit def valueW: Writer[Value] = valueRW
+  implicit def objW: Writer[Obj] = objRW
 
   implicit def boolW: Writer[Boolean] = boolRW
 

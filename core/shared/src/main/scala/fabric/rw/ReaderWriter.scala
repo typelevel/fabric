@@ -11,6 +11,7 @@ trait ReaderWriter[T] extends Reader[T] with Writer[T]
 object ReaderWriter {
   implicit lazy val unitRW: ReaderWriter[Unit] = apply(_ => Null, _ => ())
   implicit lazy val valueRW: ReaderWriter[Value] = apply(identity, identity)
+  implicit lazy val objRW: ReaderWriter[Obj] = apply(o => o, v => v.asObj)
 
   implicit lazy val boolRW: ReaderWriter[Boolean] = apply[Boolean](bool, _.asBool.value)
 
