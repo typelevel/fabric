@@ -179,8 +179,10 @@ sealed trait Value extends Any {
    * @param `type` the type to cast this ValueType as
    * @tparam V the return type
    */
-  final def asValue[V <: Value](`type`: ValueType[V]): V = if (this.`type`.is(`type`)) {
+  def asValue[V <: Value](`type`: ValueType[V]): V = if (this.`type`.is(`type`)) {
     this.asInstanceOf[V]
+  } else if (`type` == ValueType.Str) {
+    str(toString).asInstanceOf[V]
   } else {
     throw new RuntimeException(s"$this is a ${this.`type`}, not a ${`type`}")
   }
@@ -445,6 +447,12 @@ case class NumInt(value: Long) extends AnyVal with Num {
 
   override def `type`: ValueType[NumInt] = ValueType.NumInt
 
+  override def asValue[V <: Value](`type`: ValueType[V]): V = if (`type` == ValueType.NumDec) {
+    NumDec(BigDecimal(value)).asInstanceOf[V]
+  } else {
+    super.asValue[V](`type`)
+  }
+
   override def asInt: Int = value.toInt
   override def asLong: Long = value
   override def asFloat: Float = value.toFloat
@@ -464,6 +472,12 @@ case class NumDec(value: BigDecimal) extends AnyVal with Num {
   override type Type = NumDec
 
   override def `type`: ValueType[NumDec] = ValueType.NumDec
+
+  override def asValue[V <: Value](`type`: ValueType[V]): V = if (`type` == ValueType.NumInt) {
+    NumInt(value.toLong).asInstanceOf[V]
+  } else {
+    super.asValue[V](`type`)
+  }
 
   override def asInt: Int = value.toInt
   override def asLong: Long = value.toLong

@@ -14,6 +14,7 @@ object Reader {
 
   implicit def unitR: Reader[Unit] = unitRW
   implicit def valueR: Reader[Value] = valueRW
+  implicit def objR: Reader[Obj] = objRW
 
   implicit def boolR: Reader[Boolean] = boolRW
 

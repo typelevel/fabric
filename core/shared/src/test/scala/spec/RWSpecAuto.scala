@@ -50,5 +50,18 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       val w2 = value.as[Wrapper[Address]]
       w2 should be(w)
     }
+    "supporting Values in conversions" in {
+      val w = Wrapper("Test2", obj("city" -> "San Jose"), Some(obj("city" -> "Norman")))
+      val value = w.toValue
+      value should be(obj(
+        "name" -> "Test2",
+        "value" -> obj(
+          "city" -> "San Jose"
+        ),
+        "other" -> obj(
+          "city" -> "Norman"
+        )
+      ))
+    }
   }
 }
