@@ -2,6 +2,8 @@ package fabric
 
 import fabric.filter.ValueFilter
 
+import scala.util.Try
+
 /**
  * Value represents the base sealed trait for all representable types in fabric.
  */
@@ -413,6 +415,21 @@ case class Str(value: String) extends AnyVal with Value {
   override def `type`: ValueType[Str] = ValueType.Str
 
   override def isEmpty: Boolean = value.isEmpty
+
+  override def asValue[V <: Value](`type`: ValueType[V]): V = `type` match {
+    case ValueType.Bool => Try(Bool(value.toBoolean))
+      .toOption
+      .map(_.asInstanceOf[V])
+      .getOrElse(throw ConversionException(s"$value is a Str and can't be converted to Bool"))
+    case ValueType.NumInt => Try(NumInt(value.toInt))
+      .toOption
+      .map(_.asInstanceOf[V])
+      .getOrElse(throw ConversionException(s"$value is a Str and can't be converted to NumInt"))
+    case ValueType.NumDec => Try(NumDec(BigDecimal(value)))
+      .toOption
+      .map(_.asInstanceOf[V])
+      .getOrElse(throw ConversionException(s"$value is a Str and can't be converted to NumDec"))
+  }
 
   override def toString: String = s""""${Str.escape(value)}""""
 }
