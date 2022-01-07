@@ -429,6 +429,7 @@ case class Str(value: String) extends AnyVal with Value {
       .toOption
       .map(_.asInstanceOf[V])
       .getOrElse(throw ConversionException(s"$value is a Str and can't be converted to NumDec"))
+    case _ => super.asValue[V](`type`)
   }
 
   override def toString: String = s""""${Str.escape(value)}""""
