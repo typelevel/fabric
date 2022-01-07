@@ -11,11 +11,13 @@ val scalaNativeVersions = scala2
 
 name := "fabric"
 ThisBuild / organization := "com.outr"
-ThisBuild / version := "1.2.2-SNAPSHOT"
+ThisBuild / version := "1.2.2"
 ThisBuild / scalaVersion := scala213
 ThisBuild / scalacOptions ++= Seq("-unchecked", "-deprecation")
 ThisBuild / javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
 
+ThisBuild / sonatypeCredentialHost := "s01.oss.sonatype.org"
+ThisBuild / sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
 ThisBuild / publishTo := sonatypePublishTo.value
 ThisBuild / sonatypeProfileName := "com.outr"
 ThisBuild / licenses := Seq("MIT" -> url("https://github.com/outr/fabric/blob/master/LICENSE"))
