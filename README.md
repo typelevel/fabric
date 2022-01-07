@@ -3,7 +3,7 @@
 [![CI](https://github.com/outr/fabric/actions/workflows/ci.yml/badge.svg)](https://github.com/outr/fabric/actions/workflows/ci.yml)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/outr/fabric)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.outr/fabric-core_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.outr/fabric-core_2.13)
-[![Latest version](https://index.scala-lang.org/outr/fabric/fabric/latest.svg)](https://index.scala-lang.org/outr/fabric)
+[![fabric-core Scala version support](https://index.scala-lang.org/outr/fabric/fabric-core/latest-by-scala-version.svg)](https://index.scala-lang.org/outr/fabric/fabric-core)
 
 Abstract Syntax Tree (AST) based on JSON concepts, but more abstract for parsing and application.
 
@@ -25,7 +25,7 @@ some feedback.
 I wrote a performance benchmark with every expectation to be slower than the alternatives as I've done very
 little tuning, and I'm just one person versus the many developers that have worked on the others for years.
 However, I was shocked to see how well my little library performed compared to the alternatives:
-https://jmh.morethan.io/?source=https://raw.githubusercontent.com/outr/fabric/master/bench/results/benchmarks-1.0.0.json
+https://jmh.morethan.io/?source=https://raw.githubusercontent.com/outr/fabric/master/bench/results/benchmarks-1.2.2.json
 
 ## Features
 
@@ -101,10 +101,12 @@ val person = obj(
   "age" -> 21
 ).as[Person]
 
+val backToValue: Value = person.toValue
+
 case class Person(name: String, age: Int)
 
 object Person {
-  implicit val rw: ReadableWritable[Person] = ccRW[Person]
+  implicit val rw: ReaderWriter[Person] = ccRW[Person]
 }
 ```
 
@@ -124,5 +126,5 @@ val value = Json.parse("""{"name": "John Doe", "age": 21}""")
 Taking an existing value and formatting it for output as JSON:
 
 ```scala
-val formattedString = Json.format(value)
+val formattedString: String = Json.format(value)
 ```
