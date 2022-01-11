@@ -1,6 +1,7 @@
 package spec
 
 import fabric._
+import fabric.filter.{CamelToSnakeFilter, SnakeToCamelFilter, ValueFilter}
 import fabric.rw._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -145,6 +146,27 @@ class FabricSpec extends AnyWordSpec with Matchers {
         "two" -> 2,
         "three" -> "three"
       ))
+    }
+    "convert snake-case to camel-case" in {
+      val snake = obj(
+        "first_level" -> obj(
+          "second_level" -> obj(
+            "third_level_and_last" -> "Test"
+          )
+        )
+      )
+      val camel = obj(
+        "firstLevel" -> obj(
+          "secondLevel" -> obj(
+            "thirdLevelAndLast" -> "Test"
+          )
+        )
+      )
+      val snake2Camel = snake.filter(SnakeToCamelFilter)
+      snake2Camel should contain(camel)
+
+      val camel2Snake = camel.filter(CamelToSnakeFilter)
+      camel2Snake should contain(snake)
     }
   }
 }
