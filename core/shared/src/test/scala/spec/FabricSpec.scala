@@ -1,7 +1,7 @@
 package spec
 
 import fabric._
-import fabric.filter.{CamelToSnakeFilter, SnakeToCamelFilter, ValueFilter}
+import fabric.filter._
 import fabric.rw._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -162,11 +162,11 @@ class FabricSpec extends AnyWordSpec with Matchers {
           )
         )
       )
-      val snake2Camel = snake.filter(SnakeToCamelFilter)
-      snake2Camel should contain(camel)
+      val snake2Camel = snake.snake2Camel
+      snake2Camel should be(camel)
 
-      val camel2Snake = camel.filter(CamelToSnakeFilter)
-      camel2Snake should contain(snake)
+      val camel2Snake = camel.camel2Snake
+      camel2Snake should be(snake)
     }
   }
 }
