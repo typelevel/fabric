@@ -425,7 +425,7 @@ case class Str(value: String) extends AnyVal with Value {
       .toOption
       .map(_.asInstanceOf[V])
       .getOrElse(throw ConversionException(s"$value is a Str and can't be converted to NumInt"))
-    case ValueType.NumDec => Try(NumDec(BigDecimal(value)))
+    case ValueType.NumDec | ValueType.Num => Try(NumDec(BigDecimal(value)))
       .toOption
       .map(_.asInstanceOf[V])
       .getOrElse(throw ConversionException(s"$value is a Str and can't be converted to NumDec"))
