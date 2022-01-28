@@ -2,7 +2,6 @@ package fabric.parse
 
 import fabric.Value
 
-import java.io.File
 import scala.io.Source
 
 trait Parser {

@@ -1,5 +1,6 @@
 package bench
 
+import fabric.parse.{JacksonParser, JsoniterParser, Parser}
 import org.openjdk.jmh.annotations._
 
 import java.util.concurrent.TimeUnit
@@ -25,10 +26,16 @@ class ParseJson {
       |}""".stripMargin
 
   @Benchmark
-  def fabricSmall(): Unit = parseFabric(smallJsonString)
+  def fabricJacksonSmall(): Unit = parseFabric(smallJsonString, JacksonParser)
 
   @Benchmark
-  def fabricMedium(): Unit = parseFabric(mediumJsonString)
+  def fabricJsoniterSmall(): Unit = parseFabric(smallJsonString, JsoniterParser)
+
+  @Benchmark
+  def fabricJacksonMedium(): Unit = parseFabric(mediumJsonString, JacksonParser)
+
+  @Benchmark
+  def fabricJsoniterMedium(): Unit = parseFabric(mediumJsonString, JsoniterParser)
 
   @Benchmark
   def circeSmall(): Unit = parseCirce(smallJsonString)
@@ -42,11 +49,9 @@ class ParseJson {
   @Benchmark
   def uJsonMedium(): Unit = parseUJson(mediumJsonString)
 
-  private def parseFabric(jsonString: String): Unit = {
-    import fabric.parse._
-
+  private def parseFabric(jsonString: String, parser: Parser): Unit = {
     (0 until count).foreach { _ =>
-      val value = Json.parse(jsonString)
+      val value = parser.parse(jsonString)
       assert(value.isObj)
     }
   }
