@@ -37,7 +37,7 @@ object ReaderWriter {
     override def read(t: T): Value = r(t)
   }
 
-  def enum[T](list: List[T], asString: T => String): RW[T] = new RW[T] {
+  def enumeration[T](list: List[T], asString: T => String): RW[T] = new RW[T] {
     private lazy val map = list.map(t => asString(t) -> t).toMap
 
     override def write(value: Value): T = map(value.asString)
