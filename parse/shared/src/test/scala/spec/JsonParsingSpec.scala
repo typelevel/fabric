@@ -11,7 +11,7 @@ class JsonParsingSpec extends AnyWordSpec with Matchers {
       val v = Json.parse("""{"name": "Matt Hicks", "age": 41}""")
       v should be(obj(
         "name" -> "Matt Hicks",
-        "age" -> 41
+        "age" -> 41.0
       ))
     }
   }
