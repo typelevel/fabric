@@ -10,7 +10,7 @@ import scala.io.Source
  * Json provides convenience functionality to parse and format JSON to/from fabric Values
  */
 object Json extends AbstractJson {
-  override def parse(s: String): Value = JacksonParser.parse(s)
+  override def parse(s: String): Value = JsoniterParser.parse(s)
 
   def parse(file: File): Value = parse(Source.fromFile(file, "UTF-8"))
   def parse(path: Path): Value = parse(Source.fromFile(path.toFile, "UTF-8"))
