@@ -18,6 +18,7 @@ object Writer {
 
   implicit def boolW: Writer[Boolean] = boolRW
 
+  implicit def byteR: Writer[Byte] = byteRW
   implicit def shortR: Writer[Short] = shortRW
   implicit def intW: Writer[Int] = intRW
   implicit def longW: Writer[Long] = longRW
@@ -27,7 +28,11 @@ object Writer {
   implicit def bigDecimalW: Writer[BigDecimal] = bigDecimalRW
 
   implicit def stringW: Writer[String] = stringRW
-  implicit def stringMapW: Writer[Map[String, String]] = stringMapRW
+  implicit def mapW[V: Writer]: Writer[Map[String, V]] = apply[Map[String, V]] { v =>
+    v.asObj.value.map {
+      case (key, value) => key -> value.as[V]
+    }
+  }
 
   implicit def listW[T](implicit w: Writer[T]): Writer[List[T]] = apply[List[T]] {
     case Arr(vector) => vector.toList.map(w.write)

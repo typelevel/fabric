@@ -471,6 +471,8 @@ case class NumInt(value: Long) extends AnyVal with Num {
     super.asValue[V](`type`)
   }
 
+  override def asByte: Byte = value.toByte
+  override def asShort: Short = value.toShort
   override def asInt: Int = value.toInt
   override def asLong: Long = value
   override def asFloat: Float = value.toFloat
@@ -497,6 +499,8 @@ case class NumDec(value: BigDecimal) extends AnyVal with Num {
     super.asValue[V](`type`)
   }
 
+  override def asByte: Byte = value.toByte
+  override def asShort: Short = value.toShort
   override def asInt: Int = value.toInt
   override def asLong: Long = value.toLong
   override def asFloat: Float = value.toFloat

@@ -69,7 +69,8 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(
     name := "fabric-core",
     libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
+      "org.scalatestplus" %%% "scalacheck-1-15" % s"$scalaTestVersion.0" % Test
     ),
     libraryDependencies ++= (
       if (scalaVersion.value.startsWith("3")) {
@@ -104,7 +105,8 @@ lazy val parse = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "fabric-parse",
     libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
+      "org.scalatestplus" %% "scalacheck-1-15" % s"$scalaTestVersion.0" % Test
     )
   )
   .jsSettings(
