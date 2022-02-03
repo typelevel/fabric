@@ -10,7 +10,7 @@ val scalaNativeVersions = scala2
 
 name := "fabric"
 ThisBuild / organization := "com.outr"
-ThisBuild / version := "1.2.6-SNAPSHOT"
+ThisBuild / version := "1.2.6"
 ThisBuild / scalaVersion := scala213
 ThisBuild / scalacOptions ++= Seq("-unchecked", "-deprecation")
 ThisBuild / javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
@@ -29,7 +29,7 @@ ThisBuild / scmInfo := Some(
   )
 )
 ThisBuild / developers := List(
-  Developer(id="darkfrog", name="Matt Hicks", email="matt@matthicks.com", url=url("http://matthicks.com"))
+  Developer(id="darkfrog", name="Matt Hicks", email="matt@matthicks.com", url=url("https://matthicks.com"))
 )
 
 // Dependency versions
