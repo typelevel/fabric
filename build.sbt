@@ -39,7 +39,7 @@ val scalaCheckVersion: String = "3.2.11.0"
 
 // Parse module dependencies
 val jacksonVersion: String = "2.13.1"
-val typesafeConfig: String = "1.4.1"
+val typesafeConfig: String = "1.4.2"
 
 // Benchmarks
 val circeVersion: String = "0.13.0"
