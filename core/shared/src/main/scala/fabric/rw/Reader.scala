@@ -18,6 +18,7 @@ object Reader {
 
   implicit def boolR: Reader[Boolean] = boolRW
 
+  implicit def byteR: Reader[Byte] = byteRW
   implicit def shortR: Reader[Short] = shortRW
   implicit def intR: Reader[Int] = intRW
   implicit def longR: Reader[Long] = longRW
@@ -27,7 +28,9 @@ object Reader {
   implicit def bigDecimalR: Reader[BigDecimal] = bigDecimalRW
 
   implicit def stringR: Reader[String] = stringRW
-  implicit def stringMapR: Reader[Map[String, String]] = stringMapRW
+  implicit def mapR[V: Reader]: Reader[Map[String, V]] = apply[Map[String, V]](_.map {
+    case (key, value) => key -> value.toValue
+  })
 
   implicit def listR[T](implicit r: Reader[T]): Reader[List[T]] = apply[List[T]] { list =>
     Arr(list.map(r.read).toVector)
