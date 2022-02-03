@@ -15,7 +15,8 @@ object ReaderWriter {
 
   implicit lazy val boolRW: ReaderWriter[Boolean] = apply[Boolean](bool, _.asBool.value)
 
-  implicit lazy val shortRW: ReaderWriter[Short] = apply[Short](s => num(s.toDouble), _.asNum.asShort)
+  implicit lazy val byteRW: ReaderWriter[Byte] = apply[Byte](s => NumInt(s.toInt), _.asNum.asByte)
+  implicit lazy val shortRW: ReaderWriter[Short] = apply[Short](s => num(s.toInt), _.asNum.asShort)
   implicit lazy val intRW: ReaderWriter[Int] = apply[Int](i => num(i), _.asNum.asInt)
   implicit lazy val longRW: ReaderWriter[Long] = apply[Long](l => num(l), _.asNum.asLong)
   implicit lazy val floatRW: ReaderWriter[Float] = apply[Float](f => num(f.toDouble), _.asNum.asFloat)
@@ -25,10 +26,10 @@ object ReaderWriter {
 
   implicit lazy val stringRW: ReaderWriter[String] = apply[String](str, _.asStr.value)
 
-  implicit lazy val stringMapRW: ReaderWriter[Map[String, String]] = apply[Map[String, String]](_.map {
-    case (key, value) => key -> str(value)
+  implicit def mapRW[V: ReaderWriter]: ReaderWriter[Map[String, V]] = apply[Map[String, V]](_.map {
+    case (key, value) => key -> value.toValue
   }, v => v.asObj.value.map {
-    case (key, value) => key -> value.asStr.value
+    case (key, value) => key -> value.as[V]
   })
 
   def apply[T](r: T => Value, w: Value => T): ReaderWriter[T] = new ReaderWriter[T] {
