@@ -1,9 +1,8 @@
 // Scala versions
 val scala213 = "2.13.8"
 val scala212 = "2.12.15"
-val scala211 = "2.11.12"
 val scala3 = List("3.1.1")
-val scala2 = List(scala213, scala212, scala211)
+val scala2 = List(scala213, scala212)
 val allScalaVersions = scala3 ::: scala2
 val scalaJVMVersions = allScalaVersions
 val scalaJSVersions = allScalaVersions
@@ -11,7 +10,7 @@ val scalaNativeVersions = scala2
 
 name := "fabric"
 ThisBuild / organization := "com.outr"
-ThisBuild / version := "1.2.5"
+ThisBuild / version := "1.2.6-SNAPSHOT"
 ThisBuild / scalaVersion := scala213
 ThisBuild / scalacOptions ++= Seq("-unchecked", "-deprecation")
 ThisBuild / javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
