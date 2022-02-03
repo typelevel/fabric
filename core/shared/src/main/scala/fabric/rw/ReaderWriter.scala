@@ -15,7 +15,8 @@ object ReaderWriter {
 
   implicit lazy val boolRW: ReaderWriter[Boolean] = apply[Boolean](bool, _.asBool.value)
 
-  implicit lazy val shortRW: ReaderWriter[Short] = apply[Short](s => num(s.toDouble), _.asNum.asShort)
+  implicit lazy val byteRW: ReaderWriter[Byte] = apply[Byte](s => NumInt(s.toInt), _.asNum.asByte)
+  implicit lazy val shortRW: ReaderWriter[Short] = apply[Short](s => num(s.toInt), _.asNum.asShort)
   implicit lazy val intRW: ReaderWriter[Int] = apply[Int](i => num(i), _.asNum.asInt)
   implicit lazy val longRW: ReaderWriter[Long] = apply[Long](l => num(l), _.asNum.asLong)
   implicit lazy val floatRW: ReaderWriter[Float] = apply[Float](f => num(f.toDouble), _.asNum.asFloat)
@@ -25,10 +26,10 @@ object ReaderWriter {
 
   implicit lazy val stringRW: ReaderWriter[String] = apply[String](str, _.asStr.value)
 
-  implicit lazy val stringMapRW: ReaderWriter[Map[String, String]] = apply[Map[String, String]](_.map {
-    case (key, value) => key -> str(value)
+  implicit def mapRW[V: ReaderWriter]: ReaderWriter[Map[String, V]] = apply[Map[String, V]](_.map {
+    case (key, value) => key -> value.toValue
   }, v => v.asObj.value.map {
-    case (key, value) => key -> value.asStr.value
+    case (key, value) => key -> value.as[V]
   })
 
   def apply[T](r: T => Value, w: Value => T): ReaderWriter[T] = new ReaderWriter[T] {
@@ -37,10 +38,14 @@ object ReaderWriter {
     override def read(t: T): Value = r(t)
   }
 
-  def enumeration[T](list: List[T], asString: T => String): RW[T] = new RW[T] {
-    private lazy val map = list.map(t => asString(t) -> t).toMap
+  def enumeration[T](list: List[T],
+                     asString: T => String = (t: T) => t.getClass.getSimpleName.replace("$", ""),
+                     caseSensitive: Boolean = false): RW[T] = new RW[T] {
+    private def fixString(s: String): String = if (caseSensitive) s else s.toLowerCase
 
-    override def write(value: Value): T = map(value.asString)
+    private lazy val map = list.map(t => fixString(asString(t)) -> t).toMap
+
+    override def write(value: Value): T = map(fixString(value.asString))
 
     override def read(t: T): Value = str(asString(t))
   }

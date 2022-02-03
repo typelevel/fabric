@@ -460,7 +460,7 @@ sealed trait Num extends Any with Value {
 /**
  * NumInt represents a numeric value and wraps a Long
  */
-case class NumInt(value: Long) extends AnyVal with Num {
+case class NumInt(value: Long) extends Num {
   override type Type = NumInt
 
   override def `type`: ValueType[NumInt] = ValueType.NumInt
@@ -471,6 +471,8 @@ case class NumInt(value: Long) extends AnyVal with Num {
     super.asValue[V](`type`)
   }
 
+  override def asByte: Byte = value.toByte
+  override def asShort: Short = value.toShort
   override def asInt: Int = value.toInt
   override def asLong: Long = value
   override def asFloat: Float = value.toFloat
@@ -480,13 +482,19 @@ case class NumInt(value: Long) extends AnyVal with Num {
 
   override def isEmpty: Boolean = false
 
+  override def equals(obj: Any): Boolean = obj match {
+    case that: NumInt => this.value == that.value
+    case that: NumDec => BigDecimal(value) == that.value
+    case _ => false
+  }
+
   override def toString: String = value.toString
 }
 
 /**
  * NumDec represents a numeric value and wraps a BigDecimal
  */
-case class NumDec(value: BigDecimal) extends AnyVal with Num {
+case class NumDec(value: BigDecimal) extends Num {
   override type Type = NumDec
 
   override def `type`: ValueType[NumDec] = ValueType.NumDec
@@ -497,6 +505,8 @@ case class NumDec(value: BigDecimal) extends AnyVal with Num {
     super.asValue[V](`type`)
   }
 
+  override def asByte: Byte = value.toByte
+  override def asShort: Short = value.toShort
   override def asInt: Int = value.toInt
   override def asLong: Long = value.toLong
   override def asFloat: Float = value.toFloat
@@ -505,6 +515,12 @@ case class NumDec(value: BigDecimal) extends AnyVal with Num {
   override def asBigDecimal: BigDecimal = value
 
   override def isEmpty: Boolean = false
+
+  override def equals(obj: Any): Boolean = obj match {
+    case that: NumInt => this.value == BigDecimal(that.value)
+    case that: NumDec => this.value == that.value
+    case _ => false
+  }
 
   override def toString: String = value.toString()
 }

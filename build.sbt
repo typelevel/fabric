@@ -1,9 +1,8 @@
 // Scala versions
 val scala213 = "2.13.8"
 val scala212 = "2.12.15"
-val scala211 = "2.11.12"
 val scala3 = List("3.1.1")
-val scala2 = List(scala213, scala212, scala211)
+val scala2 = List(scala213, scala212)
 val allScalaVersions = scala3 ::: scala2
 val scalaJVMVersions = allScalaVersions
 val scalaJSVersions = allScalaVersions
@@ -11,7 +10,7 @@ val scalaNativeVersions = scala2
 
 name := "fabric"
 ThisBuild / organization := "com.outr"
-ThisBuild / version := "1.2.5"
+ThisBuild / version := "1.2.6-SNAPSHOT"
 ThisBuild / scalaVersion := scala213
 ThisBuild / scalacOptions ++= Seq("-unchecked", "-deprecation")
 ThisBuild / javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
@@ -36,6 +35,7 @@ ThisBuild / developers := List(
 // Dependency versions
 val collectionCompatVersion: String = "2.6.0"
 val scalaTestVersion: String = "3.2.11"
+val scalaCheckVersion: String = "3.2.11.0"
 
 // Parse module dependencies
 val jacksonVersion: String = "2.13.1"
@@ -69,7 +69,8 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(
     name := "fabric-core",
     libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
+      "org.scalatestplus" %%% "scalacheck-1-15" % scalaCheckVersion % Test
     ),
     libraryDependencies ++= (
       if (scalaVersion.value.startsWith("3")) {
@@ -104,7 +105,8 @@ lazy val parse = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "fabric-parse",
     libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
+      "org.scalatestplus" %% "scalacheck-1-15" % scalaCheckVersion % Test
     )
   )
   .jsSettings(
@@ -116,6 +118,7 @@ lazy val parse = crossProject(JSPlatform, JVMPlatform)
       "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonVersion,
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-xml" % jacksonVersion,
+      "com.jsoniter" % "jsoniter" % "0.9.23",
       "com.typesafe" % "config" % typesafeConfig
     )
   )
