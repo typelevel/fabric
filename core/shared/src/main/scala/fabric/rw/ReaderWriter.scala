@@ -38,10 +38,14 @@ object ReaderWriter {
     override def read(t: T): Value = r(t)
   }
 
-  def enumeration[T](list: List[T], asString: T => String): RW[T] = new RW[T] {
-    private lazy val map = list.map(t => asString(t) -> t).toMap
+  def enumeration[T](list: List[T],
+                     asString: T => String = (t: T) => t.getClass.getSimpleName.replace("$", ""),
+                     caseSensitive: Boolean = false): RW[T] = new RW[T] {
+    private def fixString(s: String): String = if (caseSensitive) s else s.toLowerCase
 
-    override def write(value: Value): T = map(value.asString)
+    private lazy val map = list.map(t => fixString(asString(t)) -> t).toMap
+
+    override def write(value: Value): T = map(fixString(value.asString))
 
     override def read(t: T): Value = str(asString(t))
   }
