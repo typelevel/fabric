@@ -14,7 +14,10 @@ object JsoniterParser extends Parser {
   private def read(iterator: JsonIterator): Value = iterator.whatIsNext() match {
     case com.jsoniter.ValueType.NULL => Null
     case com.jsoniter.ValueType.ARRAY => readArr(iterator)
-    case com.jsoniter.ValueType.NUMBER => NumDec(BigDecimal(iterator.readBigDecimal()))
+    case com.jsoniter.ValueType.NUMBER => iterator.readBigDecimal() match {
+      case bd if bd.scale() == 0 => NumInt(bd.longValue())
+      case bd => NumDec(BigDecimal(bd))
+    }
     case com.jsoniter.ValueType.BOOLEAN => Bool(iterator.readBoolean())
     case com.jsoniter.ValueType.OBJECT => readObj(iterator)
     case com.jsoniter.ValueType.STRING => Str(iterator.readString())
