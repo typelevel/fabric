@@ -39,11 +39,6 @@ object Writer {
   implicit def vectorW[V: Writer]: Writer[Vector[V]] = apply[Vector[V]](
     v => v.asVector.map(_.as[V])
   )
-
-  implicit def listW[T](implicit w: Writer[T]): Writer[List[T]] = apply[List[T]] {
-    case Arr(vector) => vector.toList.map(w.write)
-    case v => throw new RuntimeException(s"Unsupported list: $v")
-  }
   implicit def setW[T](implicit w: Writer[T]): Writer[Set[T]] = apply[Set[T]] {
     case Arr(vector) => vector.toSet.map(w.write)
     case v => throw new RuntimeException(s"Unsupported set: $v")
