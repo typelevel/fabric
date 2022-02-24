@@ -37,10 +37,6 @@ object Reader {
   implicit def vectorR[V: Reader]: Reader[Vector[V]] = apply[Vector[V]](
     v => Arr(v.map(_.toValue))
   )
-
-  implicit def listR[T](implicit r: Reader[T]): Reader[List[T]] = apply[List[T]] { list =>
-    Arr(list.map(r.read).toVector)
-  }
   implicit def setR[T](implicit r: Reader[T]): Reader[Set[T]] = apply[Set[T]] { set =>
     Arr(set.map(r.read).toVector)
   }
