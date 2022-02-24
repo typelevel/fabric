@@ -32,6 +32,16 @@ object ReaderWriter {
     case (key, value) => key -> value.as[V]
   })
 
+  implicit def listRW[V: ReaderWriter]: ReaderWriter[List[V]] = apply[List[V]](
+    v => Arr(v.map(_.toValue).toVector),
+    v => v.asVector.map(_.as[V]).toList
+  )
+
+  implicit def vectorRW[V: ReaderWriter]: ReaderWriter[Vector[V]] = apply[Vector[V]](
+    v => Arr(v.map(_.toValue)),
+    v => v.asVector.map(_.as[V])
+  )
+
   def apply[T](r: T => Value, w: Value => T): ReaderWriter[T] = new ReaderWriter[T] {
     override def write(value: Value): T = w(value)
 

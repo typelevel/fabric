@@ -33,6 +33,12 @@ object Writer {
       case (key, value) => key -> value.as[V]
     }
   }
+  implicit def listW[V: Writer]: Writer[List[V]] = apply[List[V]](
+    v => v.asVector.map(_.as[V]).toList
+  )
+  implicit def vectorW[V: Writer]: Writer[Vector[V]] = apply[Vector[V]](
+    v => v.asVector.map(_.as[V])
+  )
 
   implicit def listW[T](implicit w: Writer[T]): Writer[List[T]] = apply[List[T]] {
     case Arr(vector) => vector.toList.map(w.write)
