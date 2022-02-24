@@ -31,6 +31,12 @@ object Reader {
   implicit def mapR[V: Reader]: Reader[Map[String, V]] = apply[Map[String, V]](_.map {
     case (key, value) => key -> value.toValue
   })
+  implicit def listR[V: Reader]: Reader[List[V]] = apply[List[V]](
+    v => Arr(v.map(_.toValue).toVector)
+  )
+  implicit def vectorR[V: Reader]: Reader[Vector[V]] = apply[Vector[V]](
+    v => Arr(v.map(_.toValue))
+  )
 
   implicit def listR[T](implicit r: Reader[T]): Reader[List[T]] = apply[List[T]] { list =>
     Arr(list.map(r.read).toVector)
