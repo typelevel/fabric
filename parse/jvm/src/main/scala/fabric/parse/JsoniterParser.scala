@@ -12,7 +12,9 @@ object JsoniterParser extends Parser {
   }
 
   private def read(iterator: JsonIterator): Value = iterator.whatIsNext() match {
-    case com.jsoniter.ValueType.NULL => Null
+    case com.jsoniter.ValueType.NULL =>
+      iterator.readNull()
+      Null
     case com.jsoniter.ValueType.ARRAY => readArr(iterator)
     case com.jsoniter.ValueType.NUMBER => iterator.readBigDecimal() match {
       case bd if bd.scale() == 0 => NumInt(bd.longValue())
