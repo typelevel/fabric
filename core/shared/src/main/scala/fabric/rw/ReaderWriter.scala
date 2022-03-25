@@ -42,6 +42,19 @@ object ReaderWriter {
     v => v.asVector.map(_.as[V])
   )
 
+  implicit def setRW[V: ReaderWriter]: ReaderWriter[Set[V]] = apply[Set[V]](
+    v => Arr(v.map(_.toValue).toVector),
+    {
+      case Arr(vector) => vector.map(_.as[V]).toSet
+      case v => throw new RuntimeException(s"Unsupported set: $v")
+    }
+  )
+
+  implicit def optionRW[V: ReaderWriter]: ReaderWriter[Option[V]] = apply[Option[V]](
+    v => v.map(_.toValue).getOrElse(Null),
+    v => if (v.isNull) None else Some(v.as[V])
+  )
+
   def apply[T](r: T => Value, w: Value => T): ReaderWriter[T] = new ReaderWriter[T] {
     override def write(value: Value): T = w(value)
 
