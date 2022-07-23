@@ -1,7 +1,7 @@
 // Scala versions
 val scala213 = "2.13.8"
 val scala212 = "2.12.15"
-val scala3 = List("3.1.1")
+val scala3 = List("3.1.3")
 val scala2 = List(scala213, scala212)
 val allScalaVersions = scala3 ::: scala2
 val scalaJVMVersions = allScalaVersions
@@ -33,7 +33,7 @@ ThisBuild / developers := List(
 )
 
 // Dependency versions
-val collectionCompatVersion: String = "2.7.0"
+val collectionCompatVersion: String = "2.8.0"
 val scalaTestVersion: String = "3.2.11"
 val scalaCheckVersion: String = "3.2.11.0"
 
