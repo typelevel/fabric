@@ -3,17 +3,15 @@ val scala213 = "2.13.8"
 val scala212 = "2.12.16"
 val scala3 = List("3.1.3")
 val scala2 = List(scala213, scala212)
-val allScalaVersions = scala3 ::: scala2
-val scalaJVMVersions = allScalaVersions
-val scalaJSVersions = allScalaVersions
-val scalaNativeVersions = scala2
+val scalaVersions = scala3 ::: scala2
 
 name := "fabric"
 ThisBuild / organization := "com.outr"
-ThisBuild / version := "1.2.9"
+ThisBuild / version := "1.3.0-SNAPSHOT"
 ThisBuild / scalaVersion := scala213
 ThisBuild / scalacOptions ++= Seq("-unchecked", "-deprecation")
 ThisBuild / javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
+ThisBuild / crossScalaVersions := scalaVersions
 
 ThisBuild / sonatypeCredentialHost := "s01.oss.sonatype.org"
 ThisBuild / sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
@@ -89,16 +87,6 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       )
     }
   )
-  .jsSettings(
-    crossScalaVersions := scalaJSVersions
-  )
-  .jvmSettings(
-    crossScalaVersions := scalaJVMVersions
-  )
-  .nativeSettings(
-    scalaVersion := scala213,
-    crossScalaVersions := scalaNativeVersions
-  )
 
 lazy val parse = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Full)
@@ -109,11 +97,7 @@ lazy val parse = crossProject(JSPlatform, JVMPlatform)
       "org.scalatestplus" %% "scalacheck-1-15" % scalaCheckVersion % Test
     )
   )
-  .jsSettings(
-    crossScalaVersions := scalaJSVersions
-  )
   .jvmSettings(
-    crossScalaVersions := scalaJVMVersions,
     libraryDependencies ++= Seq(
       "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonVersion,
@@ -123,6 +107,17 @@ lazy val parse = crossProject(JSPlatform, JVMPlatform)
     )
   )
   .dependsOn(core)
+
+lazy val generator = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Full)
+  .settings(
+    name := "fabric-generator",
+    libraryDependencies ++= Seq(
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
+      "org.scalatestplus" %% "scalacheck-1-15" % scalaCheckVersion % Test
+    )
+  )
+  .dependsOn(parse)
 
 lazy val bench = project.in(file("bench"))
   .enablePlugins(JmhPlugin)
