@@ -108,10 +108,10 @@ lazy val parse = crossProject(JSPlatform, JVMPlatform)
   )
   .dependsOn(core)
 
-lazy val generator = crossProject(JSPlatform, JVMPlatform)
+lazy val define = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Full)
   .settings(
-    name := "fabric-generator",
+    name := "fabric-define",
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
       "org.scalatestplus" %% "scalacheck-1-15" % scalaCheckVersion % Test
