@@ -1,34 +1,35 @@
 package spec
 
 import fabric._
+import fabric.rw.Convertible
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class FabricGeneratorSpec extends AnyWordSpec with Matchers {
-  "FabricGenerator" should {
+class FabricDefinitionSpec extends AnyWordSpec with Matchers {
+  "FabricDefinition" should {
     "represent an Int properly" in {
-      FabricGenerator(num(5)) should be(GenType.Int)
+      FabricDefinition(num(5)) should be(DefType.Int)
     }
     "represent a Null properly" in {
-      FabricGenerator(Null) should be(GenType.Null)
+      FabricDefinition(Null) should be(DefType.Null)
     }
     "represent an optional Int properly" in {
-      FabricGenerator(List(num(5), Null)) should be(GenType.Opt(GenType.Int))
+      FabricDefinition(List(num(5), Null)) should be(DefType.Opt(DefType.Int))
     }
     "represent an optional Int properly starting with Null" in {
-      FabricGenerator(List(Null, num(5))) should be(GenType.Opt(GenType.Int))
+      FabricDefinition(List(Null, num(5))) should be(DefType.Opt(DefType.Int))
     }
     "represent a simple obj" in {
-      FabricGenerator(obj(
+      FabricDefinition(obj(
         "name" -> "John Doe",
         "age" -> 50
-      )) should be(GenType.Obj(Map(
-        "name" -> GenType.Str,
-        "age" -> GenType.Int
+      )) should be(DefType.Obj(Map(
+        "name" -> DefType.Str,
+        "age" -> DefType.Int
       )))
     }
     "represent a simple obj with optional value" in {
-      FabricGenerator(List(
+      FabricDefinition(List(
         obj(
           "name" -> "John Doe",
           "age" -> 50
@@ -36,26 +37,28 @@ class FabricGeneratorSpec extends AnyWordSpec with Matchers {
         obj(
           "name" -> "Jane Doe"
         )
-      )) should be(GenType.Obj(Map(
-        "name" -> GenType.Str,
-        "age" -> GenType.Opt(GenType.Int)
+      )) should be(DefType.Obj(Map(
+        "name" -> DefType.Str,
+        "age" -> DefType.Opt(DefType.Int)
       )))
     }
     "represent a simple optional obj" in {
-      FabricGenerator(List(
+      val d = FabricDefinition(List(
         Null,
         obj(
           "name" -> "Jane Doe",
           "age" -> 50
         )
-      )) should be(GenType.Opt(GenType.Obj(Map(
-        "name" -> GenType.Str,
-        "age" -> GenType.Int
+      ))
+      d should be(DefType.Opt(DefType.Obj(Map(
+        "name" -> DefType.Str,
+        "age" -> DefType.Int
       ))))
+      println(d.toValue)
     }
     "fail with conflicting types" in {
       assertThrows[RuntimeException](
-        FabricGenerator(List(
+        FabricDefinition(List(
           obj("name" -> "Bad"),
           num(5)
         ))
