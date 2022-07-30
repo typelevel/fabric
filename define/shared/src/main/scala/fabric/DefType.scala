@@ -2,10 +2,18 @@ package fabric
 
 import fabric.rw.ReaderWriter
 
+import scala.util.Try
+
 sealed trait DefType {
   def isOpt: Boolean = false
 
   def isNull: Boolean = false
+
+  def validate(value: Value): Boolean = Try(FabricDefinition(value).merge(this)).toOption.map { d =>
+    println(d)
+    println(this)
+    d
+  }.contains(this)
 
   def opt: DefType = DefType.Opt(this)
 
@@ -16,7 +24,7 @@ sealed trait DefType {
   } else if (that.isNull) {
     this.opt
   } else if (this.opt == that) {
-    this
+    that
   } else {
     throw new RuntimeException(s"Incompatible typed: $this / $that")
   }
