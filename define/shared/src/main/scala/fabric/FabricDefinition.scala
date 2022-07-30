@@ -14,7 +14,7 @@ object FabricDefinition {
     case Obj(value) => DefType.Obj(value.map {
       case (k, v) => k -> apply(v)
     })
-    case Arr(value) => DefType.Arr(value.map(apply))
+    case Arr(value) => DefType.Arr(apply(value.toList))
     case Str(_) => DefType.Str
     case NumInt(_) => DefType.Int
     case NumDec(_) => DefType.Dec

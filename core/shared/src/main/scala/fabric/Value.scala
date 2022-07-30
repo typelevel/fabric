@@ -396,7 +396,7 @@ object Obj {
           if (path.nonEmpty) {
             o = o.merge(str(value), path).asObj
           } else {
-            o = o.merge(str(value), "value").asObj
+            o = o.merge(str(value), Path("value")).asObj
           }
         }
         case None => o = o.merge(str(value), Path(key)).asObj
