@@ -9,11 +9,7 @@ sealed trait DefType {
 
   def isNull: Boolean = false
 
-  def validate(value: Value): Boolean = Try(FabricDefinition(value).merge(this)).toOption.map { d =>
-    println(d)
-    println(this)
-    d
-  }.contains(this)
+  def validate(value: Value): Boolean = Try(FabricDefinition(value).merge(this)).toOption.contains(this)
 
   def opt: DefType = DefType.Opt(this)
 
@@ -43,9 +39,9 @@ object DefType {
         case (key, dt) => key -> dt2V(dt)
       })
     )
-    case Arr(types) => obj(
+    case Arr(t) => obj(
       "type" -> "array",
-      "values" -> fabric.Arr(types.map(dt2V))
+      "value" -> dt2V(t)
     )
     case Opt(t) => obj(
       "type" -> "optional",
@@ -76,7 +72,7 @@ object DefType {
       case "object" => Obj(o.value("values").asMap.map {
         case (key, value) => key -> v2dt(value)
       })
-      case "array" => Arr(o.value("values").asVector.map(v2dt))
+      case "array" => Arr(v2dt(o.value("value")))
       case "optional" => Opt(v2dt(o.value("value")))
       case "string" => Str
       case "numeric" => o.value("precision").asString match {
@@ -102,7 +98,7 @@ object DefType {
       }.toMap
     }
   }
-  case class Arr(types: Vector[DefType]) extends DefType
+  case class Arr(t: DefType) extends DefType
   case class Opt(t: DefType) extends DefType {
     override def isOpt: Boolean = true
     override def opt: DefType = this

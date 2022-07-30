@@ -1,7 +1,7 @@
 import scala.language.implicitConversions
 
 package object fabric {
-  implicit def string2Path(s: String): Path = new Path(List(s))
+//  implicit def string2Path(s: String): Path = new Path(List(s))
 
   implicit def map2Obj(map: Map[String, Value]): Obj = Obj(map)
 

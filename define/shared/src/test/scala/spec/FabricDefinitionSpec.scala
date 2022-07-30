@@ -5,6 +5,8 @@ import fabric.rw.Convertible
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+import java.io.File
+
 class FabricDefinitionSpec extends AnyWordSpec with Matchers {
   "FabricDefinition" should {
     "represent an Int properly" in {
@@ -83,6 +85,107 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
         "name" -> "Jane Doe"
       )
       definition.validate(value) should be(false)
+    }
+    "generate a case class based on a definition" in {
+      val definition = DefType.Obj(Map(
+        "name" -> DefType.Str,
+        "age" -> DefType.Int
+      ))
+      val generated = FabricGenerator(definition, "com.example.Person")
+      generated.packageName should be(Some("com.example"))
+      generated.className should be("Person")
+      generated.code should be(
+        """package com.example
+          |
+          |import fabric.rw._
+          |
+          |case class Person(name: String, age: Long)
+          |
+          |object Person {
+          |  implicit val rw: RW[Person] = ccRW
+          |}""".stripMargin)
+      generated.additional should be(Nil)
+    }
+    "generate two case classes based on a definition" in {
+      val definition = DefType.Obj(Map(
+        "name" -> DefType.Str,
+        "age" -> DefType.Int,
+        "location" -> DefType.Obj(Map(
+          "city" -> DefType.Str,
+          "state" -> DefType.Str
+        ))
+      ))
+      val generated = FabricGenerator(
+        definition,
+        "com.example.Person",
+        "location" -> "com.example.Location"
+      )
+      generated.packageName should be(Some("com.example"))
+      generated.className should be("Person")
+      generated.code should be(
+        """package com.example
+          |
+          |import fabric.rw._
+          |
+          |case class Person(name: String, age: Long, location: com.example.Location)
+          |
+          |object Person {
+          |  implicit val rw: RW[Person] = ccRW
+          |}""".stripMargin)
+      generated.additional.length should be(1)
+      val location = generated.additional.head
+      location.packageName should be(Some("com.example"))
+      location.className should be("Location")
+      location.code should be("""package com.example
+                                |
+                                |import fabric.rw._
+                                |
+                                |case class Location(city: String, state: String)
+                                |
+                                |object Location {
+                                |  implicit val rw: RW[Location] = ccRW
+                                |}""".stripMargin)
+    }
+    "generate two case classes based on a definition with an array" in {
+      val definition = DefType.Obj(Map(
+        "name" -> DefType.Str,
+        "age" -> DefType.Int,
+        "locations" -> DefType.Arr(DefType.Obj(Map(
+          "city" -> DefType.Str,
+          "state" -> DefType.Str
+        )))
+      ))
+      val generated = FabricGenerator(
+        definition,
+        "com.example.Person",
+        "locations" -> "com.example.Location"
+      )
+      generated.packageName should be(Some("com.example"))
+      generated.className should be("Person")
+      generated.code should be(
+        """package com.example
+          |
+          |import fabric.rw._
+          |
+          |case class Person(name: String, age: Long, locations: Vector[com.example.Location])
+          |
+          |object Person {
+          |  implicit val rw: RW[Person] = ccRW
+          |}""".stripMargin)
+      generated.additional.length should be(1)
+      val location = generated.additional.head
+      location.packageName should be(Some("com.example"))
+      location.className should be("Location")
+      location.code should be(
+        """package com.example
+          |
+          |import fabric.rw._
+          |
+          |case class Location(city: String, state: String)
+          |
+          |object Location {
+          |  implicit val rw: RW[Location] = ccRW
+          |}""".stripMargin)
     }
   }
 }
