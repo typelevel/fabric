@@ -54,7 +54,6 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
         "name" -> DefType.Str,
         "age" -> DefType.Int
       ))))
-      println(d.toValue)
     }
     "fail with conflicting types" in {
       assertThrows[RuntimeException](
@@ -63,6 +62,27 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           num(5)
         ))
       )
+    }
+    "validate a definition" in {
+      val definition = DefType.Obj(Map(
+        "name" -> DefType.Str,
+        "age" -> DefType.Opt(DefType.Int)
+      ))
+      val value = obj(
+        "name" -> "Jane Doe",
+        "age" -> 50
+      )
+      definition.validate(value) should be(true)
+    }
+    "fail to validate a definition" in {
+      val definition = DefType.Obj(Map(
+        "name" -> DefType.Str,
+        "age" -> DefType.Int
+      ))
+      val value = obj(
+        "name" -> "Jane Doe"
+      )
+      definition.validate(value) should be(false)
     }
   }
 }
