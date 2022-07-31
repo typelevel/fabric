@@ -14,7 +14,7 @@ object RWMacros {
         val toMap = fields.map { field =>
           val name = field.asTerm.name
           val key = name.decodedName.toString
-          q"$key -> t.$name.toValue"
+          q"$key -> t.$name.json"
         }
         context.Expr[Reader[T]](
           q"""

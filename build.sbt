@@ -75,7 +75,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
         Nil
       } else {
         Seq(
-          "org.scala-lang.modules" %% "scala-collection-compat" % collectionCompatVersion,
+          "org.scala-lang.modules" %%% "scala-collection-compat" % collectionCompatVersion,
           "org.scala-lang" % "scala-reflect" % scalaVersion.value
         )
       }

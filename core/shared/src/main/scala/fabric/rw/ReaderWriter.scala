@@ -27,23 +27,23 @@ object ReaderWriter {
   implicit lazy val stringRW: ReaderWriter[String] = apply[String](str, _.asStr.value)
 
   implicit def mapRW[V: ReaderWriter]: ReaderWriter[Map[String, V]] = apply[Map[String, V]](_.map {
-    case (key, value) => key -> value.toValue
+    case (key, value) => key -> value.json
   }, v => v.asObj.value.map {
     case (key, value) => key -> value.as[V]
   })
 
   implicit def listRW[V: ReaderWriter]: ReaderWriter[List[V]] = apply[List[V]](
-    v => Arr(v.map(_.toValue).toVector),
+    v => Arr(v.map(_.json).toVector),
     v => v.asVector.map(_.as[V]).toList
   )
 
   implicit def vectorRW[V: ReaderWriter]: ReaderWriter[Vector[V]] = apply[Vector[V]](
-    v => Arr(v.map(_.toValue)),
+    v => Arr(v.map(_.json)),
     v => v.asVector.map(_.as[V])
   )
 
   implicit def setRW[V: ReaderWriter]: ReaderWriter[Set[V]] = apply[Set[V]](
-    v => Arr(v.map(_.toValue).toVector),
+    v => Arr(v.map(_.json).toVector),
     {
       case Arr(vector) => vector.map(_.as[V]).toSet
       case v => throw new RuntimeException(s"Unsupported set: $v")
@@ -51,7 +51,7 @@ object ReaderWriter {
   )
 
   implicit def optionRW[V: ReaderWriter]: ReaderWriter[Option[V]] = apply[Option[V]](
-    v => v.map(_.toValue).getOrElse(Null),
+    v => v.map(_.json).getOrElse(Null),
     v => if (v.isNull) None else Some(v.as[V])
   )
 

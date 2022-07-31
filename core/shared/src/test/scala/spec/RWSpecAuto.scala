@@ -9,7 +9,7 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
   "automatic conversion" should {
     "convert Person to Value and back" in {
       val person = Person("Matt Hicks", 41, Address("San Jose", "California"))
-      val value = person.toValue
+      val value = person.json
       value should be(obj(
         "name" -> "Matt Hicks",
         "age" -> 41,
@@ -35,7 +35,7 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
     }
     "supporting generic type on case class" in {
       val w = Wrapper("Test1", Address("San Jose", "California"), Some(Address("Norman", "Oklahoma")))
-      val value = w.toValue
+      val value = w.json
       value should be(obj(
         "name" -> "Test1",
         "value" -> obj(
@@ -52,7 +52,7 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
     }
     "supporting Values in conversions" in {
       val w = Wrapper("Test2", obj("city" -> "San Jose"), Some(obj("city" -> "Norman")))
-      val value = w.toValue
+      val value = w.json
       value should be(obj(
         "name" -> "Test2",
         "value" -> obj(

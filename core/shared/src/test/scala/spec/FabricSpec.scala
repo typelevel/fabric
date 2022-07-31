@@ -118,11 +118,11 @@ class FabricSpec extends AnyWordSpec with Matchers {
 
       val p1 = json1.as[Polymorphic]
       p1 should be(Polymorphic.Blank)
-      p1.toValue should be(json1)
+      p1.json should be(json1)
 
       val p2 = json2.as[Polymorphic]
       p2 should be(Polymorphic.PolyValue("Hello, World!"))
-      p2.toValue should be(json2)
+      p2.json should be(json2)
     }
     "include or exclude null fields" in {
       val json1 = obj(
