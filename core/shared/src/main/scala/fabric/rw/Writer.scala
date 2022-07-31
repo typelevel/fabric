@@ -6,14 +6,14 @@ import fabric._
  * Writable provides a simple Value => T wrapper functionality
  */
 trait Writer[T] {
-  def write(value: Value): T
+  def write(value: Json): T
 }
 
 object Writer {
   import ReaderWriter._
 
   implicit def unitW: Writer[Unit] = unitRW
-  implicit def valueW: Writer[Value] = valueRW
+  implicit def valueW: Writer[Json] = valueRW
   implicit def objW: Writer[Obj] = objRW
 
   implicit def boolW: Writer[Boolean] = boolRW
@@ -48,7 +48,7 @@ object Writer {
     case v => Option(w.write(v))
   }
 
-  def apply[T](f: Value => T): Writer[T] = new Writer[T] {
-    override def write(value: Value): T = f(value)
+  def apply[T](f: Json => T): Writer[T] = new Writer[T] {
+    override def write(value: Json): T = f(value)
   }
 }

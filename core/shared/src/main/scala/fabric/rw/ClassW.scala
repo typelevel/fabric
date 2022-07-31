@@ -1,9 +1,9 @@
 package fabric.rw
 
-import fabric.Value
+import fabric.Json
 
 trait ClassW[T] extends Writer[T] {
-  protected def map2T(map: Map[String, Value]): T
+  protected def map2T(map: Map[String, Json]): T
 
-  override def write(value: Value): T = map2T(value.asObj.value)
+  override def write(value: Json): T = map2T(value.asObj.value)
 }

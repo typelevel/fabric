@@ -9,7 +9,7 @@ sealed trait DefType {
 
   def isNull: Boolean = false
 
-  def validate(value: Value): Boolean = Try(FabricDefinition(value).merge(this)).toOption.contains(this)
+  def validate(value: Json): Boolean = Try(FabricDefinition(value).merge(this)).toOption.contains(this)
 
   def opt: DefType = DefType.Opt(this)
 
@@ -32,7 +32,7 @@ object DefType {
     w = v2dt
   )
 
-  private def dt2V(dt: DefType): Value = dt match {
+  private def dt2V(dt: DefType): Json = dt match {
     case Obj(map) => obj(
       "type" -> "object",
       "values" -> fabric.Obj(map.map {
@@ -66,7 +66,7 @@ object DefType {
     )
   }
 
-  private def v2dt(v: Value): DefType = {
+  private def v2dt(v: Json): DefType = {
     val o = v.asObj
     o.value("type").asString match {
       case "object" => Obj(o.value("values").asMap.map {

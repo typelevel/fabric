@@ -6,12 +6,12 @@ import fabric._
 import scala.annotation.tailrec
 
 object JsoniterParser extends Parser {
-  override def parse(content: String): Value = {
+  override def parse(content: String): Json = {
     val iterator = JsonIterator.parse(content)
     read(iterator)
   }
 
-  private def read(iterator: JsonIterator): Value = iterator.whatIsNext() match {
+  private def read(iterator: JsonIterator): Json = iterator.whatIsNext() match {
     case com.jsoniter.ValueType.NULL =>
       iterator.readNull()
       Null
@@ -26,8 +26,8 @@ object JsoniterParser extends Parser {
     case com.jsoniter.ValueType.INVALID => throw new RuntimeException("Invalid!")
   }
 
-  private def readArr(iterator: JsonIterator): Value = {
-    var list = List.empty[Value]
+  private def readArr(iterator: JsonIterator): Json = {
+    var list = List.empty[Json]
 
     @tailrec
     def recurse(): Unit = if (!iterator.readArray()) {
@@ -41,8 +41,8 @@ object JsoniterParser extends Parser {
     Arr(list.reverse.toVector)
   }
 
-  private def readObj(iterator: JsonIterator): Value = {
-    var map = Map.empty[String, Value]
+  private def readObj(iterator: JsonIterator): Json = {
+    var map = Map.empty[String, Json]
 
     @tailrec
     def recurse(): Unit = Option(iterator.readObject()) match {

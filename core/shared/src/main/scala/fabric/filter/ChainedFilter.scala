@@ -1,13 +1,13 @@
 package fabric.filter
 
-import fabric.Value
+import fabric.Json
 
 import scala.annotation.tailrec
 
 case class ChainedFilter(filters: List[ValueFilter]) extends ValueFilter {
-  override def apply(value: Value): Option[Value] = {
+  override def apply(value: Json): Option[Json] = {
     @tailrec
-    def recurse(value: Value, filters: List[ValueFilter]): Option[Value] = if (filters.isEmpty) {
+    def recurse(value: Json, filters: List[ValueFilter]): Option[Json] = if (filters.isEmpty) {
       Some(value)
     } else {
       val f = filters.head

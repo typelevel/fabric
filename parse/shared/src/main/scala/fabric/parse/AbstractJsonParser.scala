@@ -7,7 +7,7 @@ import scala.io.Source
 /**
  * Json provides support for parsing and formatting fabric Values from/to JSON
  */
-trait AbstractJson {
+trait AbstractJsonParser {
   /**
    * Formats the supplied value for pretty output.
    *
@@ -15,7 +15,7 @@ trait AbstractJson {
    * @param writer the JsonWriter to use (defaults to JsonWriter.Default)
    * @return formatted String
    */
-  def format(value: Value,
+  def format(value: Json,
              writer: JsonWriter = JsonWriter.Default): String = writer(value)
 
   /**
@@ -24,7 +24,7 @@ trait AbstractJson {
    * @param s the JSON string to parse
    * @return Value
    */
-  def parse(s: String): Value
+  def parse(s: String): Json
 
   /**
    * Parses the JSON source into a fabric Value.
@@ -32,7 +32,7 @@ trait AbstractJson {
    * @param source the source of JSON to parse
    * @return Value
    */
-  def parse(source: Source): Value = try {
+  def parse(source: Source): Json = try {
     parse(source.mkString("\n"))
   } finally {
     source.close()

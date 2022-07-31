@@ -6,14 +6,14 @@ import fabric._
  * Reader provides a simple T => Value wrapper functionality
  */
 trait Reader[T] {
-  def read(t: T): Value
+  def read(t: T): Json
 }
 
 object Reader {
   import ReaderWriter._
 
   implicit def unitR: Reader[Unit] = unitRW
-  implicit def valueR: Reader[Value] = valueRW
+  implicit def valueR: Reader[Json] = valueRW
   implicit def objR: Reader[Obj] = objRW
 
   implicit def boolR: Reader[Boolean] = boolRW
@@ -45,7 +45,7 @@ object Reader {
     case None => Null
   }
 
-  def apply[T](f: T => Value): Reader[T] = new Reader[T] {
-    override def read(t: T): Value = f(t)
+  def apply[T](f: T => Json): Reader[T] = new Reader[T] {
+    override def read(t: T): Json = f(t)
   }
 }

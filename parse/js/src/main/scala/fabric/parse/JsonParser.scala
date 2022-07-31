@@ -8,10 +8,10 @@ import scala.scalajs.js.JSON
 /**
  * Json provides convenience functionality to parse and format JSON to/from fabric Values
  */
-object Json extends AbstractJson {
-  override def parse(s: String): Value = parse(JSON.parse(s))
+object JsonParser extends AbstractJsonParser {
+  override def parse(s: String): Json = parse(JSON.parse(s))
 
-  def parse(value: js.Any): Value = value.asInstanceOf[Any] match {
+  def parse(value: js.Any): Json = value.asInstanceOf[Any] match {
     case null => Null
     case v: js.Array[_] => Arr(v.toVector.map(a => parse(a.asInstanceOf[js.Any])))
     case v: Int => num(v)

@@ -8,23 +8,23 @@ import scala.quoted.{given, _}
 
 trait CompileRW {
   inline def ccRW[T <: Product](using Mirror.ProductOf[T]): ReaderWriter[T] = new ClassRW[T] {
-    override protected def t2Map(t: T): Map[String, Value] = toMap(t)
-    override protected def map2T(map: Map[String, Value]): T = fromMap[T](map)
+    override protected def t2Map(t: T): Map[String, Json] = toMap(t)
+    override protected def map2T(map: Map[String, Json]): T = fromMap[T](map)
   }
 
   inline def ccR[T <: Product](using Mirror.ProductOf[T]): Reader[T] = new ClassR[T] {
-    override protected def t2Map(t: T): Map[String, Value] = toMap(t)
+    override protected def t2Map(t: T): Map[String, Json] = toMap(t)
   }
 
   inline def ccW[T <: Product](using Mirror.ProductOf[T]): Writer[T] = new ClassW[T] {
-    override protected def map2T(map: Map[String, Value]): T = fromMap[T](map)
+    override protected def map2T(map: Map[String, Json]): T = fromMap[T](map)
   }
 
-  inline def toMap[T <: Product](t: T)(using p: Mirror.ProductOf[T]): Map[String, Value] = {
+  inline def toMap[T <: Product](t: T)(using p: Mirror.ProductOf[T]): Map[String, Json] = {
     toMapElems[T, p.MirroredElemTypes, p.MirroredElemLabels](t, 0)
   }
 
-  inline def toMapElems[A <: Product, T <: Tuple, L <: Tuple](a: A, index: Int): Map[String, Value] = {
+  inline def toMapElems[A <: Product, T <: Tuple, L <: Tuple](a: A, index: Int): Map[String, Json] = {
     inline erasedValue[T] match
       case _: (hd *: tl) =>
         inline erasedValue[L] match
@@ -39,7 +39,7 @@ trait CompileRW {
       case EmptyTuple => Map.empty
   }
 
-  inline def fromMap[T <: Product](map: Map[String, Value])(using p: Mirror.ProductOf[T]): T = {
+  inline def fromMap[T <: Product](map: Map[String, Json])(using p: Mirror.ProductOf[T]): T = {
     inline val size = constValue[Tuple.Size[p.MirroredElemTypes]]
     val defaults = getDefaultParams[T]
     val arr = new Array[Any](size)
@@ -52,7 +52,7 @@ trait CompileRW {
     p.fromProduct(product)
   }
 
-  inline def fromMapElems[A <: Product, T <: Tuple, L <: Tuple](map: Map[String, Value], index: Int, arr: Array[Any], defaults: Map[String, Any]): Unit = {
+  inline def fromMapElems[A <: Product, T <: Tuple, L <: Tuple](map: Map[String, Json], index: Int, arr: Array[Any], defaults: Map[String, Any]): Unit = {
     inline erasedValue[T] match
       case _: (hd *: tl) =>
         inline erasedValue[L] match

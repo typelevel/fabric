@@ -7,7 +7,7 @@ import scala.util.Try
 /**
  * Value represents the base sealed trait for all representable types in fabric.
  */
-sealed trait Value extends Any {
+sealed trait Json extends Any {
   type Type
 
   /**
@@ -15,12 +15,12 @@ sealed trait Value extends Any {
    *
    * Throws an exception if invoked on anything except `Obj`
    */
-  final def apply(lookup: String): Value = get(lookup).getOrElse(throw new RuntimeException(s"Lookup not found: $lookup"))
+  final def apply(lookup: String): Json = get(lookup).getOrElse(throw new RuntimeException(s"Lookup not found: $lookup"))
 
   /**
    * Looks up a Value by name in the children.
    */
-  final def get(lookup: String): Option[Value] = this match {
+  final def get(lookup: String): Option[Json] = this match {
     case Obj(map) => map.get(lookup)
     case _ => None
   }
@@ -30,7 +30,7 @@ sealed trait Value extends Any {
    *
    * Example: val o: Option[Value] = someValue("first" \ "second" \ "third")
    */
-  final def get(path: Path): Option[Value] = if (path.isEmpty) {
+  final def get(path: Path): Option[Json] = if (path.isEmpty) {
     Some(this)
   } else {
     val lookup = path()
@@ -43,12 +43,12 @@ sealed trait Value extends Any {
    *
    * Example: `val v = someValue("first" \ "second" \ "third")`
    */
-  final def apply(path: Path): Value = get(path).getOrElse(throw new RuntimeException(s"Path not found: $path"))
+  final def apply(path: Path): Json = get(path).getOrElse(throw new RuntimeException(s"Path not found: $path"))
 
   /**
    * Looks up a Value by name in the children or creates a new Obj if it doesn't exist.
    */
-  final def getOrCreate(lookup: String): Value = get(lookup).getOrElse(obj())
+  final def getOrCreate(lookup: String): Json = get(lookup).getOrElse(obj())
 
   /**
    * Modifies the value at the specified path and returns back a new root Value with the modified path.
@@ -59,7 +59,7 @@ sealed trait Value extends Any {
    * @param f the function that takes the current Value and returns the modified Value
    * @return new root Value representing the changes
    */
-  def modify(path: Path)(f: Value => Value): Value = if (path.isEmpty) {
+  def modify(path: Path)(f: Json => Json): Json = if (path.isEmpty) {
     f(this)
   } else {
     val child = this.getOrCreate(path())
@@ -77,7 +77,7 @@ sealed trait Value extends Any {
    * @param filter the filter to apply
    * @return Option[Value]
    */
-  def filter(filter: ValueFilter): Option[Value] = filter(this)
+  def filter(filter: ValueFilter): Option[Json] = filter(this)
 
   /**
    * Convenience functionality for #modify to set a specific value at a path.
@@ -86,7 +86,7 @@ sealed trait Value extends Any {
    * @param value the new value to set
    * @return new root Value representing the changes
    */
-  def set(path: Path, value: Value): Value = modify(path)(_ => value)
+  def set(path: Path, value: Json): Json = modify(path)(_ => value)
 
   /**
    * Convenience functionality for #modify to remove the value at a specific path.
@@ -94,7 +94,7 @@ sealed trait Value extends Any {
    * @param path the path to remove
    * @return new root Value representing the changes
    */
-  def remove(path: Path): Value = set(path, Null)
+  def remove(path: Path): Json = set(path, Null)
 
   /**
    * Merges a Value at the specified path
@@ -104,9 +104,9 @@ sealed trait Value extends Any {
    * @param `type` the merge type (defaults to MergeType.Overwrite)
    * @return root Value after merge
    */
-  def merge(value: Value,
+  def merge(value: Json,
             path: Path = Path.empty,
-            `type`: MergeType = MergeType.Overwrite): Value = modify(path) {
+            `type`: MergeType = MergeType.Overwrite): Json = modify(path) {
     case Obj(thisMap) => value match {
       case Obj(thatMap) => {
         var merged = thatMap
@@ -181,7 +181,7 @@ sealed trait Value extends Any {
    * @param `type` the type to cast this ValueType as
    * @tparam V the return type
    */
-  def asValue[V <: Value](`type`: ValueType[V]): V = if (this.`type`.is(`type`)) {
+  def asValue[V <: Json](`type`: ValueType[V]): V = if (this.`type`.is(`type`)) {
     this.asInstanceOf[V]
   } else if (`type` == ValueType.Str) {
     str(toString).asInstanceOf[V]
@@ -196,7 +196,7 @@ sealed trait Value extends Any {
    * @tparam V the value type
    * @return Option[V]
    */
-  final def getValue[V <: Value](`type`: ValueType[V]): Option[V] = if (this.`type` == `type`) {
+  final def getValue[V <: Json](`type`: ValueType[V]): Option[V] = if (this.`type` == `type`) {
     Some(this.asInstanceOf[V])
   } else {
     None
@@ -265,12 +265,12 @@ sealed trait Value extends Any {
   /**
    * Convenience method for asObj.value
    */
-  def asMap: Map[String, Value] = asObj.value
+  def asMap: Map[String, Json] = asObj.value
 
   /**
    * Convenience method for asArr.value
    */
-  def asVector: Vector[Value] = asArr.value
+  def asVector: Vector[Json] = asArr.value
 
   /**
    * Convenience method for asStr.value
@@ -297,12 +297,12 @@ sealed trait Value extends Any {
   /**
    * Convenience method for getObj.map(_.value)
    */
-  def getMap: Option[Map[String, Value]] = getObj.map(_.value)
+  def getMap: Option[Map[String, Json]] = getObj.map(_.value)
 
   /**
    * Convenience method for getArr.map(_.value)
    */
-  def getVector: Option[Vector[Value]] = getArr.map(_.value)
+  def getVector: Option[Vector[Json]] = getArr.map(_.value)
 
   /**
    * Convenience method for getStr.map(_.value)
@@ -327,11 +327,11 @@ sealed trait Value extends Any {
   def getBoolean: Option[Boolean] = getBool.map(_.value)
 }
 
-object Value {
+object Json {
   /**
    * Merges multiple Values together. Convenience functionality to handle more than two Values.
    */
-  def merge(values: Value*): Value = if (values.nonEmpty) {
+  def merge(values: Json*): Json = if (values.nonEmpty) {
     values.tail.foldLeft(values.head)((merged, value) => merged.merge(value))
   } else {
     Null
@@ -341,12 +341,12 @@ object Value {
 /**
  * Obj represents a Map of key-value pairs (String, Value)
  */
-final class Obj private(val value: Map[String, Value]) extends AnyVal with Value {
+final class Obj private(val value: Map[String, Json]) extends AnyVal with Json {
   override type Type = Obj
 
   def keys: Set[String] = value.keySet
 
-  override def filter(filter: ValueFilter): Option[Value] = {
+  override def filter(filter: ValueFilter): Option[Json] = {
     val mutated = value.map {
       case (key, value) => value.filter(filter).map(v => key -> v)
     }.flatten.toMap
@@ -367,7 +367,7 @@ object Obj {
 
   val empty: Obj = Obj(Map.empty)
 
-  private def clean(map: Map[String, Value]): Map[String, Value] = if (ExcludeNullValues) {
+  private def clean(map: Map[String, Json]): Map[String, Json] = if (ExcludeNullValues) {
     map.filter {
       case (_, value) => value != Null
     }
@@ -375,9 +375,9 @@ object Obj {
     map
   }
 
-  def apply(value: Map[String, Value]): Obj = new Obj(clean(value))
+  def apply(value: Map[String, Json]): Obj = new Obj(clean(value))
 
-  def unapply(obj: Obj): Some[Map[String, Value]] = Some(obj.value)
+  def unapply(obj: Obj): Some[Map[String, Json]] = Some(obj.value)
 
   /**
    * Processes the supplied map creating an Obj for it. If `parsePath` is set, the key will be extracted as
@@ -409,14 +409,14 @@ object Obj {
 /**
  * Str represents a String
  */
-case class Str(value: String) extends AnyVal with Value {
+case class Str(value: String) extends AnyVal with Json {
   override type Type = Str
 
   override def `type`: ValueType[Str] = ValueType.Str
 
   override def isEmpty: Boolean = value.isEmpty
 
-  override def asValue[V <: Value](`type`: ValueType[V]): V = `type` match {
+  override def asValue[V <: Json](`type`: ValueType[V]): V = `type` match {
     case ValueType.Bool => Try(Bool(value.toBoolean))
       .toOption
       .map(_.asInstanceOf[V])
@@ -448,7 +448,7 @@ object Str {
   }.mkString
 }
 
-sealed trait Num extends Any with Value {
+sealed trait Num extends Any with Json {
   def asInt: Int
   def asLong: Long
   def asFloat: Float
@@ -465,7 +465,7 @@ case class NumInt(value: Long) extends Num {
 
   override def `type`: ValueType[NumInt] = ValueType.NumInt
 
-  override def asValue[V <: Value](`type`: ValueType[V]): V = if (`type` == ValueType.NumDec) {
+  override def asValue[V <: Json](`type`: ValueType[V]): V = if (`type` == ValueType.NumDec) {
     NumDec(BigDecimal(value)).asInstanceOf[V]
   } else {
     super.asValue[V](`type`)
@@ -499,7 +499,7 @@ case class NumDec(value: BigDecimal) extends Num {
 
   override def `type`: ValueType[NumDec] = ValueType.NumDec
 
-  override def asValue[V <: Value](`type`: ValueType[V]): V = if (`type` == ValueType.NumInt) {
+  override def asValue[V <: Json](`type`: ValueType[V]): V = if (`type` == ValueType.NumInt) {
     NumInt(value.toLong).asInstanceOf[V]
   } else {
     super.asValue[V](`type`)
@@ -528,7 +528,7 @@ case class NumDec(value: BigDecimal) extends Num {
 /**
  * Bool represents a boolean value
  */
-case class Bool(value: Boolean) extends AnyVal with Value {
+case class Bool(value: Boolean) extends AnyVal with Json {
   override type Type = Bool
 
   override def `type`: ValueType[Bool] = ValueType.Bool
@@ -541,12 +541,12 @@ case class Bool(value: Boolean) extends AnyVal with Value {
 /**
  * Arr represents an array (Vector[Value])
  */
-case class Arr(value: Vector[Value]) extends AnyVal with Value {
+case class Arr(value: Vector[Json]) extends AnyVal with Json {
   override type Type = Arr
 
   override def `type`: ValueType[Arr] = ValueType.Arr
 
-  override def filter(filter: ValueFilter): Option[Value] = {
+  override def filter(filter: ValueFilter): Option[Json] = {
     val mutated = value.flatMap(v => v.filter(filter))
     filter(Arr(mutated))
   }
@@ -556,7 +556,7 @@ case class Arr(value: Vector[Value]) extends AnyVal with Value {
   override def toString: String = value.mkString("[", ", ", "]")
 }
 
-sealed trait Null extends Value
+sealed trait Null extends Json
 
 /**
  * Null represents a null Value

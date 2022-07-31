@@ -10,7 +10,7 @@ trait ReaderWriter[T] extends Reader[T] with Writer[T]
 
 object ReaderWriter {
   implicit lazy val unitRW: ReaderWriter[Unit] = apply(_ => Null, _ => ())
-  implicit lazy val valueRW: ReaderWriter[Value] = apply(identity, identity)
+  implicit lazy val valueRW: ReaderWriter[Json] = apply(identity, identity)
   implicit lazy val objRW: ReaderWriter[Obj] = apply(o => o, v => v.asObj)
 
   implicit lazy val boolRW: ReaderWriter[Boolean] = apply[Boolean](bool, _.asBool.value)
@@ -55,10 +55,10 @@ object ReaderWriter {
     v => if (v.isNull) None else Some(v.as[V])
   )
 
-  def apply[T](r: T => Value, w: Value => T): ReaderWriter[T] = new ReaderWriter[T] {
-    override def write(value: Value): T = w(value)
+  def apply[T](r: T => Json, w: Json => T): ReaderWriter[T] = new ReaderWriter[T] {
+    override def write(value: Json): T = w(value)
 
-    override def read(t: T): Value = r(t)
+    override def read(t: T): Json = r(t)
   }
 
   def enumeration[T](list: List[T],
@@ -68,14 +68,14 @@ object ReaderWriter {
 
     private lazy val map = list.map(t => fixString(asString(t)) -> t).toMap
 
-    override def write(value: Value): T = map(fixString(value.asString))
+    override def write(value: Json): T = map(fixString(value.asString))
 
-    override def read(t: T): Value = str(asString(t))
+    override def read(t: T): Json = str(asString(t))
   }
 
   def string[T](asString: T => String, fromString: String => T): RW[T] = new RW[T] {
-    override def write(value: Value): T = fromString(value.asString)
+    override def write(value: Json): T = fromString(value.asString)
 
-    override def read(t: T): Value = str(asString(t))
+    override def read(t: T): Json = str(asString(t))
   }
 }

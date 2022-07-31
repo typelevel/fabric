@@ -33,7 +33,7 @@ ThisBuild / developers := List(
 // Dependency versions
 val collectionCompatVersion: String = "2.8.1"
 val scalaTestVersion: String = "3.2.13"
-val scalaCheckVersion: String = "3.2.11.0"
+val scalaCheckVersion: String = "3.2.12.0"
 
 // Parse module dependencies
 val jacksonVersion: String = "2.13.3"
@@ -68,7 +68,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     name := "fabric-core",
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
-      "org.scalatestplus" %%% "scalacheck-1-15" % scalaCheckVersion % Test
+      "org.scalatestplus" %%% "scalacheck-1-16" % scalaCheckVersion % Test
     ),
     libraryDependencies ++= (
       if (scalaVersion.value.startsWith("3")) {
@@ -94,7 +94,7 @@ lazy val parse = crossProject(JSPlatform, JVMPlatform)
     name := "fabric-parse",
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
-      "org.scalatestplus" %% "scalacheck-1-15" % scalaCheckVersion % Test
+      "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
     )
   )
   .jvmSettings(
@@ -114,7 +114,7 @@ lazy val define = crossProject(JSPlatform, JVMPlatform)
     name := "fabric-define",
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
-      "org.scalatestplus" %% "scalacheck-1-15" % scalaCheckVersion % Test
+      "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
     )
   )
   .dependsOn(parse)

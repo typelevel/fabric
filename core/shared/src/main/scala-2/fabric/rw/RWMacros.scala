@@ -22,7 +22,7 @@ object RWMacros {
             import _root_.fabric.rw._
 
             new ClassR[$tpe] {
-              override protected def t2Map(t: $tpe): Map[String, Value] = Map(..$toMap)
+              override protected def t2Map(t: $tpe): Map[String, Json] = Map(..$toMap)
             }
            """)
       }
@@ -70,7 +70,7 @@ object RWMacros {
             import _root_.fabric.rw._
 
             new ClassW[$tpe] {
-              override protected def map2T(map: Map[String, Value]): $tpe = $companion(..$fromMap)
+              override protected def map2T(map: Map[String, Json]): $tpe = $companion(..$fromMap)
             }
            """)
       }
@@ -94,8 +94,8 @@ object RWMacros {
             private val r = $reader
             private val w = $writer
 
-            override def read(t: $tpe): Value = r.read(t)
-            override def write(value: Value): $tpe = w.write(value)
+            override def read(t: $tpe): Json = r.read(t)
+            override def write(value: Json): $tpe = w.write(value)
          }
        """
     )
