@@ -8,7 +8,7 @@ class RWSpecGenAuto extends AnyWordSpec with Checkers {
   "generated automatic conversion" should {
     "convert Record to Value and back" in {
       check { (record: Record) =>
-        val value = record.toValue
+        val value = record.json
         record.equals(value.as[Record])
       }
     }

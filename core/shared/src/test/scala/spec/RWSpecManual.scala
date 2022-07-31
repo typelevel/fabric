@@ -8,8 +8,8 @@ import org.scalatest.wordspec.AnyWordSpec
 class RWSpecManual extends AnyWordSpec with Matchers {
   implicit val addressRW: ReaderWriter[Address] = new ClassRW[Address] {
     override protected def t2Map(t: Address): Map[String, Json] = Map(
-      "city" -> t.city.toValue,
-      "state" -> t.state.toValue
+      "city" -> t.city.json,
+      "state" -> t.state.json
     )
 
     override protected def map2T(map: Map[String, Json]): Address = Address(
@@ -19,9 +19,9 @@ class RWSpecManual extends AnyWordSpec with Matchers {
   }
   implicit val personRW: ReaderWriter[Person] = new ClassRW[Person] {
     override protected def t2Map(t: Person): Map[String, Json] = Map(
-      "name" -> t.name.toValue,
-      "age" -> t.age.toValue,
-      "address" -> t.address.toValue
+      "name" -> t.name.json,
+      "age" -> t.age.json,
+      "address" -> t.address.json
     )
 
     override protected def map2T(map: Map[String, Json]): Person = Person(
@@ -34,7 +34,7 @@ class RWSpecManual extends AnyWordSpec with Matchers {
   "manual conversion" should {
     "convert Person to Value and back" in {
       val person = Person("Matt Hicks", 41, Address("San Jose", "California"))
-      val value = person.toValue
+      val value = person.json
       value should be(obj(
         "name" -> "Matt Hicks",
         "age" -> 41,

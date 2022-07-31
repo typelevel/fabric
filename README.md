@@ -101,7 +101,7 @@ val person = obj(
   "age" -> 21
 ).as[Person]
 
-val backToValue: Value = person.toValue
+val backToValue: Json = person.json
 
 case class Person(name: String, age: Int)
 

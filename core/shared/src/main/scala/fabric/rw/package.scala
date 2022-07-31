@@ -6,7 +6,7 @@ package object rw extends CompileRW {
   type RW[T] = ReaderWriter[T]
 
   implicit class Convertible[T](value: T) {
-    def toValue(implicit reader: Reader[T]): Json = reader.read(value)
+    def json(implicit reader: Reader[T]): Json = reader.read(value)
   }
 
   implicit class Asable(value: Json) {
