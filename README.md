@@ -106,7 +106,7 @@ val backToValue: Json = person.json
 case class Person(name: String, age: Int)
 
 object Person {
-  implicit val rw: ReaderWriter[Person] = ccRW[Person]
+  implicit val rw: RW[Person] = ccRW[Person]
 }
 ```
 
@@ -118,7 +118,7 @@ Parsing from existing JSON requires the use of the `fabric-parse` module:
 import fabric._
 import fabric.json._
 
-val value = Json.parse("""{"name": "John Doe", "age": 21}""")
+val value = JsonParser.parse("""{"name": "John Doe", "age": 21}""")
 ```
 
 ### Formatting
@@ -126,5 +126,5 @@ val value = Json.parse("""{"name": "John Doe", "age": 21}""")
 Taking an existing value and formatting it for output as JSON:
 
 ```scala
-val formattedString: String = Json.format(value)
+val formattedString: String = JsonParser.format(value)
 ```
