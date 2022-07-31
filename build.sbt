@@ -40,8 +40,8 @@ val jacksonVersion: String = "2.13.3"
 val typesafeConfig: String = "1.4.2"
 
 // Benchmarks
-val circeVersion: String = "0.13.0"
-val uPickleVersion: String = "1.3.12"
+val circeVersion: String = "0.14.2"
+val uPickleVersion: String = "2.0.0"
 
 // set source map paths from local directories to github path
 val sourceMapSettings = List(
