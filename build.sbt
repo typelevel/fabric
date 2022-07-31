@@ -54,7 +54,7 @@ val sourceMapSettings = List(
 
 lazy val root = project.in(file("."))
   .aggregate(
-    core.js, core.jvm, core.native, parse.js, parse.jvm
+    core.js, core.jvm, core.native, parse.js, parse.jvm, define.js, define.jvm
   )
   .settings(
     name := "fabric",
