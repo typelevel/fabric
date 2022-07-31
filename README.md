@@ -25,9 +25,7 @@ some feedback.
 I wrote a performance benchmark with every expectation to be slower than the alternatives as I've done very
 little tuning, and I'm just one person versus the many developers that have worked on the others for years.
 However, I was shocked to see how well my little library performed compared to the alternatives:
-https://jmh.morethan.io/?source=https://raw.githubusercontent.com/outr/fabric/master/bench/results/benchmarks-1.2.6.json
-
-https://jmh.morethan.io/?source=https://raw.githubusercontent.com/outr/fabric/master/bench/results/benchmarks-1.3.0.json
+[JMH Results for 1.3.0](https://jmh.morethan.io/?source=https://raw.githubusercontent.com/outr/fabric/master/bench/results/benchmarks-1.3.0.json)
 
 ## Features
 
