@@ -1,9 +1,9 @@
 package fabric.rw
 
-import fabric.{Obj, Value}
+import fabric.{Obj, Json}
 
 trait ClassR[T] extends Reader[T] {
-  protected def t2Map(t: T): Map[String, Value]
+  protected def t2Map(t: T): Map[String, Json]
 
-  override def read(t: T): Value = Obj(t2Map(t))
+  override def read(t: T): Json = Obj(t2Map(t))
 }

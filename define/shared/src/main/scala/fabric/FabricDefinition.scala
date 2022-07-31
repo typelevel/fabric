@@ -1,7 +1,7 @@
 package fabric
 
 object FabricDefinition {
-  def apply(json: List[Value]): DefType = {
+  def apply(json: List[Json]): DefType = {
     var gt = apply(json.head)
     json.tail.foreach { t =>
       val g = apply(t)
@@ -10,7 +10,7 @@ object FabricDefinition {
     gt
   }
 
-  def apply(json: Value): DefType = json match {
+  def apply(json: Json): DefType = json match {
     case Obj(value) => DefType.Obj(value.map {
       case (k, v) => k -> apply(v)
     })

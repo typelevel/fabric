@@ -1,6 +1,6 @@
 package bench
 
-import fabric.parse.Json
+import fabric.parse.JsonParser
 import fabric.rw._
 import org.openjdk.jmh.annotations._
 
@@ -28,8 +28,8 @@ class CaseClassConvert {
       |     {"city": "Norman", "state": "Oklahoma"}
       |   ]
       |}""".stripMargin
-  private lazy val hSmallJson: fabric.Value = Json.parse(smallJson)
-  private lazy val hMediumJson: fabric.Value = Json.parse(mediumJson)
+  private lazy val hSmallJson: fabric.Json = JsonParser.parse(smallJson)
+  private lazy val hMediumJson: fabric.Json = JsonParser.parse(mediumJson)
   private lazy val cSmallJson: io.circe.Json = io.circe.parser.parse(smallJson).getOrElse(throw new RuntimeException("Parse Error"))
   private lazy val cMediumJson: io.circe.Json = io.circe.parser.parse(mediumJson).getOrElse(throw new RuntimeException("Parse Error"))
   private lazy val uSmallJson: ujson.Value = ujson.read(smallJson)

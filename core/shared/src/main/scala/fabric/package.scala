@@ -1,11 +1,11 @@
 import scala.language.implicitConversions
 
 package object fabric {
-//  implicit def string2Path(s: String): Path = new Path(List(s))
+  implicit def string2Path(s: String): Path = new Path(List(s))
 
-  implicit def map2Obj(map: Map[String, Value]): Obj = Obj(map)
+  implicit def map2Obj(map: Map[String, Json]): Obj = Obj(map)
 
-  implicit def seq2Arr(seq: Seq[Value]): Arr = Arr(seq.toVector)
+  implicit def seq2Arr(seq: Seq[Json]): Arr = Arr(seq.toVector)
 
   implicit def ints2Arr(seq: Seq[Int]): Arr = Arr(seq.map(n => num(n.toDouble)).toVector)
 
@@ -14,12 +14,12 @@ package object fabric {
   /**
    * Create an Obj from the params
    */
-  def obj(params: (String, Value)*): Obj = Obj(Map(params: _*))
+  def obj(params: (String, Json)*): Obj = Obj(Map(params: _*))
 
   /**
    * Create an Arr from the params
    */
-  def arr(values: Value*): Arr = Arr(values.toVector)
+  def arr(values: Json*): Arr = Arr(values.toVector)
 
   /**
    * Create a Str from the supplied String

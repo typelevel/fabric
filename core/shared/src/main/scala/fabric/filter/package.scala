@@ -1,11 +1,11 @@
 package fabric
 
 package object filter {
-  implicit class ValueFilterExtras(val value: Value) extends AnyVal {
-    def snake2Camel: Value = value.filter(SnakeToCamelFilter).get
-    def camel2Snake: Value = value.filter(CamelToSnakeFilter).get
-    def withoutNulls: Option[Value] = value.filter(RemoveNullsFilter)
-    def withoutEmpty: Option[Value] = value.filter(RemoveEmptyFilter)
-    def replace(find: Value, replacement: Value): Value = value.filter(ReplaceFilter(find, replacement)).get
+  implicit class ValueFilterExtras(val value: Json) extends AnyVal {
+    def snake2Camel: Json = value.filter(SnakeToCamelFilter).get
+    def camel2Snake: Json = value.filter(CamelToSnakeFilter).get
+    def withoutNulls: Option[Json] = value.filter(RemoveNullsFilter)
+    def withoutEmpty: Option[Json] = value.filter(RemoveEmptyFilter)
+    def replace(find: Json, replacement: Json): Json = value.filter(ReplaceFilter(find, replacement)).get
   }
 }

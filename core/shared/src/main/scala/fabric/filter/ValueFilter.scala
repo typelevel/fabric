@@ -1,8 +1,8 @@
 package fabric.filter
 
-import fabric.Value
+import fabric.Json
 
 trait ValueFilter {
-  def apply(value: Value): Option[Value]
+  def apply(value: Json): Option[Json]
 }
 

@@ -3,11 +3,11 @@ package fabric.parse
 import fabric._
 
 case class JsonWriter(config: JsonWriterConfig) { w =>
-  def apply(value: Value): String = {
+  def apply(value: Json): String = {
     write(value, 0)
   }
 
-  private def write(value: Value, depth: Int): String = value match {
+  private def write(value: Json, depth: Int): String = value match {
     case Arr(v) =>
       val content = v.map { value =>
         s"${config.newLine()}${config.indent(depth + 1)}${write(value, depth + 1)}"

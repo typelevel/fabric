@@ -34,7 +34,7 @@ class FabricSpec extends AnyWordSpec with Matchers {
       ))
     }
     "verify type getting works as expected" in {
-      val s: fabric.Value = Str("Hello, World!")
+      val s: fabric.Json = Str("Hello, World!")
       s.getValue(ValueType.Str) should be(Some(Str("Hello, World!")))
       s.getStr should be(Some(Str("Hello, World!")))
       s.getValue(ValueType.Obj) should be(None)
@@ -171,7 +171,7 @@ class FabricSpec extends AnyWordSpec with Matchers {
   }
 }
 
-case class Special(name: Option[String], age: Int = 21, data: Option[Value])
+case class Special(name: Option[String], age: Int = 21, data: Option[Json])
 
 object Special {
   implicit val rw: ReaderWriter[Special] = ccRW

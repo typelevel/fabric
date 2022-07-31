@@ -1,18 +1,18 @@
 package fabric.parse
 
-import com.fasterxml.jackson.core.{JsonFactory, JsonParser, JsonToken}
-import fabric.{Arr, Bool, Null, NumDec, NumInt, Obj, Str, Value}
+import com.fasterxml.jackson.core.{JsonFactory, JsonParser => JParser, JsonToken}
+import fabric.{Arr, Bool, Null, NumDec, NumInt, Obj, Str, Json}
 
 import scala.annotation.tailrec
 
 object JacksonParser extends Parser {
   private lazy val factory = new JsonFactory()
-    .enable(JsonParser.Feature.ALLOW_COMMENTS)
-    .enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES)
-    .enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
-    .enable(JsonParser.Feature.ALLOW_YAML_COMMENTS)
+    .enable(JParser.Feature.ALLOW_COMMENTS)
+    .enable(JParser.Feature.ALLOW_SINGLE_QUOTES)
+    .enable(JParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
+    .enable(JParser.Feature.ALLOW_YAML_COMMENTS)
 
-  override def parse(s: String): Value = {
+  override def parse(s: String): Json = {
     val parser = factory.createParser(s)
     try {
       parse(parser)
@@ -21,9 +21,9 @@ object JacksonParser extends Parser {
     }
   }
 
-  protected def parse(parser: JsonParser): Value = parseToken(parser, parser.nextToken())
+  protected def parse(parser: JParser): Json = parseToken(parser, parser.nextToken())
 
-  private def parseToken(parser: JsonParser, token: JsonToken): Value = token match {
+  private def parseToken(parser: JParser, token: JsonToken): Json = token match {
     case JsonToken.START_OBJECT => parseObj(parser, Map.empty)
     case JsonToken.START_ARRAY => parseArr(parser, Nil)
     case JsonToken.VALUE_STRING => Str(parser.getValueAsString)
@@ -36,7 +36,7 @@ object JacksonParser extends Parser {
   }
 
   @tailrec
-  private def parseObj(parser: JsonParser, map: Map[String, Value]): Obj = {
+  private def parseObj(parser: JParser, map: Map[String, Json]): Obj = {
     val next = parser.nextToken()
     if (next == JsonToken.END_OBJECT) {
       Obj(map)
@@ -48,7 +48,7 @@ object JacksonParser extends Parser {
   }
 
   @tailrec
-  private def parseArr(parser: JsonParser, list: List[Value]): Arr = {
+  private def parseArr(parser: JParser, list: List[Json]): Arr = {
     val next = parser.nextToken()
     if (next == JsonToken.END_ARRAY) {
       Arr(list.reverse.toVector)

@@ -7,11 +7,11 @@ import java.io.StringReader
 import scala.jdk.CollectionConverters._
 
 object Properties extends Parser {
-  override def parse(content: String): Value = {
+  override def parse(content: String): Json = {
     val p = new java.util.Properties
     p.load(new StringReader(content))
     parse(p)
   }
 
-  def parse(properties: java.util.Properties): Value = Obj.process(properties.asScala.toMap)
+  def parse(properties: java.util.Properties): Json = Obj.process(properties.asScala.toMap)
 }
