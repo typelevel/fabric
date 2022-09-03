@@ -169,27 +169,27 @@ class FabricSpec extends AnyWordSpec with Matchers {
       camel2Snake should be(snake)
     }
   }
-}
 
-case class Special(name: Option[String], age: Int = 21, data: Option[Json])
+  case class Special(name: Option[String], age: Int = 21, data: Option[Json])
 
-object Special {
-  implicit val rw: ReaderWriter[Special] = ccRW
-}
-
-sealed trait Polymorphic
-
-object Polymorphic {
-  implicit val rw: ReaderWriter[Polymorphic] = polyRW[Polymorphic]() {
-    case "blank" => staticRW(Blank)
-    case "polyValue" => PolyValue.rw
+  object Special {
+    implicit val rw: ReaderWriter[Special] = ccRW
   }
 
-  case object Blank extends Polymorphic
+  sealed trait Polymorphic
 
-  case class PolyValue(s: String) extends Polymorphic
+  object Polymorphic {
+    implicit val rw: ReaderWriter[Polymorphic] = polyRW[Polymorphic]() {
+      case "blank" => staticRW(Blank)
+      case "polyValue" => PolyValue.rw
+    }
 
-  object PolyValue {
-    implicit val rw: ReaderWriter[PolyValue] = ccRW
+    case object Blank extends Polymorphic
+
+    case class PolyValue(s: String) extends Polymorphic
+
+    object PolyValue {
+      implicit val rw: ReaderWriter[PolyValue] = ccRW
+    }
   }
 }
