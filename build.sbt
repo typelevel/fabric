@@ -36,7 +36,7 @@ val scalaTestVersion: String = "3.2.13"
 val scalaCheckVersion: String = "3.2.13.0"
 
 // Parse module dependencies
-val jacksonVersion: String = "2.13.3"
+val jacksonVersion: String = "2.13.4"
 val typesafeConfig: String = "1.4.2"
 
 // Benchmarks
