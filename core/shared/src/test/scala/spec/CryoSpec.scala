@@ -7,23 +7,22 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class CryoSpec extends AnyWordSpec with Matchers {
   "Cryo" should {
-    def freezeAndThaw(json: Json, size: Int): Assertion = {
+    def freezeAndThaw(json: Json): Assertion = {
       val bb = Cryo.freeze(json, allocateDirect = true)
       bb.flip()
-      bb.remaining() should be(size)
       val thawed = Cryo.thaw(bb)
       thawed should be(json)
     }
 
     "freeze and thaw a Str properly" in {
       val json = Str("Hello, World!")
-      freezeAndThaw(json, 18)
+      freezeAndThaw(json)
     }
     "freeze and thaw a simple obj" in {
       val json = obj(
         "value" -> 5
       )
-      freezeAndThaw(json, 24)
+      freezeAndThaw(json)
     }
     "freeze and thaw a complex obj" in {
       val json = obj(
@@ -37,7 +36,7 @@ class CryoSpec extends AnyWordSpec with Matchers {
           "zipcode" -> 95136
         )
       )
-      freezeAndThaw(json, 225)
+      freezeAndThaw(json)
     }
   }
 }
