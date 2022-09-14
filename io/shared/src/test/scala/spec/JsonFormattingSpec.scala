@@ -1,7 +1,7 @@
 package spec
 
 import fabric.io.JsonFormatter
-import fabric.{Null, arr, obj}
+import fabric._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
