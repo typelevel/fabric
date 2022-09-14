@@ -1,6 +1,5 @@
 package fabric.io
 
-import cats.effect.IO
 import fabric.Json
 
 import java.io.File
@@ -15,6 +14,6 @@ object JsonParser extends MultiFormatParser {
     HoconParser, JsoniterParser, PropertiesParser, XMLParser, YamlParser
   )
 
-  def apply(file: File, format: Format): IO[Json] = apply(Source.fromFile(file, "UTF-8"), format)
-  def apply(path: Path, format: Format): IO[Json] = apply(Source.fromFile(path.toFile, "UTF-8"), format)
+  def apply(file: File, format: Format): Json = apply(Source.fromFile(file, "UTF-8"), format)
+  def apply(path: Path, format: Format): Json = apply(Source.fromFile(path.toFile, "UTF-8"), format)
 }

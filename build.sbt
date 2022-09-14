@@ -34,9 +34,6 @@ ThisBuild / developers := List(
 val collectionCompatVersion: String = "2.8.1"
 val scalaTestVersion: String = "3.2.13"
 val scalaCheckVersion: String = "3.2.13.0"
-val catsEffectTestingVersion: String = "1.4.0"
-
-val catsVersion: String = "3.3.14"
 
 // Parse module dependencies
 val jacksonVersion: String = "2.13.4"
@@ -96,10 +93,8 @@ lazy val io = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "fabric-io",
     libraryDependencies ++= Seq(
-      "org.typelevel" %%% "cats-effect" % catsVersion,
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
-      "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test,
-      "org.typelevel" %%% "cats-effect-testing-scalatest" % catsEffectTestingVersion % Test
+      "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
     )
   )
   .jvmSettings(

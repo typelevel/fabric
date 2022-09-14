@@ -1,6 +1,5 @@
 package fabric.io
 
-import cats.effect.IO
 import com.fasterxml.jackson.core.{JsonFactory, JsonToken, JsonParser => JParser}
 import fabric.{Arr, Bool, Json, Null, NumDec, NumInt, Obj, Str}
 
@@ -15,7 +14,7 @@ object JacksonParser extends FormatParser {
 
   override def format: Format = Format.Json
 
-  override def apply(content: String): IO[Json] = IO {
+  override def apply(content: String): Json = {
     val parser = factory.createParser(content)
     try {
       parse(parser)

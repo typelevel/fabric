@@ -1,14 +1,11 @@
 package fabric.io
 
-import cats.effect.IO
 import fabric.{Arr, Bool, Json, Null, NumDec, NumInt, Obj, Str}
 
 case class JsonFormatter(config: JsonFormatterConfig) extends Formatter {
   override def format: Format = Format.Json
 
-  def apply(value: Json): IO[String] = IO {
-    write(value, 0)
-  }
+  def apply(value: Json): String = write(value, 0)
 
   private def write(value: Json, depth: Int): String = value match {
     case Arr(v) =>

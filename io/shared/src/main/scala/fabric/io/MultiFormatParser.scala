@@ -1,9 +1,6 @@
 package fabric.io
 
-import cats.effect.IO
 import fabric.Json
-
-import scala.io.Source
 
 trait MultiFormatParser extends Parser {
   def parsers: List[FormatParser]
@@ -12,7 +9,7 @@ trait MultiFormatParser extends Parser {
     parser.format -> parser
   }.toMap
 
-  override def apply(content: String, format: Format): IO[Json] = IO(map.get(format)).flatMap {
+  override def apply(content: String, format: Format): Json = map.get(format) match {
     case Some(parser) => parser(content)
     case None => throw new RuntimeException(s"Format not supported: $format")
   }
