@@ -1,6 +1,5 @@
 package bench
 
-import cats.effect.unsafe.implicits.global
 import fabric.io._
 import org.openjdk.jmh.annotations._
 
@@ -52,7 +51,7 @@ class ParseJson {
 
   private def parseFabric(jsonString: String, parser: FormatParser): Unit = {
     (0 until count).foreach { _ =>
-      val value = parser(jsonString).unsafeRunSync()
+      val value = parser(jsonString)
       assert(value.isObj)
     }
   }

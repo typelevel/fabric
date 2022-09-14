@@ -1,6 +1,5 @@
 package spec.gen
 
-import cats.effect.unsafe.implicits.global
 import fabric.Json
 import fabric.io.{Format, JsonFormatter, JsonParser}
 import org.scalacheck.Arbitrary
@@ -12,8 +11,8 @@ class RWSpecGenParse extends AnyWordSpec with Checkers {
     "serialize and deserialize Value" in {
       implicit val vg: Arbitrary[Json] = ValueGenerator.arbitraryValue
       check { (value: Json) =>
-        val json = JsonFormatter.Default(value).unsafeRunSync()
-        value == JsonParser(json, Format.Json).unsafeRunSync()
+        val json = JsonFormatter.Default(value)
+        value == JsonParser(json, Format.Json)
       }
     }
   }

@@ -1,20 +1,17 @@
 package fabric.io
 
-import cats.effect.IO
 import fabric.Json
 
 import scala.io.Source
 
 trait Parser {
-  final def apply(source: Source, format: Format): IO[Json] = IO {
+  final def apply(source: Source, format: Format): Json = {
     try {
-      source.mkString("\n")
+      apply(source.mkString("\n"), format)
     } finally {
       source.close()
     }
-  }.flatMap { s =>
-    apply(s, format)
   }
 
-  def apply(content: String, format: Format): IO[Json]
+  def apply(content: String, format: Format): Json
 }

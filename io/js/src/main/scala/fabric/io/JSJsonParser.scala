@@ -1,6 +1,5 @@
 package fabric.io
 
-import cats.effect.IO
 import fabric._
 
 import scala.scalajs.js
@@ -9,7 +8,7 @@ import scala.scalajs.js.JSON
 object JSJsonParser extends FormatParser {
   override def format: Format = Format.Json
 
-  override def apply(content: String): IO[Json] = IO(parse(JSON.parse(content)))
+  override def apply(content: String): Json = parse(JSON.parse(content))
 
   def parse(value: js.Any): Json = value.asInstanceOf[Any] match {
     case null => Null

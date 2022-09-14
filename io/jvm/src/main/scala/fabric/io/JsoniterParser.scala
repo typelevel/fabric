@@ -1,6 +1,5 @@
 package fabric.io
 
-import cats.effect.IO
 import com.jsoniter.JsonIterator
 import fabric._
 
@@ -9,7 +8,7 @@ import scala.annotation.tailrec
 object JsoniterParser extends FormatParser {
   override def format: Format = Format.Json
 
-  override def apply(content: String): IO[Json] = IO {
+  override def apply(content: String): Json = {
     val iterator = JsonIterator.parse(content)
     read(iterator)
   }
