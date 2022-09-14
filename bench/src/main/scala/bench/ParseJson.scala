@@ -1,6 +1,7 @@
 package bench
 
-import fabric.parse.{JacksonParser, JsoniterParser, Parser}
+import cats.effect.unsafe.implicits.global
+import fabric.io._
 import org.openjdk.jmh.annotations._
 
 import java.util.concurrent.TimeUnit
@@ -49,9 +50,9 @@ class ParseJson {
   @Benchmark
   def uJsonMedium(): Unit = parseUJson(mediumJsonString)
 
-  private def parseFabric(jsonString: String, parser: Parser): Unit = {
+  private def parseFabric(jsonString: String, parser: FormatParser): Unit = {
     (0 until count).foreach { _ =>
-      val value = parser.parse(jsonString)
+      val value = parser(jsonString).unsafeRunSync()
       assert(value.isObj)
     }
   }

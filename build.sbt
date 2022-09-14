@@ -34,6 +34,9 @@ ThisBuild / developers := List(
 val collectionCompatVersion: String = "2.8.1"
 val scalaTestVersion: String = "3.2.13"
 val scalaCheckVersion: String = "3.2.13.0"
+val catsEffectTestingVersion: String = "1.4.0"
+
+val catsVersion: String = "3.3.14"
 
 // Parse module dependencies
 val jacksonVersion: String = "2.13.4"
@@ -54,7 +57,7 @@ val sourceMapSettings = List(
 
 lazy val root = project.in(file("."))
   .aggregate(
-    core.js, core.jvm, core.native, parse.js, parse.jvm, define.js, define.jvm
+    core.js, core.jvm, core.native, io.js, io.jvm, define.js, define.jvm
   )
   .settings(
     name := "fabric",
@@ -88,13 +91,15 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     }
   )
 
-lazy val parse = crossProject(JSPlatform, JVMPlatform)
+lazy val io = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Full)
   .settings(
-    name := "fabric-parse",
+    name := "fabric-io",
     libraryDependencies ++= Seq(
+      "org.typelevel" %%% "cats-effect" % catsVersion,
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
-      "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
+      "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test,
+      "org.typelevel" %%% "cats-effect-testing-scalatest" % catsEffectTestingVersion % Test
     )
   )
   .jvmSettings(
@@ -117,11 +122,11 @@ lazy val define = crossProject(JSPlatform, JVMPlatform)
       "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
     )
   )
-  .dependsOn(parse)
+  .dependsOn(core)
 
 lazy val bench = project.in(file("bench"))
   .enablePlugins(JmhPlugin)
-  .dependsOn(parse.jvm)
+  .dependsOn(io.jvm)
   .settings(
     name := "fabric-benchmarks",
     libraryDependencies ++= Seq(
