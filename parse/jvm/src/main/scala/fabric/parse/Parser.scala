@@ -17,18 +17,18 @@ trait Parser {
 
 object Parser {
   def apply(source: Source, format: Format): Json = format match {
-    case Format.Hocon => Hocon.parse(source)
+    case Format.Hocon => HoconParser.parse(source)
     case Format.Json => JsonParser.parse(source)
     case Format.Properties => Properties.parse(source)
-    case Format.XML => XML.parse(source)
-    case Format.Yaml => Yaml.parse(source)
+    case Format.XML => XMLParser.parse(source)
+    case Format.Yaml => YamlParser.parse(source)
   }
 
   def apply(s: String, format: Format): Json = format match {
-    case Format.Hocon => Hocon.parse(s)
+    case Format.Hocon => HoconParser.parse(s)
     case Format.Json => JsonParser.parse(s)
     case Format.Properties => Properties.parse(s)
-    case Format.XML => XML.parse(s)
-    case Format.Yaml => Yaml.parse(s)
+    case Format.XML => XMLParser.parse(s)
+    case Format.Yaml => YamlParser.parse(s)
   }
 }

@@ -2,14 +2,14 @@ package spec
 
 import fabric._
 import fabric.filter.{ChainedFilter, RemoveEmptyFilter, RemoveNullsFilter}
-import fabric.parse.{Hocon, JsonWriter, Properties, XML, Yaml}
+import fabric.parse.{HoconParser, JsonWriter, Properties, XMLParser, YamlParser}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class JVMParsingSpec extends AnyWordSpec with Matchers {
   "JVM Parsing" should {
     "parse basic YAML" in {
-      val v = Yaml.parse(
+      val v = YamlParser.parse(
         """
           |test:
           |   yaml: "yes"
@@ -21,7 +21,7 @@ class JVMParsingSpec extends AnyWordSpec with Matchers {
       ))
     }
     "parse basic XML" in {
-      val v = XML.parse("<test><xml>yes</xml></test>")
+      val v = XMLParser.parse("<test><xml>yes</xml></test>")
       v should be(obj(
         "test" -> obj(
           "xml" -> "yes"
@@ -29,7 +29,7 @@ class JVMParsingSpec extends AnyWordSpec with Matchers {
       ))
     }
     "parse basic HOCON" in {
-      val v = Hocon.parse("""test.hocon = "yes"""")
+      val v = HoconParser.parse("""test.hocon = "yes"""")
       v should be(obj(
         "test" -> obj(
           "hocon" -> "yes"
