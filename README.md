@@ -25,7 +25,6 @@ some feedback.
 I wrote a performance benchmark with every expectation to be slower than the alternatives as I've done very
 little tuning, and I'm just one person versus the many developers that have worked on the others for years.
 However, I was shocked to see how well my little library performed compared to the alternatives:
-[JMH Results for 1.3.0 on Scala 3](https://jmh.morethan.io/?source=https://raw.githubusercontent.com/outr/fabric/master/bench/results/benchmarks-1.3.0.json)
 [JMH Results for 1.4.0 on Scala 3](https://jmh.morethan.io/?source=https://raw.githubusercontent.com/outr/fabric/master/bench/results/benchmarks-1.4.0.json)
 ## Features
 
@@ -118,9 +117,9 @@ Parsing from existing JSON requires the use of the `fabric-parse` module:
 
 ```scala
 import fabric._
-import fabric.json._
+import fabric.io._
 
-val value = JsonParser.parse("""{"name": "John Doe", "age": 21}""")
+val value = JsonParser("""{"name": "John Doe", "age": 21}""", Format.Json)
 ```
 
 ### Formatting
@@ -128,5 +127,5 @@ val value = JsonParser.parse("""{"name": "John Doe", "age": 21}""")
 Taking an existing value and formatting it for output as JSON:
 
 ```scala
-val formattedString: String = JsonParser.format(value)
+val formattedString: String = JsonFormatter.Default(value)
 ```
