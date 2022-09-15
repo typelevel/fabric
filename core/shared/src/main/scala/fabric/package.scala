@@ -7,7 +7,7 @@ package object fabric {
 
   implicit def seq2Arr(seq: Seq[Json]): Arr = Arr(seq.toVector)
 
-  implicit def ints2Arr(seq: Seq[Int]): Arr = Arr(seq.map(n => num(n.toDouble)).toVector)
+  implicit def ints2Arr(seq: Seq[Int]): Arr = Arr(seq.map(n => num(n)).toVector)
 
   implicit def doubles2Arr(seq: Seq[Double]): Arr = Arr(seq.map(num).toVector)
 
