@@ -28,7 +28,7 @@ object JacksonParser extends FormatParser {
 
   private def parseToken(parser: JParser, token: JsonToken): Json = token match {
     case JsonToken.START_OBJECT => parseObj(parser, ListMap.empty)
-    case JsonToken.START_ARRAY => parseArr(parser, Nil)
+    case JsonToken.START_ARRAY => parseArr(parser, Vector.empty)
     case JsonToken.VALUE_STRING => Str(parser.getValueAsString)
     case JsonToken.VALUE_NUMBER_FLOAT => NumDec(BigDecimal(parser.getValueAsDouble))
     case JsonToken.VALUE_NUMBER_INT => NumInt(parser.getValueAsLong)
@@ -51,13 +51,13 @@ object JacksonParser extends FormatParser {
   }
 
   @tailrec
-  private def parseArr(parser: JParser, list: List[Json]): Arr = {
+  private def parseArr(parser: JParser, vector: Vector[Json]): Arr = {
     val next = parser.nextToken()
     if (next == JsonToken.END_ARRAY) {
-      Arr(list.reverse.toVector)
+      Arr(vector)
     } else {
       val value = parseToken(parser, next)
-      parseArr(parser, value :: list)
+      parseArr(parser, vector :+ value)
     }
   }
 }
