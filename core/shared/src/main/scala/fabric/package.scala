@@ -1,9 +1,12 @@
+import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 
 package object fabric {
   implicit def string2Path(s: String): Path = new Path(List(s))
 
-  implicit def map2Obj(map: Map[String, Json]): Obj = Obj(map)
+  implicit def listMap2Obj(map: ListMap[String, Json]): Obj = Obj(map)
+
+  implicit def map2Obj(map: Map[String, Json]): Obj = listMap2Obj(ListMap.from(map))
 
   implicit def seq2Arr(seq: Seq[Json]): Arr = Arr(seq.toVector)
 
@@ -14,7 +17,7 @@ package object fabric {
   /**
    * Create an Obj from the params
    */
-  def obj(params: (String, Json)*): Obj = Obj(Map(params: _*))
+  def obj(params: (String, Json)*): Obj = Obj(ListMap(params: _*))
 
   /**
    * Create an Arr from the params

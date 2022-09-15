@@ -4,6 +4,7 @@ import com.jsoniter.JsonIterator
 import fabric._
 
 import scala.annotation.tailrec
+import scala.collection.immutable.ListMap
 
 object JsoniterParser extends FormatParser {
   override def format: Format = Format.Json
@@ -44,17 +45,17 @@ object JsoniterParser extends FormatParser {
   }
 
   private def readObj(iterator: JsonIterator): Json = {
-    var map = Map.empty[String, Json]
+    var list = List.empty[(String, Json)]
 
     @tailrec
     def recurse(): Unit = Option(iterator.readObject()) match {
       case None => // Finished
       case Some(key) =>
-        map += key -> read(iterator)
+        list = (key -> read(iterator)) :: list
         recurse()
     }
     recurse()
 
-    Obj(map)
+    Obj(ListMap.from(list.reverse))
   }
 }

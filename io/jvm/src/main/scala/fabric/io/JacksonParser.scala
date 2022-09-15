@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.{JsonFactory, JsonToken, JsonParser => JParser
 import fabric.{Arr, Bool, Json, Null, NumDec, NumInt, Obj, Str}
 
 import scala.annotation.tailrec
+import scala.collection.immutable.ListMap
 
 object JacksonParser extends FormatParser {
   private lazy val factory = new JsonFactory()
@@ -26,7 +27,7 @@ object JacksonParser extends FormatParser {
   protected def parse(parser: JParser): Json = parseToken(parser, parser.nextToken())
 
   private def parseToken(parser: JParser, token: JsonToken): Json = token match {
-    case JsonToken.START_OBJECT => parseObj(parser, Map.empty)
+    case JsonToken.START_OBJECT => parseObj(parser, ListMap.empty)
     case JsonToken.START_ARRAY => parseArr(parser, Nil)
     case JsonToken.VALUE_STRING => Str(parser.getValueAsString)
     case JsonToken.VALUE_NUMBER_FLOAT => NumDec(BigDecimal(parser.getValueAsDouble))
@@ -38,7 +39,7 @@ object JacksonParser extends FormatParser {
   }
 
   @tailrec
-  private def parseObj(parser: JParser, map: Map[String, Json]): Obj = {
+  private def parseObj(parser: JParser, map: ListMap[String, Json]): Obj = {
     val next = parser.nextToken()
     if (next == JsonToken.END_OBJECT) {
       Obj(map)

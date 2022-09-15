@@ -2,6 +2,7 @@ package fabric
 
 import fabric.filter.ValueFilter
 
+import scala.collection.immutable.ListMap
 import scala.util.Try
 
 /**
@@ -265,7 +266,7 @@ sealed trait Json extends Any {
   /**
    * Convenience method for asObj.value
    */
-  def asMap: Map[String, Json] = asObj.value
+  def asMap: ListMap[String, Json] = asObj.value
 
   /**
    * Convenience method for asArr.value
@@ -341,7 +342,7 @@ object Json {
 /**
  * Obj represents a Map of key-value pairs (String, Value)
  */
-final class Obj private(val value: Map[String, Json]) extends AnyVal with Json {
+final class Obj private(val value: ListMap[String, Json]) extends AnyVal with Json {
   override type Type = Obj
 
   def keys: Set[String] = value.keySet
@@ -349,8 +350,8 @@ final class Obj private(val value: Map[String, Json]) extends AnyVal with Json {
   override def filter(filter: ValueFilter): Option[Json] = {
     val mutated = value.map {
       case (key, value) => value.filter(filter).map(v => key -> v)
-    }.flatten.toMap
-    filter(Obj(mutated))
+    }.flatten
+    filter(Obj(ListMap.from(mutated)))
   }
 
   override def isEmpty: Boolean = value.isEmpty
@@ -365,9 +366,9 @@ final class Obj private(val value: Map[String, Json]) extends AnyVal with Json {
 object Obj {
   var ExcludeNullValues: Boolean = false
 
-  val empty: Obj = Obj(Map.empty)
+  val empty: Obj = Obj(ListMap.empty)
 
-  private def clean(map: Map[String, Json]): Map[String, Json] = if (ExcludeNullValues) {
+  private def clean(map: ListMap[String, Json]): ListMap[String, Json] = if (ExcludeNullValues) {
     map.filter {
       case (_, value) => value != Null
     }
@@ -375,9 +376,9 @@ object Obj {
     map
   }
 
-  def apply(value: Map[String, Json]): Obj = new Obj(clean(value))
+  def apply(value: ListMap[String, Json]): Obj = new Obj(clean(value))
 
-  def unapply(obj: Obj): Some[Map[String, Json]] = Some(obj.value)
+  def unapply(obj: Obj): Some[ListMap[String, Json]] = Some(obj.value)
 
   /**
    * Processes the supplied map creating an Obj for it. If `parsePath` is set, the key will be extracted as

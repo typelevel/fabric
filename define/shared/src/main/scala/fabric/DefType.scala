@@ -2,6 +2,7 @@ package fabric
 
 import fabric.rw.ReaderWriter
 
+import scala.collection.immutable.ListMap
 import scala.util.Try
 
 sealed trait DefType {
@@ -84,18 +85,18 @@ object DefType {
     }
   }
 
-  case class Obj(map: Map[String, DefType]) extends DefType {
+  case class Obj(map: ListMap[String, DefType]) extends DefType {
     override def merge(that: DefType): DefType = that match {
       case Obj(thatMap) => Obj(mergeMap(map, thatMap))
       case Opt(Obj(thatMap)) => Opt(Obj(mergeMap(map, thatMap)))
       case _ => super.merge(that)
     }
 
-    private def mergeMap(m1: Map[String, DefType], m2: Map[String, DefType]): Map[String, DefType] = {
+    private def mergeMap(m1: ListMap[String, DefType], m2: ListMap[String, DefType]): ListMap[String, DefType] = {
       val keys = m1.keySet ++ m2.keySet
-      keys.map { key =>
+      ListMap.from(keys.map { key =>
         key -> m1.getOrElse(key, Null).merge(m2.getOrElse(key, Null))
-      }.toMap
+      })
     }
   }
   case class Arr(t: DefType) extends DefType
