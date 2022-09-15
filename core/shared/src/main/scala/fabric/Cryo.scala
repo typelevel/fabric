@@ -1,6 +1,7 @@
 package fabric
 
 import java.nio.ByteBuffer
+import scala.collection.immutable.ListMap
 
 object Cryo {
   private object identifiers {
@@ -69,11 +70,11 @@ object Cryo {
   def thaw(bb: ByteBuffer): Json = bb.get() match {
     case identifiers.Obj =>
       val size = bb.getInt
-      val map = (0 until size).map { _ =>
+      val map = ListMap.from((0 until size).map { _ =>
         val key = thaw(bb).asString
         val value = thaw(bb)
         key -> value
-      }.toMap
+      })
       Obj(map)
     case identifiers.Str =>
       val size = bb.getInt

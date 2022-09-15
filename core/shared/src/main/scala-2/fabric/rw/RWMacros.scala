@@ -20,9 +20,10 @@ object RWMacros {
           q"""
             import _root_.fabric._
             import _root_.fabric.rw._
+            import _root_.scala.collection.immutable.ListMap
 
             new ClassR[$tpe] {
-              override protected def t2Map(t: $tpe): Map[String, Json] = Map(..$toMap)
+              override protected def t2Map(t: $tpe): ListMap[String, Json] = ListMap(..$toMap)
             }
            """)
       }
@@ -52,7 +53,7 @@ object RWMacros {
     } match {
       case Some(fields) => {
         val fromMap = fields.zipWithIndex.map {
-          case (field, index) => {
+          case (field, index) =>
             val name = field.asTerm.name
             val key = name.decodedName.toString
             val returnType = tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
@@ -62,15 +63,15 @@ object RWMacros {
               case None => q"""sys.error("Unable to find field " + ${tpe.toString} + "." + $key + " (and no defaults set) in " + Obj(map))"""
             }
             q"""$name = map.get($key).map(_.as[$returnType]).getOrElse($default)"""
-          }
         }
         context.Expr[Writer[T]](
           q"""
             import _root_.fabric._
             import _root_.fabric.rw._
+            import _root_.scala.collection.immutable.ListMap
 
             new ClassW[$tpe] {
-              override protected def map2T(map: Map[String, Json]): $tpe = $companion(..$fromMap)
+              override protected def map2T(map: ListMap[String, Json]): $tpe = $companion(..$fromMap)
             }
            """)
       }

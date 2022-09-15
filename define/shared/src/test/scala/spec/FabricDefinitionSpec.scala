@@ -6,6 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 import java.io.File
+import scala.collection.immutable.ListMap
 
 class FabricDefinitionSpec extends AnyWordSpec with Matchers {
   "FabricDefinition" should {
@@ -25,7 +26,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       FabricDefinition(obj(
         "name" -> "John Doe",
         "age" -> 50
-      )) should be(DefType.Obj(Map(
+      )) should be(DefType.Obj(ListMap(
         "name" -> DefType.Str,
         "age" -> DefType.Int
       )))
@@ -39,7 +40,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
         obj(
           "name" -> "Jane Doe"
         )
-      )) should be(DefType.Obj(Map(
+      )) should be(DefType.Obj(ListMap(
         "name" -> DefType.Str,
         "age" -> DefType.Opt(DefType.Int)
       )))
@@ -52,7 +53,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           "age" -> 50
         )
       ))
-      d should be(DefType.Opt(DefType.Obj(Map(
+      d should be(DefType.Opt(DefType.Obj(ListMap(
         "name" -> DefType.Str,
         "age" -> DefType.Int
       ))))
@@ -66,7 +67,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       )
     }
     "validate a definition" in {
-      val definition = DefType.Obj(Map(
+      val definition = DefType.Obj(ListMap(
         "name" -> DefType.Str,
         "age" -> DefType.Opt(DefType.Int)
       ))
@@ -77,7 +78,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       definition.validate(value) should be(true)
     }
     "fail to validate a definition" in {
-      val definition = DefType.Obj(Map(
+      val definition = DefType.Obj(ListMap(
         "name" -> DefType.Str,
         "age" -> DefType.Int
       ))
@@ -87,7 +88,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       definition.validate(value) should be(false)
     }
     "generate a case class based on a definition" in {
-      val definition = DefType.Obj(Map(
+      val definition = DefType.Obj(ListMap(
         "name" -> DefType.Str,
         "age" -> DefType.Int
       ))
@@ -107,10 +108,10 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       generated.additional should be(Nil)
     }
     "generate two case classes based on a definition" in {
-      val definition = DefType.Obj(Map(
+      val definition = DefType.Obj(ListMap(
         "name" -> DefType.Str,
         "age" -> DefType.Int,
-        "location" -> DefType.Obj(Map(
+        "location" -> DefType.Obj(ListMap(
           "city" -> DefType.Str,
           "state" -> DefType.Str
         ))
@@ -147,10 +148,10 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
                                 |}""".stripMargin)
     }
     "generate two case classes based on a definition with an array" in {
-      val definition = DefType.Obj(Map(
+      val definition = DefType.Obj(ListMap(
         "name" -> DefType.Str,
         "age" -> DefType.Int,
-        "locations" -> DefType.Arr(DefType.Obj(Map(
+        "locations" -> DefType.Arr(DefType.Obj(ListMap(
           "city" -> DefType.Str,
           "state" -> DefType.Str
         )))

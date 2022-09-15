@@ -37,7 +37,8 @@ val scalaCheckVersion: String = "3.2.13.0"
 
 // Parse module dependencies
 val jacksonVersion: String = "2.13.4"
-val typesafeConfig: String = "1.4.2"
+val typesafeConfigVersion: String = "1.4.2"
+val jsoniterJavaVersion: String = "0.9.23"
 
 // Benchmarks
 val circeVersion: String = "0.14.2"
@@ -102,8 +103,8 @@ lazy val io = crossProject(JSPlatform, JVMPlatform)
       "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonVersion,
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-xml" % jacksonVersion,
-      "com.jsoniter" % "jsoniter" % "0.9.23",
-      "com.typesafe" % "config" % typesafeConfig
+      "com.jsoniter" % "jsoniter" % jsoniterJavaVersion,
+      "com.typesafe" % "config" % typesafeConfigVersion
     )
   )
   .dependsOn(core)
