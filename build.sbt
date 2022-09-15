@@ -130,3 +130,14 @@ lazy val bench = project.in(file("bench"))
       "com.lihaoyi" %% "upickle" % uPickleVersion
     )
   )
+
+lazy val docs = project
+  .in(file("documentation"))
+  .dependsOn(io.jvm)
+  .enablePlugins(MdocPlugin)
+  .settings(
+    mdocVariables := Map(
+      "VERSION" -> version.value
+    ),
+    mdocOut := file(".")
+  )
