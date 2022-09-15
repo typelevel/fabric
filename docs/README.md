@@ -55,7 +55,7 @@ For parsing support include:
 
 Creating fabric structures with the DSL is very easy:
 
-```scala
+```scala mdoc
 import fabric._
 
 val v1 = obj(
@@ -67,14 +67,13 @@ val v1 = obj(
     "city" -> "San Jose"
   )
 )
-// v1: Obj = {"name": "John Doe", "age": 21, "numbers": [1.0, 2.0, 3.0], "address": {"street": "123 Somewhere Rd.", "city": "San Jose"}}
 ```
 
 ### Merging
 
 Deep-merging is trivial:
 
-```scala
+```scala mdoc
 import fabric._
 
 val v2 = obj(
@@ -84,10 +83,8 @@ val v2 = obj(
     "state" -> "California"
   )
 )
-// v2: Obj = {"age": 23, "numbers": [4.0, 5.0, 6.0], "address": {"state": "California"}}
 
 val v3 = v1.merge(v2)
-// v3: Json = {"age": 23, "numbers": [4.0, 5.0, 6.0], "address": {"state": "California", "street": "123 Somewhere Rd.", "city": "San Jose"}, "name": "John Doe"}
 ```
 
 It is worth mentioning that because values are immutable, `v1` and `v2` remain unchanged.
@@ -96,7 +93,7 @@ It is worth mentioning that because values are immutable, `v1` and `v2` remain u
 
 Conversion to other types is very easy with the built-in compile-time conversions:
 
-```scala
+```scala mdoc
 import fabric._
 import fabric.rw._
 
@@ -104,10 +101,8 @@ val person = obj(
   "name" -> "John Doe",
   "age" -> 21
 ).as[Person]
-// person: Person = Person(name = "John Doe", age = 21)
 
 val backToValue: Json = person.json
-// backToValue: Json = {"name": "John Doe", "age": 21}
 
 case class Person(name: String, age: Int)
 
@@ -120,22 +115,17 @@ object Person {
 
 Parsing from existing JSON requires the use of the `fabric-parse` module:
 
-```scala
+```scala mdoc
 import fabric._
 import fabric.io._
 
 val value = JsonParser("""{"name": "John Doe", "age": 21}""", Format.Json)
-// value: Json = {"name": "John Doe", "age": 21}
 ```
 
 ### Formatting
 
 Taking an existing value and formatting it for output as JSON:
 
-```scala
+```scala mdoc
 val formattedString: String = JsonFormatter.Default(value)
-// formattedString: String = """{
-//   "name": "John Doe",
-//   "age": 21
-// }"""
 ```
