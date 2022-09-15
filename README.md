@@ -67,7 +67,7 @@ val v1 = obj(
     "city" -> "San Jose"
   )
 )
-// v1: Obj = {"name": "John Doe", "age": 21, "numbers": [1.0, 2.0, 3.0], "address": {"street": "123 Somewhere Rd.", "city": "San Jose"}}
+// v1: Obj = {"name": "John Doe", "age": 21, "numbers": [1, 2, 3], "address": {"street": "123 Somewhere Rd.", "city": "San Jose"}}
 ```
 
 ### Merging
@@ -84,10 +84,10 @@ val v2 = obj(
     "state" -> "California"
   )
 )
-// v2: Obj = {"age": 23, "numbers": [4.0, 5.0, 6.0], "address": {"state": "California"}}
+// v2: Obj = {"age": 23, "numbers": [4, 5, 6], "address": {"state": "California"}}
 
 val v3 = v1.merge(v2)
-// v3: Json = {"age": 23, "numbers": [4.0, 5.0, 6.0], "address": {"state": "California", "street": "123 Somewhere Rd.", "city": "San Jose"}, "name": "John Doe"}
+// v3: Json = {"age": 23, "numbers": [4, 5, 6], "address": {"state": "California", "street": "123 Somewhere Rd.", "city": "San Jose"}, "name": "John Doe"}
 ```
 
 It is worth mentioning that because values are immutable, `v1` and `v2` remain unchanged.

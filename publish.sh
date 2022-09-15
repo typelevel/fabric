@@ -1,3 +1,7 @@
 #!/usr/bin/env bash
 
-sbt +clean +test +coreJS/publishSigned +coreJVM/publishSigned +coreNative/publishSigned +ioJS/publishSigned +ioJVM/publishSigned +defineJS/publishSigned +defineJVM/publishSigned sonatypeRelease
+sbt +clean +compile
+sbt +test
+sbt docs/mdoc
+sbt +coreJS/publishSigned +coreJVM/publishSigned +coreNative/publishSigned +ioJS/publishSigned +ioJVM/publishSigned +defineJS/publishSigned +defineJVM/publishSigned
+sbt sonatypeRelease
