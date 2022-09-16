@@ -3,27 +3,36 @@ package fabric
 import scala.collection.mutable
 
 object FabricGenerator {
+  def withMappings(dt: DefType,
+                   rootName: String,
+                   mappings: (String, String)*): GeneratedClass = {
+    val map = mappings.toMap
+    apply(dt, rootName, map.apply)
+  }
+
   def apply(dt: DefType,
             rootName: String,
-            mappings: (String, String)*): GeneratedClass = {
-    val name2ClassName = mappings.toMap
+            resolver: String => String): GeneratedClass = {
     var additional = List.empty[GeneratedClass]
 
-    def generate(rootName: String, map: Map[String, DefType]): GeneratedClass = {
-      def typeFor(name: String, dt: DefType): String = {
-        dt match {
-          case DefType.Obj(map) =>
-            val className = name2ClassName(name)
-            additional = generate(className, map) :: additional
-            className
-          case DefType.Arr(t) => s"Vector[${typeFor(name, t)}]"
-          case DefType.Opt(t) => s"Option[${typeFor(name, t)}]"
-          case DefType.Str => "String"
-          case DefType.Int => "Long"
-          case DefType.Dec => "BigDecimal"
-          case DefType.Bool => "Boolean"
-          case DefType.Null => throw new RuntimeException("Null type found in definition! Not supported for code generation!")
-        }
+    def generate(rootName: String, original: Map[String, DefType]): GeneratedClass = {
+      val map = original.filterNot {
+        case (_, DefType.Null) => true
+        case (_, DefType.Arr(DefType.Null)) => true
+        case _ => false
+      }
+      def typeFor(name: String, dt: DefType): String = dt match {
+        case DefType.Obj(map) =>
+          val className = resolver(name)
+          additional = generate(className, map) :: additional
+          className
+        case DefType.Arr(t) => s"Vector[${typeFor(name, t)}]"
+        case DefType.Opt(t) => s"Option[${typeFor(name, t)}]"
+        case DefType.Str => "String"
+        case DefType.Int => "Long"
+        case DefType.Dec => "BigDecimal"
+        case DefType.Bool => "Boolean"
+        case DefType.Null => throw new RuntimeException("Null type found in definition! Not supported for code generation!")
       }
 
       val b = new mutable.StringBuilder
@@ -38,8 +47,14 @@ object FabricGenerator {
       }
       b.append("import fabric.rw._\n\n")
       b.append(s"case class $className(")
+      def fixName(name: String): String = name match {
+        case "type" => "`type`"
+        case "private" => "`private`"
+        case _ if name.contains('+') | name.contains('-') => s"`$name`"
+        case _ => name
+      }
       b.append(map.map {
-        case (name, value) => s"$name: ${typeFor(name, value)}"
+        case (name, value) => s"${fixName(name)}: ${typeFor(name, value)}"
       }.mkString(", "))
       b.append(")\n\n")
       b.append(s"object $className {\n")

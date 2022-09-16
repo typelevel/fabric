@@ -3,17 +3,7 @@ package bench
 import fabric.io.{FormatParser, JacksonParser}
 
 object TightLoop {
-  private val jsonString: String =
-    """{
-      | "string": "Sample String",
-      | "int": 123,
-      | "seq": [1, 2, 3],
-      | "object": {
-      |   "one": 1,
-      |   "two": "Dos",
-      |   "three": "III"
-      | }
-      |}""".stripMargin
+  private val jsonString: String = Samples.largeJsonString
 
   private def parseFabric(jsonString: String, parser: FormatParser, count: Int): Unit = {
     (0 until count).foreach { _ =>
@@ -24,7 +14,7 @@ object TightLoop {
 
   def main(args: Array[String]): Unit = {
     val parser = JacksonParser
-    val count = 20_000_000
+    val count = 200_000_000
 
     val start = System.currentTimeMillis()
     parseFabric(jsonString, parser, count)

@@ -22,8 +22,10 @@ sealed trait DefType {
     this.opt
   } else if (this.opt == that) {
     that
+  } else if (this == that.opt) {
+    this
   } else {
-    throw new RuntimeException(s"Incompatible typed: $this / $that")
+    throw new RuntimeException(s"Incompatible typed:\n$this\n\n$that")
   }
 }
 
@@ -99,10 +101,27 @@ object DefType {
       })
     }
   }
-  case class Arr(t: DefType) extends DefType
+  case class Arr(t: DefType) extends DefType {
+    override def merge(that: DefType): DefType = that match {
+      case Arr(thatType) => Arr(t.merge(thatType))
+      case _ => super.merge(that)
+    }
+  }
   case class Opt(t: DefType) extends DefType {
     override def isOpt: Boolean = true
     override def opt: DefType = this
+
+    override def merge(that: DefType): DefType = that match {
+      case Opt(thatOpt) => t.merge(thatOpt) match {
+        case o: Opt => o
+        case result => Opt(result)
+      }
+      case o: Obj => o.merge(t) match {
+        case o: Opt => o
+        case result => Opt(result)
+      }
+      case _ => super.merge(that)
+    }
   }
   case object Str extends DefType
   case object Int extends DefType
@@ -110,5 +129,11 @@ object DefType {
   case object Bool extends DefType
   case object Null extends DefType {
     override def isNull: Boolean = true
+
+    override def merge(that: DefType): DefType = that match {
+      case o: Opt => o
+      case Null => Null
+      case _ => Opt(that)
+    }
   }
 }
