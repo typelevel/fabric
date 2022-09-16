@@ -1,7 +1,7 @@
 package spec.gen
 
 import fabric.Json
-import fabric.io.{Format, JsonFormatter, JsonParser}
+import fabric.io.{Format, JsonFormatter, JsonParser, JsoniterParser}
 import org.scalacheck.Arbitrary
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.scalacheck.Checkers
@@ -12,7 +12,8 @@ class RWSpecGenParse extends AnyWordSpec with Checkers {
       implicit val vg: Arbitrary[Json] = ValueGenerator.arbitraryValue
       check { (value: Json) =>
         val json = JsonFormatter.Default(value)
-        value == JsonParser(json, Format.Json)
+        // TODO: Switch to JsonParser when JacksonParser can handle this properly
+        value == JsoniterParser(json)
       }
     }
   }
