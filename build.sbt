@@ -1,8 +1,7 @@
 // Scala versions
 val scala213 = "2.13.8"
-val scala212 = "2.12.16"
 val scala3 = List("3.2.0")
-val scala2 = List(scala213, scala212)
+val scala2 = List(scala213)
 val scalaVersions = scala3 ::: scala2
 
 name := "fabric"
@@ -15,7 +14,7 @@ ThisBuild / crossScalaVersions := scalaVersions
 
 ThisBuild / sonatypeCredentialHost := "s01.oss.sonatype.org"
 ThisBuild / sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
-ThisBuild / publishTo := sonatypePublishTo.value
+ThisBuild / publishTo := sonatypePublishToBundle.value
 ThisBuild / sonatypeProfileName := "com.outr"
 ThisBuild / licenses := Seq("MIT" -> url("https://github.com/outr/fabric/blob/master/LICENSE"))
 ThisBuild / sonatypeProjectHosting := Some(xerial.sbt.Sonatype.GitHubHosting("outr", "fabric", "matt@outr.com"))
@@ -55,7 +54,7 @@ val sourceMapSettings = List(
 
 lazy val root = project.in(file("."))
   .aggregate(
-    core.js, core.jvm, core.native, io.js, io.jvm, define.js, define.jvm
+    core.js, core.jvm, core.native, io.js, io.jvm, define.jvm
   )
   .settings(
     name := "fabric",
@@ -109,7 +108,7 @@ lazy val io = crossProject(JSPlatform, JVMPlatform)
   )
   .dependsOn(core)
 
-lazy val define = crossProject(JSPlatform, JVMPlatform)
+lazy val define = crossProject(JVMPlatform)
   .crossType(CrossType.Full)
   .settings(
     name := "fabric-define",
