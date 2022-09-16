@@ -1,7 +1,9 @@
 package fabric
 
 object FabricDefinition {
-  def apply(json: List[Json]): DefType = {
+  def apply(json: List[Json]): DefType = if (json.isEmpty) {
+    DefType.Null
+  } else {
     var gt = apply(json.head)
     json.tail.foreach { t =>
       val g = apply(t)

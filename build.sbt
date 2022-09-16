@@ -118,7 +118,7 @@ lazy val define = crossProject(JSPlatform, JVMPlatform)
       "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
     )
   )
-  .dependsOn(core)
+  .dependsOn(io)
 
 lazy val bench = project.in(file("bench"))
   .enablePlugins(JmhPlugin)
