@@ -1,6 +1,6 @@
 package spec.gen
 
-import fabric.rw.{RW, ReaderWriter}
+import fabric.rw.RW
 import org.scalacheck.{Arbitrary, Gen}
 
 sealed trait Enum
@@ -12,5 +12,5 @@ object Enum {
   lazy val values: Vector[Enum] = Vector(Zero, One)
 
   implicit val arbitraryEnum: Arbitrary[Enum] = Arbitrary(Gen.choose(0, Enum.values.size - 1).map(values.apply))
-  implicit val rw: RW[Enum] = ReaderWriter.enumeration(List(Zero, One))
+  implicit val rw: RW[Enum] = RW.enumeration(List(Zero, One))
 }

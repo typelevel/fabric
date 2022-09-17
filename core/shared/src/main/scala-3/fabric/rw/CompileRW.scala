@@ -9,7 +9,7 @@ import scala.quoted.{given, _}
 import scala.collection.immutable.ListMap
 
 trait CompileRW {
-  inline def ccRW[T <: Product](using Mirror.ProductOf[T]): ReaderWriter[T] = new ClassRW[T] {
+  inline def ccRW[T <: Product](using Mirror.ProductOf[T]): RW[T] = new ClassRW[T] {
     override protected def t2Map(t: T): ListMap[String, Json] = toMap(t)
     override protected def map2T(map: ListMap[String, Json]): T = fromMap[T](map)
   }

@@ -80,18 +80,18 @@ object RWMacros {
   }
 
   def caseClassRW[T](context: blackbox.Context)
-                  (implicit t: context.WeakTypeTag[T]): context.Expr[ReaderWriter[T]] = {
+                  (implicit t: context.WeakTypeTag[T]): context.Expr[RW[T]] = {
     import context.universe._
 
     val tpe = t.tpe
     val reader = caseClassR[T](context)
     val writer = caseClassW[T](context)
-    context.Expr[ReaderWriter[T]](
+    context.Expr[RW[T]](
       q"""
          import _root_.fabric._
          import _root_.fabric.rw._
 
-         new ReaderWriter[$tpe] {
+         new RW[$tpe] {
             private val r = $reader
             private val w = $writer
 

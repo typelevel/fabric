@@ -37,7 +37,7 @@ class CaseClassConvertLarge extends AbstractCaseClassConvert {
                    public: Boolean,
                    created_at: String)
   object Event {
-    implicit val hRW: ReaderWriter[Event] = ccRW
+    implicit val hRW: RW[Event] = ccRW
     implicit val cDecoder: io.circe.Decoder[Event] = io.circe.generic.semiauto.deriveDecoder[Event]
     implicit val uRW: uPickleSupport.ReadWriter[Event] = uPickleSupport.macroRW[Event]
   }
@@ -48,7 +48,7 @@ class CaseClassConvertLarge extends AbstractCaseClassConvert {
                         url: String,
                         avatar_url: String)
   object EventActor {
-    implicit val hRW: ReaderWriter[EventActor] = ccRW
+    implicit val hRW: RW[EventActor] = ccRW
     implicit val cDecoder: io.circe.Decoder[EventActor] = io.circe.generic.semiauto.deriveDecoder[EventActor]
     implicit val uRW: uPickleSupport.ReadWriter[EventActor] = uPickleSupport.macroRW[EventActor]
   }
@@ -56,7 +56,7 @@ class CaseClassConvertLarge extends AbstractCaseClassConvert {
                        name: String,
                        url: String)
   object EventRepo {
-    implicit val hRW: ReaderWriter[EventRepo] = ccRW
+    implicit val hRW: RW[EventRepo] = ccRW
     implicit val cDecoder: io.circe.Decoder[EventRepo] = io.circe.generic.semiauto.deriveDecoder[EventRepo]
     implicit val uRW: uPickleSupport.ReadWriter[EventRepo] = uPickleSupport.macroRW[EventRepo]
   }

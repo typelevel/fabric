@@ -8,7 +8,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import scala.collection.immutable.ListMap
 
 class RWSpecManual extends AnyWordSpec with Matchers {
-  implicit val addressRW: ReaderWriter[Address] = new ClassRW[Address] {
+  implicit val addressRW: RW[Address] = new ClassRW[Address] {
     override protected def t2Map(t: Address): ListMap[String, Json] = ListMap(
       "city" -> t.city.json,
       "state" -> t.state.json
@@ -19,7 +19,7 @@ class RWSpecManual extends AnyWordSpec with Matchers {
       state = map("state").as[String]
     )
   }
-  implicit val personRW: ReaderWriter[Person] = new ClassRW[Person] {
+  implicit val personRW: RW[Person] = new ClassRW[Person] {
     override protected def t2Map(t: Person): ListMap[String, Json] = ListMap(
       "name" -> t.name.json,
       "age" -> t.age.json,
