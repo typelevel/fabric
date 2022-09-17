@@ -2,7 +2,6 @@ package spec
 
 import fabric._
 import fabric.io.{Format, JsonParser}
-import fabric.rw.Convertible
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
