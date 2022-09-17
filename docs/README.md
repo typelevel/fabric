@@ -49,7 +49,7 @@ For SBT simply include:
 `libraryDependencies += "com.outr" %%% "fabric-core" % "@VERSION@"`
 
 For parsing support include:
-`libraryDependencies += "com.outr" %%% "fabric-parse" % "@VERSION@"`
+`libraryDependencies += "com.outr" %%% "fabric-io" % "@VERSION@"`
 
 ### Create
 
