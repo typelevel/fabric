@@ -2,8 +2,7 @@
 
 set -e
 
-sbt +clean +compile
-sbt +test
+sbt +clean +compile +test
 sbt docs/mdoc
 sbt +publishSigned
 sbt sonatypeBundleRelease
