@@ -174,14 +174,14 @@ class FabricSpec extends AnyWordSpec with Matchers {
 case class Special(name: Option[String], age: Int = 21, data: Option[Json])
 
 object Special {
-  implicit val rw: ReaderWriter[Special] = ccRW
+  implicit val rw: RW[Special] = ccRW
 }
 
 sealed trait Polymorphic
 
 object Polymorphic {
-  implicit val rw: ReaderWriter[Polymorphic] = ReaderWriter.poly[Polymorphic]() {
-    case "blank" => ReaderWriter.static(Blank)
+  implicit val rw: RW[Polymorphic] = RW.poly[Polymorphic]() {
+    case "blank" => RW.static(Blank)
     case "polyValue" => PolyValue.rw
   }
 
@@ -190,6 +190,6 @@ object Polymorphic {
   case class PolyValue(s: String) extends Polymorphic
 
   object PolyValue {
-    implicit val rw: ReaderWriter[PolyValue] = ccRW
+    implicit val rw: RW[PolyValue] = ccRW
   }
 }

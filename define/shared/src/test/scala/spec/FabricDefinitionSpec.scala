@@ -206,10 +206,6 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           s"bench.event.Event$name"
         }
       )
-      println(generated.code)
-      generated.additional.foreach { gc =>
-        println(gc.code)
-      }
       generated.write(new File("bench/src/main/scala/"))
     }
   }

@@ -10,7 +10,7 @@ trait Reader[T] {
 }
 
 object Reader {
-  import ReaderWriter._
+  import RW._
 
   implicit def unitR: Reader[Unit] = unitRW
   implicit def valueR: Reader[Json] = valueRW

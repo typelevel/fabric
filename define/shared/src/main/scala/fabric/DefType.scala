@@ -1,6 +1,6 @@
 package fabric
 
-import fabric.rw.ReaderWriter
+import fabric.rw.RW
 
 import scala.collection.immutable.ListMap
 import scala.util.Try
@@ -30,7 +30,7 @@ sealed trait DefType {
 }
 
 object DefType {
-  implicit def rw: ReaderWriter[DefType] = ReaderWriter[DefType](
+  implicit def rw: RW[DefType] = RW[DefType](
     r = dt2V,
     w = v2dt
   )

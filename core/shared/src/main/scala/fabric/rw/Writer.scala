@@ -10,7 +10,7 @@ trait Writer[T] {
 }
 
 object Writer {
-  import ReaderWriter._
+  import RW._
 
   implicit def unitW: Writer[Unit] = unitRW
   implicit def valueW: Writer[Json] = valueRW

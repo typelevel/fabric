@@ -36,7 +36,7 @@ class CaseClassConvertSmall extends AbstractCaseClassConvert {
 
   case class Person(name: String, age: Int)
   object Person {
-    implicit val hRW: ReaderWriter[Person] = ccRW[Person]
+    implicit val hRW: RW[Person] = ccRW[Person]
     implicit val cDecoder: io.circe.Decoder[Person] = io.circe.generic.semiauto.deriveDecoder[Person]
     implicit val uRW: uPickleSupport.ReadWriter[Person] = uPickleSupport.macroRW[Person]
   }
