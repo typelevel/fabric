@@ -13,5 +13,10 @@ trait Parser {
     }
   }
 
+  final def apply(content: Array[Byte], format: Format): Json = {
+    val s = new String(content, "UTF-8")
+    apply(s, format)
+  }
+
   def apply(content: String, format: Format): Json
 }
