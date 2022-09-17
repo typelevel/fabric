@@ -180,8 +180,8 @@ object Special {
 sealed trait Polymorphic
 
 object Polymorphic {
-  implicit val rw: ReaderWriter[Polymorphic] = polyRW[Polymorphic]() {
-    case "blank" => staticRW(Blank)
+  implicit val rw: ReaderWriter[Polymorphic] = ReaderWriter.poly[Polymorphic]() {
+    case "blank" => ReaderWriter.static(Blank)
     case "polyValue" => PolyValue.rw
   }
 
