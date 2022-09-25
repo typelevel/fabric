@@ -10,4 +10,4 @@ addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")
 
 addSbtPlugin("com.github.sbt" % "sbt-git" % "2.0.0")
 
-addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.3.3" )
+addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.3.4" )
