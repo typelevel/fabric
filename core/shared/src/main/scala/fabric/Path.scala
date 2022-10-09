@@ -1,7 +1,7 @@
 package fabric
 
 /**
- * Path is a convenience wrapper to represent paths for lookups or changes in Value
+ * Path is a convenience wrapper to represent paths for lookups or changes in Json
  */
 case class Path(entries: List[String]) extends AnyVal {
   /**

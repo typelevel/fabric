@@ -36,13 +36,13 @@ class FabricSpec extends AnyWordSpec with Matchers {
     }
     "verify type getting works as expected" in {
       val s: fabric.Json = Str("Hello, World!")
-      s.getValue(JsonType.Str) should be(Some(Str("Hello, World!")))
+      s.getAsType(JsonType.Str) should be(Some(Str("Hello, World!")))
       s.getStr should be(Some(Str("Hello, World!")))
-      s.getValue(JsonType.Obj) should be(None)
-      s.getValue(JsonType.Bool) should be(None)
-      s.getValue(JsonType.Arr) should be(None)
-      s.getValue(JsonType.Num) should be(None)
-      s.getValue(JsonType.Null) should be(None)
+      s.getAsType(JsonType.Obj) should be(None)
+      s.getAsType(JsonType.Bool) should be(None)
+      s.getAsType(JsonType.Arr) should be(None)
+      s.getAsType(JsonType.Num) should be(None)
+      s.getAsType(JsonType.Null) should be(None)
     }
     "extract the state" in {
       val state = v("address" \ "state")

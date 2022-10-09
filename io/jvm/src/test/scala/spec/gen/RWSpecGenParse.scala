@@ -8,7 +8,7 @@ import org.scalatestplus.scalacheck.Checkers
 
 class RWSpecGenParse extends AnyWordSpec with Checkers {
   "generated automatic conversion" should {
-    "serialize and deserialize Value" in {
+    "serialize and deserialize Json" in {
       implicit val vg: Arbitrary[Json] = ValueGenerator.arbitraryValue
       check { (value: Json) =>
         val json = JsonFormatter.Default(value)

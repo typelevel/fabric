@@ -3,7 +3,7 @@ package fabric.rw
 import fabric._
 
 /**
- * Writable provides a simple Value => T wrapper functionality
+ * Writable provides a simple Json => T wrapper functionality
  */
 trait Writer[T] {
   def write(value: Json): T
