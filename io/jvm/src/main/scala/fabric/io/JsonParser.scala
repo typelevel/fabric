@@ -11,8 +11,7 @@ import scala.io.Source
  */
 object JsonParser extends MultiFormatParser {
   override def parsers: List[FormatParser] = List(
-//    HoconParser, JacksonParser, PropertiesParser, XMLParser, YamlParser
-    HoconParser, SimpleJsonParser, PropertiesParser, XMLParser, YamlParser
+    HoconParser, JacksonParser, PropertiesParser, XMLParser, YamlParser
   )
 
   def apply(file: File, format: Format): Json = apply(Source.fromFile(file, "UTF-8"), format)

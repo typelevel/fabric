@@ -1,6 +1,7 @@
 package fabric
 
 import fabric.filter.ValueFilter
+import fabric.merge.MergeConfig
 
 import scala.collection.immutable.ListMap
 import scala.util.Try
@@ -102,41 +103,19 @@ sealed trait Json extends Any {
    *
    * @param value the value to merge
    * @param path the path (defaults to Path.empty)
-   * @param `type` the merge type (defaults to MergeType.Overwrite)
+   * @param config the merge configuration (defaults to MergeConfig)
    * @return root Value after merge
    */
-  def merge(value: Json,
-            path: Path = Path.empty,
-            `type`: MergeType = MergeType.Overwrite): Json = modify(path) {
-    case Obj(thisMap) => value match {
-      case Obj(thatMap) => {
-        var merged = thatMap
-        thisMap.foreach {
-          case (k, v) => if (merged.contains(k)) {
-            `type` match {
-              case MergeType.Overwrite => merged += k -> v.merge(merged(k))
-              case MergeType.Add => merged += k -> merged(k).merge(v)
-              case MergeType.ErrorOnDuplicate => throw new RuntimeException(s"Duplicate found: $k, existing: ${merged(k)}, new: $v")
-            }
-          } else {
-            merged += k -> v
-          }
-        }
-        merged
-      }
-      case _ => `type` match {
-        case MergeType.Overwrite => value
-        case MergeType.Add => Obj(thisMap)
-        case MergeType.ErrorOnDuplicate => throw new RuntimeException(s"Duplicate found at $path, existing: ${Obj(thisMap)}, new: $value")
-      }
-    }
-    case _ => value
+  final def merge(value: Json,
+                  path: Path = Path.empty,
+                  config: MergeConfig = MergeConfig): Json = modify(path) { current =>
+    config.merge(current, value, path)
   }
 
   /**
    * The type of value
    */
-  def `type`: ValueType[Type]
+  def `type`: JsonType[Type]
 
   def isEmpty: Boolean
 
@@ -145,36 +124,36 @@ sealed trait Json extends Any {
   /**
    * True if this is an Obj
    */
-  def isObj: Boolean = `type` == ValueType.Obj
+  def isObj: Boolean = `type` == JsonType.Obj
 
   /**
    * True if this is an Arr
    */
-  def isArr: Boolean = `type` == ValueType.Arr
+  def isArr: Boolean = `type` == JsonType.Arr
 
   /**
    * True if this is a Str
    */
-  def isStr: Boolean = `type` == ValueType.Str
+  def isStr: Boolean = `type` == JsonType.Str
 
   /**
    * True if this is a Num
    */
   def isNum: Boolean = isNumInt || isNumDec
 
-  def isNumInt: Boolean = `type` == ValueType.NumInt
+  def isNumInt: Boolean = `type` == JsonType.NumInt
 
-  def isNumDec: Boolean = `type` == ValueType.NumDec
+  def isNumDec: Boolean = `type` == JsonType.NumDec
 
   /**
    * True if this is a Bool
    */
-  def isBool: Boolean = `type` == ValueType.Bool
+  def isBool: Boolean = `type` == JsonType.Bool
 
   /**
    * True if this is a Null
    */
-  def isNull: Boolean = `type` == ValueType.Null
+  def isNull: Boolean = `type` == JsonType.Null
 
   /**
    * Safely casts this Value as the specified ValueType. Throws an exception if not a match.
@@ -182,9 +161,9 @@ sealed trait Json extends Any {
    * @param `type` the type to cast this ValueType as
    * @tparam V the return type
    */
-  def asValue[V <: Json](`type`: ValueType[V]): V = if (this.`type`.is(`type`)) {
+  def asValue[V <: Json](`type`: JsonType[V]): V = if (this.`type`.is(`type`)) {
     this.asInstanceOf[V]
-  } else if (`type` == ValueType.Str) {
+  } else if (`type` == JsonType.Str) {
     str(toString).asInstanceOf[V]
   } else {
     throw new RuntimeException(s"$this is a ${this.`type`}, not a ${`type`}")
@@ -197,7 +176,7 @@ sealed trait Json extends Any {
    * @tparam V the value type
    * @return Option[V]
    */
-  final def getValue[V <: Json](`type`: ValueType[V]): Option[V] = if (this.`type` == `type`) {
+  final def getValue[V <: Json](`type`: JsonType[V]): Option[V] = if (this.`type` == `type`) {
     Some(this.asInstanceOf[V])
   } else {
     None
@@ -206,62 +185,62 @@ sealed trait Json extends Any {
   /**
    * Casts to Obj or throws an exception if not an Obj
    */
-  def asObj: Obj = asValue[Obj](ValueType.Obj)
+  def asObj: Obj = asValue[Obj](JsonType.Obj)
 
   /**
    * Casts to Arr or throws an exception if not an Arr
    */
-  def asArr: Arr = asValue[Arr](ValueType.Arr)
+  def asArr: Arr = asValue[Arr](JsonType.Arr)
 
   /**
    * Casts to Str or throws an exception if not a Str
    */
-  def asStr: Str = asValue[Str](ValueType.Str)
+  def asStr: Str = asValue[Str](JsonType.Str)
 
   /**
    * Casts to Num or throws an exception if not a Num
    */
-  def asNum: Num = asValue[Num](ValueType.Num)
+  def asNum: Num = asValue[Num](JsonType.Num)
 
   /**
    * Casts to NumInt or throws an exception if not a NumInt
    */
-  def asNumInt: NumInt = asValue[NumInt](ValueType.NumInt)
+  def asNumInt: NumInt = asValue[NumInt](JsonType.NumInt)
 
   /**
    * Casts to NumDec or throws an exception if not a NumDec
    */
-  def asNumDec: NumDec = asValue[NumDec](ValueType.NumDec)
+  def asNumDec: NumDec = asValue[NumDec](JsonType.NumDec)
 
   /**
    * Casts to Bool or throws an exception if not a Bool
    */
-  def asBool: Bool = asValue[Bool](ValueType.Bool)
+  def asBool: Bool = asValue[Bool](JsonType.Bool)
 
   /**
    * Casts to Obj if it's of Obj type or returns None
    */
-  def getObj: Option[Obj] = getValue(ValueType.Obj)
+  def getObj: Option[Obj] = getValue(JsonType.Obj)
 
   /**
    * Casts to Arr if it's of Arr type or returns None
    */
-  def getArr: Option[Arr] = getValue(ValueType.Arr)
+  def getArr: Option[Arr] = getValue(JsonType.Arr)
 
   /**
    * Casts to Str if it's of Str type or returns None
    */
-  def getStr: Option[Str] = getValue(ValueType.Str)
+  def getStr: Option[Str] = getValue(JsonType.Str)
 
   /**
    * Casts to Num if it's of Num type or returns None
    */
-  def getNum: Option[Num] = getValue(ValueType.Num)
+  def getNum: Option[Num] = getValue(JsonType.Num)
 
   /**
    * Casts to Bool if it's of Bool type or returns None
    */
-  def getBool: Option[Bool] = getValue(ValueType.Bool)
+  def getBool: Option[Bool] = getValue(JsonType.Bool)
 
   /**
    * Convenience method for asObj.value
@@ -356,7 +335,7 @@ final class Obj private(val value: ListMap[String, Json]) extends AnyVal with Js
 
   override def isEmpty: Boolean = value.isEmpty
 
-  override def `type`: ValueType[Obj] = ValueType.Obj
+  override def `type`: JsonType[Obj] = JsonType.Obj
 
   override def toString: String = value.map {
     case (key, value) => s""""$key": $value"""
@@ -413,20 +392,20 @@ object Obj {
 case class Str(value: String) extends AnyVal with Json {
   override type Type = Str
 
-  override def `type`: ValueType[Str] = ValueType.Str
+  override def `type`: JsonType[Str] = JsonType.Str
 
   override def isEmpty: Boolean = value.isEmpty
 
-  override def asValue[V <: Json](`type`: ValueType[V]): V = `type` match {
-    case ValueType.Bool => Try(Bool(value.toBoolean))
+  override def asValue[V <: Json](`type`: JsonType[V]): V = `type` match {
+    case JsonType.Bool => Try(Bool(value.toBoolean))
       .toOption
       .map(_.asInstanceOf[V])
       .getOrElse(throw ConversionException(s"$value is a Str and can't be converted to Bool"))
-    case ValueType.NumInt => Try(NumInt(value.toInt))
+    case JsonType.NumInt => Try(NumInt(value.toInt))
       .toOption
       .map(_.asInstanceOf[V])
       .getOrElse(throw ConversionException(s"$value is a Str and can't be converted to NumInt"))
-    case ValueType.NumDec | ValueType.Num => Try(NumDec(BigDecimal(value)))
+    case JsonType.NumDec | JsonType.Num => Try(NumDec(BigDecimal(value)))
       .toOption
       .map(_.asInstanceOf[V])
       .getOrElse(throw ConversionException(s"$value is a Str and can't be converted to NumDec"))
@@ -464,9 +443,9 @@ sealed trait Num extends Any with Json {
 case class NumInt(value: Long) extends Num {
   override type Type = NumInt
 
-  override def `type`: ValueType[NumInt] = ValueType.NumInt
+  override def `type`: JsonType[NumInt] = JsonType.NumInt
 
-  override def asValue[V <: Json](`type`: ValueType[V]): V = if (`type` == ValueType.NumDec) {
+  override def asValue[V <: Json](`type`: JsonType[V]): V = if (`type` == JsonType.NumDec) {
     NumDec(BigDecimal(value)).asInstanceOf[V]
   } else {
     super.asValue[V](`type`)
@@ -498,9 +477,9 @@ case class NumInt(value: Long) extends Num {
 case class NumDec(value: BigDecimal) extends Num {
   override type Type = NumDec
 
-  override def `type`: ValueType[NumDec] = ValueType.NumDec
+  override def `type`: JsonType[NumDec] = JsonType.NumDec
 
-  override def asValue[V <: Json](`type`: ValueType[V]): V = if (`type` == ValueType.NumInt) {
+  override def asValue[V <: Json](`type`: JsonType[V]): V = if (`type` == JsonType.NumInt) {
     NumInt(value.toLong).asInstanceOf[V]
   } else {
     super.asValue[V](`type`)
@@ -532,7 +511,7 @@ case class NumDec(value: BigDecimal) extends Num {
 case class Bool(value: Boolean) extends AnyVal with Json {
   override type Type = Bool
 
-  override def `type`: ValueType[Bool] = ValueType.Bool
+  override def `type`: JsonType[Bool] = JsonType.Bool
 
   override def isEmpty: Boolean = false
 
@@ -545,7 +524,7 @@ case class Bool(value: Boolean) extends AnyVal with Json {
 case class Arr(value: Vector[Json]) extends AnyVal with Json {
   override type Type = Arr
 
-  override def `type`: ValueType[Arr] = ValueType.Arr
+  override def `type`: JsonType[Arr] = JsonType.Arr
 
   override def filter(filter: ValueFilter): Option[Json] = {
     val mutated = value.flatMap(v => v.filter(filter))
@@ -565,7 +544,7 @@ sealed trait Null extends Json
 object Null extends Null {
   override type Type = Null
 
-  override def `type`: ValueType[Null] = ValueType.Null
+  override def `type`: JsonType[Null] = JsonType.Null
 
   override def isEmpty: Boolean = true
 

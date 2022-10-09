@@ -18,6 +18,9 @@ class ParseJsonMedium extends AbstractParseJson {
   def fabricJsoniterMedium(): Unit = parseFabric(Samples.mediumJsonString, JsoniterParser)
 
   @Benchmark
+  def fabricSimpleJsonMedium(): Unit = parseFabric(Samples.mediumJsonString, SimpleJsonParser)
+
+  @Benchmark
   def circeMedium(): Unit = parseCirce(Samples.mediumJsonString)
 
   @Benchmark

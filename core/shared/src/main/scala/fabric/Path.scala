@@ -3,7 +3,7 @@ package fabric
 /**
  * Path is a convenience wrapper to represent paths for lookups or changes in Value
  */
-class Path(val entries: List[String]) extends AnyVal {
+case class Path(entries: List[String]) extends AnyVal {
   /**
    * Convenience DSL to build paths
    */
@@ -25,7 +25,11 @@ class Path(val entries: List[String]) extends AnyVal {
    */
   def next(): Path = new Path(entries.tail)
 
-  override def toString: String = entries.mkString(".")
+  override def toString: String = if (entries.isEmpty) {
+    "<empty>"
+  } else {
+    entries.mkString("Path(", " \\ ", ")")
+  }
 }
 
 object Path {
