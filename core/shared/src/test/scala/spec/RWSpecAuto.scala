@@ -7,7 +7,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class RWSpecAuto extends AnyWordSpec with Matchers {
   "automatic conversion" should {
-    "convert Person to Value and back" in {
+    "convert Person to Json and back" in {
       val person = Person("Matt Hicks", 41, Address("San Jose", "California"))
       val value = person.json
       value should be(obj(

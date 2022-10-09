@@ -3,7 +3,7 @@ package fabric.rw
 import fabric._
 
 /**
- * Reader provides a simple T => Value wrapper functionality
+ * Reader provides a simple T => Json wrapper functionality
  */
 trait Reader[T] {
   def read(t: T): Json

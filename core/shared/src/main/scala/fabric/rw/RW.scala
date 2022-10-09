@@ -89,7 +89,7 @@ object RW {
   /**
    * Convenience functionality for working with enumerations
    *
-   * @param fieldName the field name to refer to in the Value
+   * @param fieldName the field name to refer to in the Json
    * @param mapping   a mapping of key/value pairs representing the String in fieldName to the representative value
    */
   def enumeration[T](fieldName: String, mapping: (String, T)*): RW[T] = {
