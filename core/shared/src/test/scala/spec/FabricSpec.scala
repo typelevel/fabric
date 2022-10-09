@@ -2,6 +2,7 @@ package spec
 
 import fabric._
 import fabric.filter._
+import fabric.merge.{ArrConcatMerge, MergeConfig}
 import fabric.rw._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -35,13 +36,13 @@ class FabricSpec extends AnyWordSpec with Matchers {
     }
     "verify type getting works as expected" in {
       val s: fabric.Json = Str("Hello, World!")
-      s.getValue(ValueType.Str) should be(Some(Str("Hello, World!")))
+      s.getValue(JsonType.Str) should be(Some(Str("Hello, World!")))
       s.getStr should be(Some(Str("Hello, World!")))
-      s.getValue(ValueType.Obj) should be(None)
-      s.getValue(ValueType.Bool) should be(None)
-      s.getValue(ValueType.Arr) should be(None)
-      s.getValue(ValueType.Num) should be(None)
-      s.getValue(ValueType.Null) should be(None)
+      s.getValue(JsonType.Obj) should be(None)
+      s.getValue(JsonType.Bool) should be(None)
+      s.getValue(JsonType.Arr) should be(None)
+      s.getValue(JsonType.Num) should be(None)
+      s.getValue(JsonType.Null) should be(None)
     }
     "extract the state" in {
       val state = v("address" \ "state")
@@ -167,6 +168,27 @@ class FabricSpec extends AnyWordSpec with Matchers {
 
       val camel2Snake = camel.camel2Snake
       camel2Snake should be(snake)
+    }
+    "merge with a custom override" in {
+      val json1 = obj(
+        "test1" -> obj(
+          "test2" -> arr(1, 2, 3),
+          "test3" -> arr(1, 2, 3)
+        )
+      )
+      val json2 = obj(
+        "test1" -> obj(
+          "test2" -> arr(4, 5, 6),
+          "test3" -> arr(4, 5, 6)
+        )
+      )
+      val merged = json1.merge(json2, config = MergeConfig.withOverride(Path.parse("test1.test2"), ArrConcatMerge))
+      merged should be(obj(
+        "test1" -> obj(
+          "test2" -> arr(1, 2, 3, 4, 5, 6),
+          "test3" -> arr(4, 5, 6)
+        )
+      ))
     }
   }
 }

@@ -18,6 +18,9 @@ class ParseJsonLarge extends AbstractParseJson {
   def fabricJsoniterLarge(): Unit = parseFabric(Samples.largeJsonString, JsoniterParser)
 
   @Benchmark
+  def fabricSimpleJsonLarge(): Unit = parseFabric(Samples.largeJsonString, SimpleJsonParser)
+
+  @Benchmark
   def circeLarge(): Unit = parseCirce(Samples.largeJsonString)
 
   @Benchmark
