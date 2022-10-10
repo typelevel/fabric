@@ -46,10 +46,10 @@ The focus of this project is minimalism and flexibility. To that end, the featur
 ### Setup
 
 For SBT simply include:
-`libraryDependencies += "com.outr" %%% "fabric-core" % "1.6.1"`
+`libraryDependencies += "com.outr" %%% "fabric-core" % "1.7.0"`
 
 For parsing support include:
-`libraryDependencies += "com.outr" %%% "fabric-io" % "1.6.1"`
+`libraryDependencies += "com.outr" %%% "fabric-io" % "1.7.0"`
 
 ### Create
 
@@ -112,7 +112,7 @@ val backToValue: Json = person.json
 case class Person(name: String, age: Int)
 
 object Person {
-  implicit val rw: RW[Person] = ccRW[Person]
+  implicit val rw: RW[Person] = RW.gen[Person]
 }
 ```
 
