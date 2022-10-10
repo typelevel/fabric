@@ -58,7 +58,7 @@ object FabricGenerator {
       }.mkString(", "))
       b.append(")\n\n")
       b.append(s"object $className {\n")
-      b.append(s"  implicit val rw: RW[$className] = ccRW\n")
+      b.append(s"  implicit val rw: RW[$className] = RW\n")
       b.append("}")
       GeneratedClass(packageName, className, b.toString(), additional.reverse)
     }

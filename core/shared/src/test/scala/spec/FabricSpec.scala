@@ -196,7 +196,7 @@ class FabricSpec extends AnyWordSpec with Matchers {
 case class Special(name: Option[String], age: Int = 21, data: Option[Json])
 
 object Special {
-  implicit val rw: RW[Special] = ccRW
+  implicit val rw: RW[Special] = RW.gen
 }
 
 sealed trait Polymorphic
@@ -212,6 +212,6 @@ object Polymorphic {
   case class PolyValue(s: String) extends Polymorphic
 
   object PolyValue {
-    implicit val rw: RW[PolyValue] = ccRW
+    implicit val rw: RW[PolyValue] = RW.gen
   }
 }

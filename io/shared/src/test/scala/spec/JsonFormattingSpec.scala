@@ -53,6 +53,6 @@ class JsonFormattingSpec extends AnyWordSpec with Matchers {
   case class Simple(value: String)
 
   object Simple {
-    implicit val rw: RW[Simple] = ccRW
+    implicit val rw: RW[Simple] = RW.gen
   }
 }

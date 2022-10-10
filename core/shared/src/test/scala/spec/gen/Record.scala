@@ -22,7 +22,7 @@ final case class Record(
 )
 
 object Record {
-  implicit val rw: RW[Record] = ccRW
+  implicit val rw: RW[Record] = RW.gen
 
   implicit val arbitraryRecord: Arbitrary[Record] = Arbitrary(for {
     string <- arbitrary[String]

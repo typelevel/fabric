@@ -104,7 +104,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           |case class Person(name: String, age: Long)
           |
           |object Person {
-          |  implicit val rw: RW[Person] = ccRW
+          |  implicit val rw: RW[Person] = RW
           |}""".stripMargin)
       generated.additional should be(Nil)
     }
@@ -132,7 +132,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           |case class Person(name: String, age: Long, location: com.example.Location)
           |
           |object Person {
-          |  implicit val rw: RW[Person] = ccRW
+          |  implicit val rw: RW[Person] = RW
           |}""".stripMargin)
       generated.additional.length should be(1)
       val location = generated.additional.head
@@ -145,7 +145,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
                                 |case class Location(city: String, state: String)
                                 |
                                 |object Location {
-                                |  implicit val rw: RW[Location] = ccRW
+                                |  implicit val rw: RW[Location] = RW
                                 |}""".stripMargin)
     }
     "generate two case classes based on a definition with an array" in {
@@ -172,7 +172,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           |case class Person(name: String, age: Long, locations: Vector[com.example.Location])
           |
           |object Person {
-          |  implicit val rw: RW[Person] = ccRW
+          |  implicit val rw: RW[Person] = RW
           |}""".stripMargin)
       generated.additional.length should be(1)
       val location = generated.additional.head
@@ -186,7 +186,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           |case class Location(city: String, state: String)
           |
           |object Location {
-          |  implicit val rw: RW[Location] = ccRW
+          |  implicit val rw: RW[Location] = RW
           |}""".stripMargin)
     }
     "generate complex case classes from large JSON" in {
