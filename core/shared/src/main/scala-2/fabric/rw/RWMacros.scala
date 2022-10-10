@@ -7,6 +7,7 @@ object RWMacros {
     import context.universe._
 
     val tpe = t.tpe
+    val companion = tpe.typeSymbol.companion
     tpe.decls.collectFirst {
       case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
     } match {
@@ -27,7 +28,23 @@ object RWMacros {
             }
            """)
       }
-      case None => context.abort(context.enclosingPosition, s"$t is not a valid case class (no primary constructor found)")
+      case None =>
+        val caseObjects = tpe.companion.members.collect {
+          case s if s.typeSignature <:< t.tpe => s.name
+        }
+        if (caseObjects.isEmpty) {
+          context.abort(context.enclosingPosition, s"$t is not a valid case class (no primary constructor found)")
+        } else {
+          context.Expr[Reader[T]](
+            q"""
+               import _root_.fabric._
+               import _root_.fabric.rw._
+               import _root_.scala.collection.immutable.ListMap
+
+               RW.enumeration[$t](List(..$caseObjects))
+             """
+          )
+        }
     }
   }
 
@@ -75,7 +92,23 @@ object RWMacros {
             }
            """)
       }
-      case None => context.abort(context.enclosingPosition, s"$t is not a valid case class (no primary constructor found)")
+      case None =>
+        val caseObjects = tpe.companion.members.collect {
+          case s if s.typeSignature <:< t.tpe => s.name
+        }
+        if (caseObjects.isEmpty) {
+          context.abort(context.enclosingPosition, s"$t is not a valid case class (no primary constructor found)")
+        } else {
+          context.Expr[Writer[T]](
+            q"""
+               import _root_.fabric._
+               import _root_.fabric.rw._
+               import _root_.scala.collection.immutable.ListMap
+
+               RW.enumeration[$t](List(..$caseObjects))
+             """
+          )
+        }
     }
   }
 
