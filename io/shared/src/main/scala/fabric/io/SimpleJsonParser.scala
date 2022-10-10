@@ -6,6 +6,9 @@ import scala.annotation.tailrec
 import scala.collection.immutable.ListMap
 import scala.collection.mutable
 
+/**
+ * Dead simple Json parser meant to be faster than larger alternatives. Still needs some work to be faster.
+ */
 object SimpleJsonParser extends FormatParser {
   override def format: Format = Format.Json
 
