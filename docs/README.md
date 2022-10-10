@@ -107,7 +107,7 @@ val backToValue: Json = person.json
 case class Person(name: String, age: Int)
 
 object Person {
-  implicit val rw: RW[Person] = ccRW[Person]
+  implicit val rw: RW[Person] = RW.gen[Person]
 }
 ```
 
