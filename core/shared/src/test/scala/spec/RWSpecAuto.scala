@@ -63,5 +63,11 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
         )
       ))
     }
+    // TODO: Enable once Scala 3 support for sealed traits is working
+//    "supporting sealed traits" in {
+//      val car: VehicleType = VehicleType.Car
+//      car.json should be(Str("Car"))
+//      "SUV".json.as[VehicleType] should be(VehicleType.SUV)
+//    }
   }
 }
