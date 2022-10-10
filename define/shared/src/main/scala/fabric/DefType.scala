@@ -30,7 +30,7 @@ sealed trait DefType {
 }
 
 object DefType {
-  implicit def rw: RW[DefType] = RW[DefType](
+  implicit def rw: RW[DefType] = RW.from[DefType](
     r = dt2V,
     w = v2dt
   )

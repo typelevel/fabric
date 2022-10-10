@@ -9,16 +9,16 @@ import scala.quoted.{given, _}
 import scala.collection.immutable.ListMap
 
 trait CompileRW {
-  inline def ccRW[T <: Product](using Mirror.ProductOf[T]): RW[T] = new ClassRW[T] {
+  inline def gen[T <: Product](using Mirror.ProductOf[T]): RW[T] = new ClassRW[T] {
     override protected def t2Map(t: T): ListMap[String, Json] = toMap(t)
     override protected def map2T(map: ListMap[String, Json]): T = fromMap[T](map)
   }
 
-  inline def ccR[T <: Product](using Mirror.ProductOf[T]): Reader[T] = new ClassR[T] {
+  inline def genR[T <: Product](using Mirror.ProductOf[T]): Reader[T] = new ClassR[T] {
     override protected def t2Map(t: T): ListMap[String, Json] = toMap(t)
   }
 
-  inline def ccW[T <: Product](using Mirror.ProductOf[T]): Writer[T] = new ClassW[T] {
+  inline def genW[T <: Product](using Mirror.ProductOf[T]): Writer[T] = new ClassW[T] {
     override protected def map2T(map: ListMap[String, Json]): T = fromMap[T](map)
   }
 

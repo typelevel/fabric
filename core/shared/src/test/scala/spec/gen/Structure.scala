@@ -9,7 +9,7 @@ final case class Structure(
 )
 
 object Structure {
-  implicit val rw: RW[Structure] = ccRW
+  implicit val rw: RW[Structure] = RW.gen
 
   implicit val arbitraryStructure: Arbitrary[Structure] = Arbitrary(for {
     value <- arbitrary[String]
