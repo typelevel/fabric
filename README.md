@@ -25,7 +25,7 @@ some feedback.
 I wrote a performance benchmark with every expectation to be slower than the alternatives as I've done very
 little tuning, and I'm just one person versus the many developers that have worked on the others for years.
 However, I was shocked to see how well my little library performed compared to the alternatives:
-[JMH Results for 1.5.0 on Scala 3](https://jmh.morethan.io/?source=https://raw.githubusercontent.com/outr/fabric/master/bench/results/benchmarks-1.5.0.json)
+[JMH Results for 1.7.0 on Scala 3](https://jmh.morethan.io/?source=https://raw.githubusercontent.com/outr/fabric/master/bench/results/benchmarks-1.7.0.json)
 ## Features
 
 The focus of this project is minimalism and flexibility. To that end, the features are somewhat sparse:
