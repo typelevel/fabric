@@ -41,13 +41,13 @@ class CaseClassConvertMedium extends AbstractCaseClassConvert {
 
   case class Address(city: String, state: String)
   object Address {
-    implicit val hRW: RW[Address] = RW[Address]
+    implicit val hRW: RW[Address] = RW.gen
     implicit val cDecoder: io.circe.Decoder[Address] = io.circe.generic.semiauto.deriveDecoder[Address]
     implicit val uRW: uPickleSupport.ReadWriter[Address] = uPickleSupport.macroRW[Address]
   }
   case class User(username: String, password: String, fullName: Option[String], addresses: List[Address])
   object User {
-    implicit val hRW: RW[User] = RW[User]
+    implicit val hRW: RW[User] = RW.gen
     implicit val cDecoder: io.circe.Decoder[User] = io.circe.generic.semiauto.deriveDecoder[User]
     implicit val uRW: uPickleSupport.ReadWriter[User] = uPickleSupport.macroRW[User]
   }
