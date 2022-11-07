@@ -5,15 +5,17 @@ val scala2 = List(scala213)
 val scalaVersions = scala3 ::: scala2
 
 name := "fabric"
-ThisBuild / organization := "com.outr"
-ThisBuild / version := "1.7.0"
+ThisBuild / tlBaseVersion := "0.4"
+ThisBuild / organization := "org.typelevel"
+ThisBuild / startYear := Some(2021)
+ThisBuild / licenses := Seq(License.MIT)
+//ThisBuild / version := "1.7.1-SNAPSHOT"
 ThisBuild / scalaVersion := scala213
 ThisBuild / scalacOptions ++= Seq("-unchecked", "-deprecation")
 ThisBuild / javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
 ThisBuild / crossScalaVersions := scalaVersions
+ThisBuild / tlSonatypeUseLegacyHost := false
 
-ThisBuild / sonatypeCredentialHost := "s01.oss.sonatype.org"
-ThisBuild / sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
 ThisBuild / publishTo := sonatypePublishToBundle.value
 ThisBuild / sonatypeProfileName := "com.outr"
 ThisBuild / licenses := Seq("MIT" -> url("https://github.com/outr/fabric/blob/master/LICENSE"))
@@ -26,7 +28,7 @@ ThisBuild / scmInfo := Some(
   )
 )
 ThisBuild / developers := List(
-  Developer(id="darkfrog", name="Matt Hicks", email="matt@matthicks.com", url=url("https://matthicks.com"))
+  tlGitHubDev("darkfrog26", "Matt Hicks")
 )
 
 // Dependency versions
@@ -45,24 +47,7 @@ val jsoniterJavaVersion: String = "0.9.23"
 val circeVersion: String = "0.14.2"
 val uPickleVersion: String = "2.0.0"
 
-// set source map paths from local directories to github path
-val sourceMapSettings = List(
-  scalacOptions ++= git.gitHeadCommit.value.map { headCommit =>
-    val local = baseDirectory.value.toURI
-    val remote = s"https://raw.githubusercontent.com/outr/fabric/$headCommit/"
-    s"-P:scalajs:mapSourceURI:$local->$remote"
-  }
-)
-
-lazy val root = project.in(file("."))
-  .aggregate(
-    core.js, core.jvm, core.native, io.js, io.jvm, define.jvm
-  )
-  .settings(
-    name := "fabric",
-    publish := {},
-    publishLocal := {}
-  )
+lazy val root = tlCrossRootProject.aggregate(core.js, core.jvm, core.native, io.js, io.jvm, define.jvm)
 
 lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .crossType(CrossType.Full)
