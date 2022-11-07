@@ -41,20 +41,28 @@ object Cryo {
   }
 
   def bytes(json: Json): Int = json match {
-    case Obj(map) => bytes.Byte + bytes.Integer + map.foldLeft(0)((sum, t) => t match {
-      case (key, value) => sum + bytes(Str(key)) + bytes(value)
-    })
+    case Obj(map) =>
+      bytes.Byte + bytes.Integer + map.foldLeft(0)((sum, t) =>
+        t match {
+          case (key, value) => sum + bytes(Str(key)) + bytes(value)
+        }
+      )
     case Str(s) => bytes.Byte + bytes.Integer + s.length
     case NumInt(_) => bytes.Byte + bytes.Long
     case NumDec(bd) => bytes.Byte + bytes(Str(bd.toString()))
     case Bool(_) => bytes.Byte + bytes.Byte
-    case Arr(v) => bytes.Byte + bytes.Integer + v.foldLeft(0)((sum, json) => sum + bytes(json))
+    case Arr(v) =>
+      bytes.Byte + bytes.Integer + v.foldLeft(0)((sum, json) =>
+        sum + bytes(json)
+      )
     case Null => bytes.Byte
   }
 
   def freeze(json: Json, allocateDirect: Boolean): ByteBuffer = {
     val size = bytes(json)
-    val bb = if (allocateDirect) ByteBuffer.allocateDirect(size) else ByteBuffer.allocate(size)
+    val bb =
+      if (allocateDirect) ByteBuffer.allocateDirect(size)
+      else ByteBuffer.allocate(size)
     freeze(json, bb)
     bb
   }
@@ -63,10 +71,9 @@ object Cryo {
     case Obj(map) =>
       bb.put(identifiers.Obj)
       bb.putInt(map.size)
-      map.foreach {
-        case (key, value) =>
-          freeze(Str(key), bb)
-          freeze(value, bb)
+      map.foreach { case (key, value) =>
+        freeze(Str(key), bb)
+        freeze(value, bb)
       }
     case Str(s) =>
       bb.put(identifiers.Str)

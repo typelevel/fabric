@@ -35,5 +35,6 @@ object PropertiesParser extends FormatParser {
     parse(p)
   }
 
-  def parse(properties: java.util.Properties): Json = Obj.process(properties.asScala.toMap)
+  def parse(properties: java.util.Properties): Json =
+    Obj.process(properties.asScala.toMap)
 }

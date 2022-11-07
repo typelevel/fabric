@@ -24,19 +24,26 @@ package fabric
 import scala.collection.mutable
 
 object FabricGenerator {
-  def withMappings(dt: DefType,
-                   rootName: String,
-                   mappings: (String, String)*): GeneratedClass = {
+  def withMappings(
+      dt: DefType,
+      rootName: String,
+      mappings: (String, String)*
+  ): GeneratedClass = {
     val map = mappings.toMap
     apply(dt, rootName, map.apply)
   }
 
-  def apply(dt: DefType,
-            rootName: String,
-            resolver: String => String): GeneratedClass = {
+  def apply(
+      dt: DefType,
+      rootName: String,
+      resolver: String => String
+  ): GeneratedClass = {
     var additional = List.empty[GeneratedClass]
 
-    def generate(rootName: String, original: Map[String, DefType]): GeneratedClass = {
+    def generate(
+        rootName: String,
+        original: Map[String, DefType]
+    ): GeneratedClass = {
       val map = original.filterNot {
         case (_, DefType.Null) => true
         case (_, DefType.Arr(DefType.Null)) => true
@@ -53,7 +60,10 @@ object FabricGenerator {
         case DefType.Int => "Long"
         case DefType.Dec => "BigDecimal"
         case DefType.Bool => "Boolean"
-        case DefType.Null => throw new RuntimeException("Null type found in definition! Not supported for code generation!")
+        case DefType.Null =>
+          throw new RuntimeException(
+            "Null type found in definition! Not supported for code generation!"
+          )
       }
 
       val b = new mutable.StringBuilder
@@ -74,9 +84,13 @@ object FabricGenerator {
         case _ if name.contains('+') | name.contains('-') => s"`$name`"
         case _ => name
       }
-      b.append(map.map {
-        case (name, value) => s"${fixName(name)}: ${typeFor(name, value)}"
-      }.mkString(", "))
+      b.append(
+        map
+          .map { case (name, value) =>
+            s"${fixName(name)}: ${typeFor(name, value)}"
+          }
+          .mkString(", ")
+      )
       b.append(")\n\n")
       b.append(s"object $className {\n")
       b.append(s"  implicit val rw: RW[$className] = RW\n")
@@ -86,7 +100,10 @@ object FabricGenerator {
 
     dt match {
       case DefType.Obj(map) => generate(rootName, map)
-      case _ => throw new RuntimeException(s"Only DefType.Obj is supported for generation, but received: $dt")
+      case _ =>
+        throw new RuntimeException(
+          s"Only DefType.Obj is supported for generation, but received: $dt"
+        )
     }
   }
 }

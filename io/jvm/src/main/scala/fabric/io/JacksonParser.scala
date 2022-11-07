@@ -21,7 +21,11 @@
 
 package fabric.io
 
-import com.fasterxml.jackson.core.{JsonFactory, JsonToken, JsonParser => JParser}
+import com.fasterxml.jackson.core.{
+  JsonFactory,
+  JsonToken,
+  JsonParser => JParser
+}
 import fabric.{Arr, Bool, Json, Null, NumDec, NumInt, Obj, Str}
 
 import scala.annotation.tailrec
@@ -45,19 +49,22 @@ object JacksonParser extends FormatParser {
     }
   }
 
-  protected def parse(parser: JParser): Json = parseToken(parser, parser.nextToken())
+  protected def parse(parser: JParser): Json =
+    parseToken(parser, parser.nextToken())
 
-  private def parseToken(parser: JParser, token: JsonToken): Json = token match {
-    case JsonToken.START_OBJECT => parseObj(parser, ListMap.empty)
-    case JsonToken.START_ARRAY => parseArr(parser, Vector.empty)
-    case JsonToken.VALUE_STRING => Str(parser.getValueAsString)
-    case JsonToken.VALUE_NUMBER_FLOAT => NumDec(BigDecimal(parser.getValueAsDouble))
-    case JsonToken.VALUE_NUMBER_INT => NumInt(parser.getValueAsLong)
-    case JsonToken.VALUE_NULL => Null
-    case JsonToken.VALUE_TRUE => Bool(true)
-    case JsonToken.VALUE_FALSE => Bool(false)
-    case t => throw new RuntimeException(s"Unsupported token: $t")
-  }
+  private def parseToken(parser: JParser, token: JsonToken): Json =
+    token match {
+      case JsonToken.START_OBJECT => parseObj(parser, ListMap.empty)
+      case JsonToken.START_ARRAY => parseArr(parser, Vector.empty)
+      case JsonToken.VALUE_STRING => Str(parser.getValueAsString)
+      case JsonToken.VALUE_NUMBER_FLOAT =>
+        NumDec(BigDecimal(parser.getValueAsDouble))
+      case JsonToken.VALUE_NUMBER_INT => NumInt(parser.getValueAsLong)
+      case JsonToken.VALUE_NULL => Null
+      case JsonToken.VALUE_TRUE => Bool(true)
+      case JsonToken.VALUE_FALSE => Bool(false)
+      case t => throw new RuntimeException(s"Unsupported token: $t")
+    }
 
   @tailrec
   private def parseObj(parser: JParser, map: ListMap[String, Json]): Obj = {

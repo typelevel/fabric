@@ -30,8 +30,9 @@ trait MultiFormatParser extends Parser {
     parser.format -> parser
   }.toMap
 
-  override def apply(content: String, format: Format): Json = map.get(format) match {
-    case Some(parser) => parser(content)
-    case None => throw new RuntimeException(s"Format not supported: $format")
-  }
+  override def apply(content: String, format: Format): Json =
+    map.get(format) match {
+      case Some(parser) => parser(content)
+      case None => throw new RuntimeException(s"Format not supported: $format")
+    }
 }

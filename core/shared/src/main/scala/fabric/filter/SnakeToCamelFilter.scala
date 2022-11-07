@@ -28,16 +28,18 @@ import fabric._
  */
 object SnakeToCamelFilter extends ValueFilter {
   override def apply(value: Json): Option[Json] = value match {
-    case Obj(map) => Some(Obj(map.map {
-      case (key, value) => toCamel(key) -> value
-    }))
+    case Obj(map) =>
+      Some(Obj(map.map { case (key, value) =>
+        toCamel(key) -> value
+      }))
     case _ => Some(value)
   }
 
-  def toCamel(key: String): String = key
-    .toList
+  def toCamel(key: String): String = key.toList
     .foldLeft(List.empty[Char]) {
       case ('_' :: xs, c) => c.toUpper :: xs
       case (xs, c) => c :: xs
-    }.reverse.mkString
+    }
+    .reverse
+    .mkString
 }
