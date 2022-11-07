@@ -31,7 +31,8 @@ sealed trait DefType {
 
   def isNull: Boolean = false
 
-  def validate(value: Json): Boolean = Try(FabricDefinition(value).merge(this)).toOption.contains(this)
+  def validate(value: Json): Boolean =
+    Try(FabricDefinition(value).merge(this)).toOption.contains(this)
 
   def opt: DefType = DefType.Opt(this)
 
@@ -57,52 +58,62 @@ object DefType {
   )
 
   private def dt2V(dt: DefType): Json = dt match {
-    case Obj(map) => obj(
-      "type" -> "object",
-      "values" -> fabric.Obj(map.map {
-        case (key, dt) => key -> dt2V(dt)
-      })
-    )
-    case Arr(t) => obj(
-      "type" -> "array",
-      "value" -> dt2V(t)
-    )
-    case Opt(t) => obj(
-      "type" -> "optional",
-      "value" -> dt2V(t)
-    )
-    case Str => obj(
-      "type" -> "string"
-    )
-    case Int => obj(
-      "type" -> "numeric",
-      "precision" -> "integer"
-    )
-    case Dec => obj(
-      "type" -> "numeric",
-      "precision" -> "decimal"
-    )
-    case Bool => obj(
-      "type" -> "boolean"
-    )
-    case Null => obj(
-      "type" -> "null"
-    )
+    case Obj(map) =>
+      obj(
+        "type" -> "object",
+        "values" -> fabric.Obj(map.map { case (key, dt) =>
+          key -> dt2V(dt)
+        })
+      )
+    case Arr(t) =>
+      obj(
+        "type" -> "array",
+        "value" -> dt2V(t)
+      )
+    case Opt(t) =>
+      obj(
+        "type" -> "optional",
+        "value" -> dt2V(t)
+      )
+    case Str =>
+      obj(
+        "type" -> "string"
+      )
+    case Int =>
+      obj(
+        "type" -> "numeric",
+        "precision" -> "integer"
+      )
+    case Dec =>
+      obj(
+        "type" -> "numeric",
+        "precision" -> "decimal"
+      )
+    case Bool =>
+      obj(
+        "type" -> "boolean"
+      )
+    case Null =>
+      obj(
+        "type" -> "null"
+      )
   }
 
   private def v2dt(v: Json): DefType = {
     val o = v.asObj
     o.value("type").asString match {
-      case "object" => Obj(o.value("values").asMap.map {
-        case (key, value) => key -> v2dt(value)
-      })
+      case "object" =>
+        Obj(o.value("values").asMap.map { case (key, value) =>
+          key -> v2dt(value)
+        })
       case "array" => Arr(v2dt(o.value("value")))
       case "optional" => Opt(v2dt(o.value("value")))
       case "string" => Str
-      case "numeric" => o.value("precision").asString match {
-        case "integer" => Int
-        case "decimal" => Dec
-      }
+      case "numeric" =>
+        o.value("precision").asString match {
+          case "integer" => Int
+          case "decimal" => Dec
+        }
       case "boolean" => Bool
       case "null" => Null
     }
@@ -115,7 +126,10 @@ object DefType {
       case _ => super.merge(that)
     }
 
-    private def mergeMap(m1: ListMap[String, DefType], m2: ListMap[String, DefType]): ListMap[String, DefType] = {
+    private def mergeMap(
+        m1: ListMap[String, DefType],
+        m2: ListMap[String, DefType]
+    ): ListMap[String, DefType] = {
       val keys = m1.keySet ++ m2.keySet
       ListMap.from(keys.map { key =>
         key -> m1.getOrElse(key, Null).merge(m2.getOrElse(key, Null))
@@ -133,14 +147,16 @@ object DefType {
     override def opt: DefType = this
 
     override def merge(that: DefType): DefType = that match {
-      case Opt(thatOpt) => t.merge(thatOpt) match {
-        case o: Opt => o
-        case result => Opt(result)
-      }
-      case o: Obj => o.merge(t) match {
-        case o: Opt => o
-        case result => Opt(result)
-      }
+      case Opt(thatOpt) =>
+        t.merge(thatOpt) match {
+          case o: Opt => o
+          case result => Opt(result)
+        }
+      case o: Obj =>
+        o.merge(t) match {
+          case o: Opt => o
+          case result => Opt(result)
+        }
       case _ => super.merge(that)
     }
   }

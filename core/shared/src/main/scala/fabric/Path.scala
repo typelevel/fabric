@@ -22,9 +22,11 @@
 package fabric
 
 /**
- * Path is a convenience wrapper to represent paths for lookups or changes in Json
+ * Path is a convenience wrapper to represent paths for lookups or changes in
+ * Json
  */
 case class Path(entries: List[String]) extends AnyVal {
+
   /**
    * Convenience DSL to build paths
    */
@@ -59,9 +61,12 @@ object Path {
   def apply(entries: String*): Path = new Path(entries.toList)
 
   /**
-   * Simple splitting functionality to separate a string into a path by separation character.
+   * Simple splitting functionality to separate a string into a path by
+   * separation character.
    *
    * The separation character defaults to '.'
    */
-  def parse(path: String, sep: Char = '.'): Path = new Path(path.split(sep).map(_.trim).filter(_ != "").toList)
+  def parse(path: String, sep: Char = '.'): Path = new Path(
+    path.split(sep).map(_.trim).filter(_ != "").toList
+  )
 }

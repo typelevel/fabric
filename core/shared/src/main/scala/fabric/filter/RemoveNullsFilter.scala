@@ -30,4 +30,3 @@ object RemoveNullsFilter extends ValueFilter {
     Some(value)
   }
 }
-

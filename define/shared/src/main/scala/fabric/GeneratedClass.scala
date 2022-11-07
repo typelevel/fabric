@@ -23,7 +23,12 @@ package fabric
 
 import java.io.{File, FileOutputStream}
 
-case class GeneratedClass(packageName: Option[String], className: String, code: String, additional: List[GeneratedClass]) {
+case class GeneratedClass(
+    packageName: Option[String],
+    className: String,
+    code: String,
+    additional: List[GeneratedClass]
+) {
   private val written = new ThreadLocal[Set[String]] {
     override def initialValue(): Set[String] = Set.empty
   }

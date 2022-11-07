@@ -28,10 +28,3 @@ trait Formatter {
 
   def apply(json: Json): String
 }
-
-
-
-
-
-
-
