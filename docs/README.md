@@ -1,9 +1,9 @@
 # fabric
 
-[![CI](https://github.com/outr/fabric/actions/workflows/ci.yml/badge.svg)](https://github.com/outr/fabric/actions/workflows/ci.yml)
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/outr/fabric)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.outr/fabric-core_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.outr/fabric-core_2.13)
-[![fabric-core Scala version support](https://index.scala-lang.org/outr/fabric/fabric-core/latest-by-scala-version.svg)](https://index.scala-lang.org/outr/fabric/fabric-core)
+[![CI](https://github.com/typelevel/fabric/actions/workflows/ci.yml/badge.svg)](https://github.com/typelevel/fabric/actions/workflows/ci.yml)
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/typelevel/fabric)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.typelevel/fabric-core_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.typelevel/fabric-core_2.13)
+[![fabric-core Scala version support](https://index.scala-lang.org/typelevel/fabric/fabric-core/latest-by-scala-version.svg)](https://index.scala-lang.org/typelevel/fabric/fabric-core)
 
 Abstract Syntax Tree (AST) based on JSON concepts, but more abstract for parsing and application.
 
@@ -25,7 +25,7 @@ some feedback.
 I wrote a performance benchmark with every expectation to be slower than the alternatives as I've done very
 little tuning, and I'm just one person versus the many developers that have worked on the others for years.
 However, I was shocked to see how well my little library performed compared to the alternatives:
-[JMH Results for 1.7.0 on Scala 3](https://jmh.morethan.io/?source=https://raw.githubusercontent.com/outr/fabric/master/bench/results/benchmarks-1.7.0.json)
+[JMH Results for 1.7.0 on Scala 3](https://jmh.morethan.io/?source=https://raw.githubusercontent.com/typelevel/fabric/master/bench/results/benchmarks-1.7.0.json)
 ## Features
 
 The focus of this project is minimalism and flexibility. To that end, the features are somewhat sparse:
@@ -46,10 +46,10 @@ The focus of this project is minimalism and flexibility. To that end, the featur
 ### Setup
 
 For SBT simply include:
-`libraryDependencies += "com.outr" %%% "fabric-core" % "@VERSION@"`
+`libraryDependencies += "org.typelevel" %%% "fabric-core" % "1.7.2"`
 
 For parsing support include:
-`libraryDependencies += "com.outr" %%% "fabric-io" % "@VERSION@"`
+`libraryDependencies += "org.typelevel" %%% "fabric-io" % "1.7.2"`
 
 ### Create
 
