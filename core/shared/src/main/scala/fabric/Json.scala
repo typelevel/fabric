@@ -1,3 +1,24 @@
+/*
+ * Copyright (c) 2021 Typelevel
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package fabric
 
 import fabric.filter.ValueFilter
@@ -17,7 +38,9 @@ sealed trait Json extends Any {
    *
    * Throws an exception if invoked on anything except `Obj`
    */
-  final def apply(lookup: String): Json = get(lookup).getOrElse(throw new RuntimeException(s"Lookup not found: $lookup"))
+  final def apply(lookup: String): Json = get(lookup).getOrElse(
+    throw new RuntimeException(s"Lookup not found: $lookup")
+  )
 
   /**
    * Looks up a Json by name in the children.
@@ -45,21 +68,28 @@ sealed trait Json extends Any {
    *
    * Example: `val v = someValue("first" \ "second" \ "third")`
    */
-  final def apply(path: Path): Json = get(path).getOrElse(throw new RuntimeException(s"Path not found: $path"))
+  final def apply(path: Path): Json =
+    get(path).getOrElse(throw new RuntimeException(s"Path not found: $path"))
 
   /**
-   * Looks up a Json by name in the children or creates a new Obj if it doesn't exist.
+   * Looks up a Json by name in the children or creates a new Obj if it doesn't
+   * exist.
    */
   final def getOrCreate(lookup: String): Json = get(lookup).getOrElse(obj())
 
   /**
-   * Modifies the value at the specified path and returns back a new root Json with the modified path.
+   * Modifies the value at the specified path and returns back a new root Json
+   * with the modified path.
    *
-   * Note: We use the term "modify" here from an immutable standpoint. The original Json will not change.
+   * Note: We use the term "modify" here from an immutable standpoint. The
+   * original Json will not change.
    *
-   * @param path the path to modify
-   * @param f the function that takes the current Json and returns the modified Json
-   * @return new root Json representing the changes
+   * @param path
+   *   the path to modify
+   * @param f
+   *   the function that takes the current Json and returns the modified Json
+   * @return
+   *   new root Json representing the changes
    */
   def modify(path: Path)(f: Json => Json): Json = if (path.isEmpty) {
     f(this)
@@ -74,41 +104,56 @@ sealed trait Json extends Any {
   }
 
   /**
-   * Applies the filter recursively to this value beginning on the leafs working backward up the tree back to the root.
+   * Applies the filter recursively to this value beginning on the leafs working
+   * backward up the tree back to the root.
    *
-   * @param filter the filter to apply
-   * @return Option[Json]
+   * @param filter
+   *   the filter to apply
+   * @return
+   *   Option[Json]
    */
   def filter(filter: ValueFilter): Option[Json] = filter(this)
 
   /**
    * Convenience functionality for #modify to set a specific value at a path.
    *
-   * @param path the path to replace
-   * @param value the new value to set
-   * @return new root Json representing the changes
+   * @param path
+   *   the path to replace
+   * @param value
+   *   the new value to set
+   * @return
+   *   new root Json representing the changes
    */
   def set(path: Path, value: Json): Json = modify(path)(_ => value)
 
   /**
-   * Convenience functionality for #modify to remove the value at a specific path.
+   * Convenience functionality for #modify to remove the value at a specific
+   * path.
    *
-   * @param path the path to remove
-   * @return new root Json representing the changes
+   * @param path
+   *   the path to remove
+   * @return
+   *   new root Json representing the changes
    */
   def remove(path: Path): Json = set(path, Null)
 
   /**
    * Merges a Json at the specified path
    *
-   * @param value the value to merge
-   * @param path the path (defaults to Path.empty)
-   * @param config the merge configuration (defaults to MergeConfig)
-   * @return root Json after merge
+   * @param value
+   *   the value to merge
+   * @param path
+   *   the path (defaults to Path.empty)
+   * @param config
+   *   the merge configuration (defaults to MergeConfig)
+   * @return
+   *   root Json after merge
    */
-  final def merge(value: Json,
-                  path: Path = Path.empty,
-                  config: MergeConfig = MergeConfig): Json = modify(path) { current =>
+  final def merge(
+      value: Json,
+      path: Path = Path.empty,
+      config: MergeConfig = MergeConfig
+  ): Json = modify(path) { current =>
     config.merge(current, value, path)
   }
 
@@ -156,10 +201,13 @@ sealed trait Json extends Any {
   def isNull: Boolean = `type` == JsonType.Null
 
   /**
-   * Safely casts this Json as the specified JsonType. Throws an exception if not a match.
+   * Safely casts this Json as the specified JsonType. Throws an exception if
+   * not a match.
    *
-   * @param `type` the type to cast this JsonType as
-   * @tparam V the return type
+   * @param `type`
+   *   the type to cast this JsonType as
+   * @tparam V
+   *   the return type
    */
   def asType[V <: Json](`type`: JsonType[V]): V = if (this.`type`.is(`type`)) {
     this.asInstanceOf[V]
@@ -170,13 +218,19 @@ sealed trait Json extends Any {
   }
 
   /**
-   * Safely casts this Json as the specified JsonType. Returns None if it's a different type.
+   * Safely casts this Json as the specified JsonType. Returns None if it's a
+   * different type.
    *
-   * @param `type` the value type of value you want.
-   * @tparam V the value type
-   * @return Option[V]
+   * @param `type`
+   *   the value type of value you want.
+   * @tparam V
+   *   the value type
+   * @return
+   *   Option[V]
    */
-  final def getAsType[V <: Json](`type`: JsonType[V]): Option[V] = if (this.`type` == `type`) {
+  final def getAsType[V <: Json](`type`: JsonType[V]): Option[V] = if (
+    this.`type` == `type`
+  ) {
     Some(this.asInstanceOf[V])
   } else {
     None
@@ -308,8 +362,10 @@ sealed trait Json extends Any {
 }
 
 object Json {
+
   /**
-   * Merges multiple Values together. Convenience functionality to handle more than two Values.
+   * Merges multiple Values together. Convenience functionality to handle more
+   * than two Values.
    */
   def merge(values: Json*): Json = if (values.nonEmpty) {
     values.tail.foldLeft(values.head)((merged, value) => merged.merge(value))
@@ -321,14 +377,16 @@ object Json {
 /**
  * Obj represents a Map of key-value pairs (String, Json)
  */
-final class Obj private(val value: ListMap[String, Json]) extends AnyVal with Json {
+final class Obj private (val value: ListMap[String, Json])
+    extends AnyVal
+    with Json {
   override type Type = Obj
 
   def keys: Set[String] = value.keySet
 
   override def filter(filter: ValueFilter): Option[Json] = {
-    val mutated = value.map {
-      case (key, value) => value.filter(filter).map(v => key -> v)
+    val mutated = value.map { case (key, value) =>
+      value.filter(filter).map(v => key -> v)
     }.flatten
     filter(Obj(ListMap.from(mutated)))
   }
@@ -337,9 +395,11 @@ final class Obj private(val value: ListMap[String, Json]) extends AnyVal with Js
 
   override def `type`: JsonType[Obj] = JsonType.Obj
 
-  override def toString: String = value.map {
-    case (key, value) => s""""$key": $value"""
-  }.mkString("{", ", ", "}")
+  override def toString: String = value
+    .map { case (key, value) =>
+      s""""$key": $value"""
+    }
+    .mkString("{", ", ", "}")
 }
 
 object Obj {
@@ -347,9 +407,11 @@ object Obj {
 
   val empty: Obj = Obj(ListMap.empty)
 
-  private def clean(map: ListMap[String, Json]): ListMap[String, Json] = if (ExcludeNullValues) {
-    map.filter {
-      case (_, value) => value != Null
+  private def clean(map: ListMap[String, Json]): ListMap[String, Json] = if (
+    ExcludeNullValues
+  ) {
+    map.filter { case (_, value) =>
+      value != Null
     }
   } else {
     map
@@ -360,17 +422,25 @@ object Obj {
   def unapply(obj: Obj): Some[ListMap[String, Json]] = Some(obj.value)
 
   /**
-   * Processes the supplied map creating an Obj for it. If `parsePath` is set, the key will be extracted as
-   * as a path based on the `parsePath` separation character. If it is not set, the key will be set as-is.
+   * Processes the supplied map creating an Obj for it. If `parsePath` is set,
+   * the key will be extracted as as a path based on the `parsePath` separation
+   * character. If it is not set, the key will be set as-is.
    *
-   * @param map the map to parse into an Obj
-   * @param parsePath the optional separation character to parse the keys into paths (defaults to Some('.'))
-   * @return Obj
+   * @param map
+   *   the map to parse into an Obj
+   * @param parsePath
+   *   the optional separation character to parse the keys into paths (defaults
+   *   to Some('.'))
+   * @return
+   *   Obj
    */
-  def process(map: Map[String, String], parsePath: Option[Char] = Some('.')): Obj = {
+  def process(
+      map: Map[String, String],
+      parsePath: Option[Char] = Some('.')
+  ): Obj = {
     var o = obj()
-    map.foreach {
-      case (key, value) => parsePath match {
+    map.foreach { case (key, value) =>
+      parsePath match {
         case Some(sep) => {
           val path = Path.parse(key, sep)
           if (path.nonEmpty) {
@@ -397,18 +467,30 @@ case class Str(value: String) extends AnyVal with Json {
   override def isEmpty: Boolean = value.isEmpty
 
   override def asType[V <: Json](`type`: JsonType[V]): V = `type` match {
-    case JsonType.Bool => Try(Bool(value.toBoolean))
-      .toOption
-      .map(_.asInstanceOf[V])
-      .getOrElse(throw ConversionException(s"$value is a Str and can't be converted to Bool"))
-    case JsonType.NumInt => Try(NumInt(value.toInt))
-      .toOption
-      .map(_.asInstanceOf[V])
-      .getOrElse(throw ConversionException(s"$value is a Str and can't be converted to NumInt"))
-    case JsonType.NumDec | JsonType.Num => Try(NumDec(BigDecimal(value)))
-      .toOption
-      .map(_.asInstanceOf[V])
-      .getOrElse(throw ConversionException(s"$value is a Str and can't be converted to NumDec"))
+    case JsonType.Bool =>
+      Try(Bool(value.toBoolean)).toOption
+        .map(_.asInstanceOf[V])
+        .getOrElse(
+          throw ConversionException(
+            s"$value is a Str and can't be converted to Bool"
+          )
+        )
+    case JsonType.NumInt =>
+      Try(NumInt(value.toLong)).toOption
+        .map(_.asInstanceOf[V])
+        .getOrElse(
+          throw ConversionException(
+            s"$value is a Str and can't be converted to NumInt"
+          )
+        )
+    case JsonType.NumDec | JsonType.Num =>
+      Try(NumDec(BigDecimal(value))).toOption
+        .map(_.asInstanceOf[V])
+        .getOrElse(
+          throw ConversionException(
+            s"$value is a Str and can't be converted to NumDec"
+          )
+        )
     case _ => super.asType[V](`type`)
   }
 
@@ -445,7 +527,9 @@ case class NumInt(value: Long) extends Num {
 
   override def `type`: JsonType[NumInt] = JsonType.NumInt
 
-  override def asType[V <: Json](`type`: JsonType[V]): V = if (`type` == JsonType.NumDec) {
+  override def asType[V <: Json](`type`: JsonType[V]): V = if (
+    `type` == JsonType.NumDec
+  ) {
     NumDec(BigDecimal(value)).asInstanceOf[V]
   } else {
     super.asType[V](`type`)
@@ -479,7 +563,9 @@ case class NumDec(value: BigDecimal) extends Num {
 
   override def `type`: JsonType[NumDec] = JsonType.NumDec
 
-  override def asType[V <: Json](`type`: JsonType[V]): V = if (`type` == JsonType.NumInt) {
+  override def asType[V <: Json](`type`: JsonType[V]): V = if (
+    `type` == JsonType.NumInt
+  ) {
     NumInt(value.toLong).asInstanceOf[V]
   } else {
     super.asType[V](`type`)

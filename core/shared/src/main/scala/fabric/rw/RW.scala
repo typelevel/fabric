@@ -1,10 +1,32 @@
+/*
+ * Copyright (c) 2021 Typelevel
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package fabric.rw
 
 import fabric._
 import fabric.rw._
 
 /**
- * RW provides a single class representation of a Reader and Writer for the same type
+ * RW provides a single class representation of a Reader and Writer for the same
+ * type
  */
 trait RW[T] extends Reader[T] with Writer[T]
 
@@ -15,22 +37,31 @@ object RW extends CompileRW {
 
   implicit lazy val boolRW: RW[Boolean] = from[Boolean](bool, _.asBool.value)
 
-  implicit lazy val byteRW: RW[Byte] = from[Byte](s => NumInt(s.toInt), _.asNum.asByte)
-  implicit lazy val shortRW: RW[Short] = from[Short](s => num(s.toInt), _.asNum.asShort)
+  implicit lazy val byteRW: RW[Byte] =
+    from[Byte](s => NumInt(s.toLong), _.asNum.asByte)
+  implicit lazy val shortRW: RW[Short] =
+    from[Short](s => num(s.toInt), _.asNum.asShort)
   implicit lazy val intRW: RW[Int] = from[Int](i => num(i), _.asNum.asInt)
   implicit lazy val longRW: RW[Long] = from[Long](l => num(l), _.asNum.asLong)
-  implicit lazy val floatRW: RW[Float] = from[Float](f => num(f.toDouble), _.asNum.asFloat)
+  implicit lazy val floatRW: RW[Float] =
+    from[Float](f => num(f.toDouble), _.asNum.asFloat)
   implicit lazy val doubleRW: RW[Double] = from[Double](num, _.asNum.asDouble)
-  implicit lazy val bigIntRW: RW[BigInt] = from[BigInt](i => num(BigDecimal(i)), _.asNum.asBigInt)
-  implicit lazy val bigDecimalRW: RW[BigDecimal] = from[BigDecimal](num, _.asNum.asBigDecimal)
+  implicit lazy val bigIntRW: RW[BigInt] =
+    from[BigInt](i => num(BigDecimal(i)), _.asNum.asBigInt)
+  implicit lazy val bigDecimalRW: RW[BigDecimal] =
+    from[BigDecimal](num, _.asNum.asBigDecimal)
 
   implicit lazy val stringRW: RW[String] = from[String](str, _.asStr.value)
 
-  implicit def mapRW[V: RW]: RW[Map[String, V]] = from[Map[String, V]](_.map {
-    case (key, value) => key -> value.json
-  }, v => v.asObj.value.map {
-    case (key, value) => key -> value.as[V]
-  })
+  implicit def mapRW[V: RW]: RW[Map[String, V]] = from[Map[String, V]](
+    _.map { case (key, value) =>
+      key -> value.json
+    },
+    v =>
+      v.asObj.value.map { case (key, value) =>
+        key -> value.as[V]
+      }
+  )
 
   implicit def listRW[V: RW]: RW[List[V]] = from[List[V]](
     v => Arr(v.map(_.json).toVector),
@@ -61,10 +92,14 @@ object RW extends CompileRW {
     override def read(t: T): Json = r(t)
   }
 
-  def enumeration[T](list: List[T],
-                     asString: T => String = (t: T) => t.getClass.getSimpleName.replace("$", ""),
-                     caseSensitive: Boolean = false): RW[T] = new RW[T] {
-    private def fixString(s: String): String = if (caseSensitive) s else s.toLowerCase
+  def enumeration[T](
+      list: List[T],
+      asString: T => String = (t: T) =>
+        t.getClass.getSimpleName.replace("$", ""),
+      caseSensitive: Boolean = false
+  ): RW[T] = new RW[T] {
+    private def fixString(s: String): String =
+      if (caseSensitive) s else s.toLowerCase
 
     private lazy val map = list.map(t => fixString(asString(t)) -> t).toMap
 
@@ -73,24 +108,30 @@ object RW extends CompileRW {
     override def read(t: T): Json = str(asString(t))
   }
 
-  def string[T](asString: T => String, fromString: String => T): RW[T] = new RW[T] {
-    override def write(value: Json): T = fromString(value.asString)
+  def string[T](asString: T => String, fromString: String => T): RW[T] =
+    new RW[T] {
+      override def write(value: Json): T = fromString(value.asString)
 
-    override def read(t: T): Json = str(asString(t))
-  }
+      override def read(t: T): Json = str(asString(t))
+    }
 
   /**
-   * Convenience functionality to provide a static / singleton value that represents that type
+   * Convenience functionality to provide a static / singleton value that
+   * represents that type
    *
-   * @param value the singleton value to use
+   * @param value
+   *   the singleton value to use
    */
   def static[T](value: T): RW[T] = from(_ => obj(), _ => value)
 
   /**
    * Convenience functionality for working with enumerations
    *
-   * @param fieldName the field name to refer to in the Json
-   * @param mapping   a mapping of key/value pairs representing the String in fieldName to the representative value
+   * @param fieldName
+   *   the field name to refer to in the Json
+   * @param mapping
+   *   a mapping of key/value pairs representing the String in fieldName to the
+   *   representative value
    */
   def enumeration[T](fieldName: String, mapping: (String, T)*): RW[T] = {
     val f2T: Map[String, T] = mapping.toMap
@@ -105,19 +146,29 @@ object RW extends CompileRW {
   /**
    * Convenience functionality for working with polymorphic types
    *
-   * @param fieldName the field name stored in the value (defaults to "type")
-   * @param getType   a function to determine the field value from an instance (defaults to the class name with the first character lowercase - defaultGetType)
-   * @param matcher   a matcher for field values to get the representative RW for that type
+   * @param fieldName
+   *   the field name stored in the value (defaults to "type")
+   * @param getType
+   *   a function to determine the field value from an instance (defaults to the
+   *   class name with the first character lowercase - defaultGetType)
+   * @param matcher
+   *   a matcher for field values to get the representative RW for that type
    */
-  def poly[P](fieldName: String = "type",
-              getType: P => String = defaultGetType _)
-             (matcher: PartialFunction[String, RW[_ <: P]]): RW[P] = from(
+  def poly[P](
+      fieldName: String = "type",
+      getType: P => String = defaultGetType _
+  )(matcher: PartialFunction[String, RW[_ <: P]]): RW[P] = from(
     p => {
       val `type` = getType(p)
       if (matcher.isDefinedAt(`type`)) {
-        matcher(`type`).asInstanceOf[RW[P]].read(p).merge(obj(fieldName -> `type`))
+        matcher(`type`)
+          .asInstanceOf[RW[P]]
+          .read(p)
+          .merge(obj(fieldName -> `type`))
       } else {
-        throw new RuntimeException(s"Type not found [${`type`}] converting from object $p")
+        throw new RuntimeException(
+          s"Type not found [${`type`}] converting from object $p"
+        )
       }
     },
     v => {
@@ -125,13 +176,16 @@ object RW extends CompileRW {
       if (matcher.isDefinedAt(`type`)) {
         matcher(`type`).write(v)
       } else {
-        throw new RuntimeException(s"Type not found [${`type`}] converting from value $v")
+        throw new RuntimeException(
+          s"Type not found [${`type`}] converting from value $v"
+        )
       }
     }
   )
 
   /**
-   * Used by poly by default to getType using the class name with the first character lowercase
+   * Used by poly by default to getType using the class name with the first
+   * character lowercase
    */
   private def defaultGetType[P](p: P): String = {
     val name = p.getClass.getSimpleName.replace("$", "")
