@@ -21,7 +21,7 @@
 
 package fabric.merge
 
-import fabric.{Arr, MergeType, Path}
+import fabric.{Arr, Path}
 
 object ArrConcatDedupeMerge extends JsonMerge[Arr] {
   override def merge(

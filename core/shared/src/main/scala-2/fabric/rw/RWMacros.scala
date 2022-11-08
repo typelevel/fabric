@@ -30,7 +30,6 @@ object RWMacros {
     import context.universe._
 
     val tpe = t.tpe
-    val companion = tpe.typeSymbol.companion
     tpe.decls.collectFirst {
       case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
     } match {

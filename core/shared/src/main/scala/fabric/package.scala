@@ -20,7 +20,6 @@
  */
 
 import scala.collection.immutable.ListMap
-import scala.language.implicitConversions
 
 package object fabric {
   implicit def string2Path(s: String): Path = new Path(List(s))
