@@ -34,37 +34,46 @@ class JVMParsingSpec extends AnyWordSpec with Matchers {
         """
           |test:
           |   yaml: "yes"
-          |""".stripMargin, Format.Yaml
+          |""".stripMargin,
+        Format.Yaml
       )
-      json should be(obj(
-        "test" -> obj(
-          "yaml" -> "yes"
+      json should be(
+        obj(
+          "test" -> obj(
+            "yaml" -> "yes"
+          )
         )
-      ))
+      )
     }
     "parse basic XML" in {
       val json = JsonParser("<test><xml>yes</xml></test>", Format.XML)
-      json should be(obj(
-        "test" -> obj(
-          "xml" -> "yes"
+      json should be(
+        obj(
+          "test" -> obj(
+            "xml" -> "yes"
+          )
         )
-      ))
+      )
     }
     "parse basic HOCON" in {
       val json = JsonParser("""test.hocon = "yes"""", Format.Hocon)
-      json should be(obj(
-        "test" -> obj(
-          "hocon" -> "yes"
+      json should be(
+        obj(
+          "test" -> obj(
+            "hocon" -> "yes"
+          )
         )
-      ))
+      )
     }
     "parse basic Properties" in {
       val json = JsonParser("test.properties=yes", Format.Properties)
-      json should be(obj(
-        "test" -> obj(
-          "properties" -> "yes"
+      json should be(
+        obj(
+          "test" -> obj(
+            "properties" -> "yes"
+          )
         )
-      ))
+      )
     }
   }
 }

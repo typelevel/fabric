@@ -32,6 +32,8 @@ object Enum {
 
   lazy val values: Vector[Enum] = Vector(Zero, One)
 
-  implicit val arbitraryEnum: Arbitrary[Enum] = Arbitrary(Gen.choose(0, Enum.values.size - 1).map(values.apply))
+  implicit val arbitraryEnum: Arbitrary[Enum] = Arbitrary(
+    Gen.choose(0, Enum.values.size - 1).map(values.apply)
+  )
   implicit val rw: RW[Enum] = RW.enumeration(List(Zero, One))
 }
