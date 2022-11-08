@@ -52,7 +52,8 @@ class JsonFormattingSpec extends AnyWordSpec with Matchers {
         )
       )
       val jsonString = JsonFormatter.Compact(v)
-      val expected = """{"one":1,"two":false,"three":3.5,"four":{"test1":"Testing 1","test2":null,"test3":[1,2,3],"test4":"This\nis\nmulti-line","test5":"This is \"quoted\" text.","test6":[null]}}"""
+      val expected =
+        """{"one":1,"two":false,"three":3.5,"four":{"test1":"Testing 1","test2":null,"test3":[1,2,3],"test4":"This\nis\nmulti-line","test5":"This is \"quoted\" text.","test6":[null]}}"""
       jsonString should be(expected)
     }
     "parse a String with as support" in {

@@ -31,14 +31,16 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
     "convert Person to Json and back" in {
       val person = Person("Matt Hicks", 41, Address("San Jose", "California"))
       val value = person.json
-      value should be(obj(
-        "name" -> "Matt Hicks",
-        "age" -> 41,
-        "address" -> obj(
-          "city" -> "San Jose",
-          "state" -> "California"
+      value should be(
+        obj(
+          "name" -> "Matt Hicks",
+          "age" -> 41,
+          "address" -> obj(
+            "city" -> "San Jose",
+            "state" -> "California"
+          )
         )
-      ))
+      )
       val back = value.as[Person]
       back should be(person)
     }
@@ -55,34 +57,46 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       d.age should be(21)
     }
     "supporting generic type on case class" in {
-      val w = Wrapper("Test1", Address("San Jose", "California"), Some(Address("Norman", "Oklahoma")))
+      val w = Wrapper(
+        "Test1",
+        Address("San Jose", "California"),
+        Some(Address("Norman", "Oklahoma"))
+      )
       val value = w.json
-      value should be(obj(
-        "name" -> "Test1",
-        "value" -> obj(
-          "city" -> "San Jose",
-          "state" -> "California"
-        ),
-        "other" -> obj(
-          "city" -> "Norman",
-          "state" -> "Oklahoma"
+      value should be(
+        obj(
+          "name" -> "Test1",
+          "value" -> obj(
+            "city" -> "San Jose",
+            "state" -> "California"
+          ),
+          "other" -> obj(
+            "city" -> "Norman",
+            "state" -> "Oklahoma"
+          )
         )
-      ))
+      )
       val w2 = value.as[Wrapper[Address]]
       w2 should be(w)
     }
     "supporting Values in conversions" in {
-      val w = Wrapper("Test2", obj("city" -> "San Jose"), Some(obj("city" -> "Norman")))
+      val w = Wrapper(
+        "Test2",
+        obj("city" -> "San Jose"),
+        Some(obj("city" -> "Norman"))
+      )
       val value = w.json
-      value should be(obj(
-        "name" -> "Test2",
-        "value" -> obj(
-          "city" -> "San Jose"
-        ),
-        "other" -> obj(
-          "city" -> "Norman"
+      value should be(
+        obj(
+          "name" -> "Test2",
+          "value" -> obj(
+            "city" -> "San Jose"
+          ),
+          "other" -> obj(
+            "city" -> "Norman"
+          )
         )
-      ))
+      )
     }
     // TODO: Enable once Scala 3 support for sealed traits is working
 //    "supporting sealed traits" in {

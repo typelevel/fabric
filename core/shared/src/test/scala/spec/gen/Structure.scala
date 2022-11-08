@@ -26,7 +26,7 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.arbitrary
 
 final case class Structure(
-  value: String
+    value: String
 )
 
 object Structure {

@@ -43,17 +43,19 @@ class FabricSpec extends AnyWordSpec with Matchers {
 
   "Fabric" should {
     "represent AST properly" in {
-      v should be(obj(
-        "name" -> "Matt \"Matteo\" Hicks",
-        "age" -> 41,
-        "numbers" -> List(1, 2, 3),
-        "address" -> obj(
-          "street" -> "123 Somewhere Rd.\nBox 123",
-          "city" -> "San Jose",
-          "state" -> "California",
-          "zipcode" -> 95136
+      v should be(
+        obj(
+          "name" -> "Matt \"Matteo\" Hicks",
+          "age" -> 41,
+          "numbers" -> List(1, 2, 3),
+          "address" -> obj(
+            "street" -> "123 Somewhere Rd.\nBox 123",
+            "city" -> "San Jose",
+            "state" -> "California",
+            "zipcode" -> 95136
+          )
         )
-      ))
+      )
     }
     "verify type getting works as expected" in {
       val s: fabric.Json = Str("Hello, World!")
@@ -73,30 +75,34 @@ class FabricSpec extends AnyWordSpec with Matchers {
       val updated = v.modify("address" \ "state") { value =>
         str("Tennessee")
       }
-      updated should be(obj(
-        "name" -> "Matt \"Matteo\" Hicks",
-        "age" -> 41,
-        "numbers" -> List(1, 2, 3),
-        "address" -> obj(
-          "street" -> "123 Somewhere Rd.\nBox 123",
-          "city" -> "San Jose",
-          "state" -> "Tennessee",
-          "zipcode" -> 95136
+      updated should be(
+        obj(
+          "name" -> "Matt \"Matteo\" Hicks",
+          "age" -> 41,
+          "numbers" -> List(1, 2, 3),
+          "address" -> obj(
+            "street" -> "123 Somewhere Rd.\nBox 123",
+            "city" -> "San Jose",
+            "state" -> "Tennessee",
+            "zipcode" -> 95136
+          )
         )
-      ))
+      )
     }
     "remove from the hierarchy" in {
       val removed = v.remove("address" \ "state")
-      removed should be(obj(
-        "name" -> "Matt \"Matteo\" Hicks",
-        "age" -> 41,
-        "numbers" -> List(1, 2, 3),
-        "address" -> obj(
-          "street" -> "123 Somewhere Rd.\nBox 123",
-          "city" -> "San Jose",
-          "zipcode" -> 95136
+      removed should be(
+        obj(
+          "name" -> "Matt \"Matteo\" Hicks",
+          "age" -> 41,
+          "numbers" -> List(1, 2, 3),
+          "address" -> obj(
+            "street" -> "123 Somewhere Rd.\nBox 123",
+            "city" -> "San Jose",
+            "zipcode" -> 95136
+          )
         )
-      ))
+      )
     }
     "properly merge a simple scenario" in {
       val v1 = obj(
@@ -159,15 +165,19 @@ class FabricSpec extends AnyWordSpec with Matchers {
         "three" -> "three"
       )
       Obj.ExcludeNullValues = false
-      json1 should be(obj(
-        "one" -> Null,
-        "two" -> 2,
-        "three" -> "three"
-      ))
-      json2 should be(obj(
-        "two" -> 2,
-        "three" -> "three"
-      ))
+      json1 should be(
+        obj(
+          "one" -> Null,
+          "two" -> 2,
+          "three" -> "three"
+        )
+      )
+      json2 should be(
+        obj(
+          "two" -> 2,
+          "three" -> "three"
+        )
+      )
     }
     "convert snake-case to camel-case" in {
       val snake = obj(
@@ -203,13 +213,19 @@ class FabricSpec extends AnyWordSpec with Matchers {
           "test3" -> arr(4, 5, 6)
         )
       )
-      val merged = json1.merge(json2, config = MergeConfig.withOverride(Path.parse("test1.test2"), ArrConcatMerge))
-      merged should be(obj(
-        "test1" -> obj(
-          "test2" -> arr(1, 2, 3, 4, 5, 6),
-          "test3" -> arr(4, 5, 6)
+      val merged = json1.merge(
+        json2,
+        config =
+          MergeConfig.withOverride(Path.parse("test1.test2"), ArrConcatMerge)
+      )
+      merged should be(
+        obj(
+          "test1" -> obj(
+            "test2" -> arr(1, 2, 3, 4, 5, 6),
+            "test3" -> arr(4, 5, 6)
+          )
         )
-      ))
+      )
     }
   }
 }
