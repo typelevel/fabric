@@ -18,8 +18,12 @@ ThisBuild / tlSonatypeUseLegacyHost := false
 
 ThisBuild / publishTo := sonatypePublishToBundle.value
 ThisBuild / sonatypeProfileName := "com.outr"
-ThisBuild / licenses := Seq("MIT" -> url("https://github.com/outr/fabric/blob/master/LICENSE"))
-ThisBuild / sonatypeProjectHosting := Some(xerial.sbt.Sonatype.GitHubHosting("outr", "fabric", "matt@outr.com"))
+ThisBuild / licenses := Seq(
+  "MIT" -> url("https://github.com/outr/fabric/blob/master/LICENSE")
+)
+ThisBuild / sonatypeProjectHosting := Some(
+  xerial.sbt.Sonatype.GitHubHosting("outr", "fabric", "matt@outr.com")
+)
 ThisBuild / homepage := Some(url("https://github.com/outr/fabric"))
 ThisBuild / scmInfo := Some(
   ScmInfo(
@@ -47,7 +51,14 @@ val jsoniterJavaVersion: String = "0.9.23"
 val circeVersion: String = "0.14.2"
 val uPickleVersion: String = "2.0.0"
 
-lazy val root = tlCrossRootProject.aggregate(core.js, core.jvm, core.native, io.js, io.jvm, define.jvm)
+lazy val root = tlCrossRootProject.aggregate(
+  core.js,
+  core.jvm,
+  core.native,
+  io.js,
+  io.jvm,
+  define.jvm
+)
 
 lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .crossType(CrossType.Full)
@@ -70,7 +81,8 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     Compile / unmanagedSourceDirectories ++= {
       val major = if (scalaVersion.value.startsWith("3")) "-3" else "-2"
       List(CrossType.Pure, CrossType.Full).flatMap(
-        _.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + major))
+        _.sharedSrcDir(baseDirectory.value, "main").toList
+          .map(f => file(f.getPath + major))
       )
     }
   )
@@ -106,7 +118,8 @@ lazy val define = crossProject(JVMPlatform)
   )
   .dependsOn(io)
 
-lazy val bench = project.in(file("bench"))
+lazy val bench = project
+  .in(file("bench"))
   .enablePlugins(JmhPlugin)
   .dependsOn(io.jvm)
   .settings(
