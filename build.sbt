@@ -9,7 +9,6 @@ ThisBuild / tlBaseVersion := "0.4"
 ThisBuild / organization := "org.typelevel"
 ThisBuild / startYear := Some(2021)
 ThisBuild / licenses := Seq(License.MIT)
-//ThisBuild / version := "1.7.1-SNAPSHOT"
 ThisBuild / scalaVersion := scala213
 ThisBuild / javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
 ThisBuild / crossScalaVersions := scalaVersions
