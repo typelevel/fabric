@@ -22,7 +22,7 @@
 package spec.gen
 
 import fabric.Json
-import fabric.io.{Format, JsonFormatter, JsonParser, JsoniterParser}
+import fabric.io.{JsonFormatter, JsoniterParser}
 import org.scalacheck.Arbitrary
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.scalacheck.Checkers
