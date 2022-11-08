@@ -1,3 +1,24 @@
+/*
+ * Copyright (c) 2021 Typelevel
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package fabric.rw
 
 import fabric._
@@ -28,22 +49,23 @@ object Reader {
   implicit def bigDecimalR: Reader[BigDecimal] = bigDecimalRW
 
   implicit def stringR: Reader[String] = stringRW
-  implicit def mapR[V: Reader]: Reader[Map[String, V]] = apply[Map[String, V]](_.map {
-    case (key, value) => key -> value.json
-  })
-  implicit def listR[V: Reader]: Reader[List[V]] = apply[List[V]](
-    v => Arr(v.map(_.json).toVector)
-  )
-  implicit def vectorR[V: Reader]: Reader[Vector[V]] = apply[Vector[V]](
-    v => Arr(v.map(_.json))
-  )
-  implicit def setR[T](implicit r: Reader[T]): Reader[Set[T]] = apply[Set[T]] { set =>
-    Arr(set.map(r.read).toVector)
+  implicit def mapR[V: Reader]: Reader[Map[String, V]] =
+    apply[Map[String, V]](_.map { case (key, value) =>
+      key -> value.json
+    })
+  implicit def listR[V: Reader]: Reader[List[V]] =
+    apply[List[V]](v => Arr(v.map(_.json).toVector))
+  implicit def vectorR[V: Reader]: Reader[Vector[V]] =
+    apply[Vector[V]](v => Arr(v.map(_.json)))
+  implicit def setR[T](implicit r: Reader[T]): Reader[Set[T]] = apply[Set[T]] {
+    set =>
+      Arr(set.map(r.read).toVector)
   }
-  implicit def optionR[T](implicit r: Reader[T]): Reader[Option[T]] = apply[Option[T]] {
-    case Some(t) => r.read(t)
-    case None => Null
-  }
+  implicit def optionR[T](implicit r: Reader[T]): Reader[Option[T]] =
+    apply[Option[T]] {
+      case Some(t) => r.read(t)
+      case None => Null
+    }
 
   def apply[T](f: T => Json): Reader[T] = new Reader[T] {
     override def read(t: T): Json = f(t)

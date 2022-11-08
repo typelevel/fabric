@@ -1,3 +1,24 @@
+/*
+ * Copyright (c) 2021 Typelevel
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package fabric.rw
 
 import fabric._
@@ -28,25 +49,25 @@ object Writer {
   implicit def bigDecimalW: Writer[BigDecimal] = bigDecimalRW
 
   implicit def stringW: Writer[String] = stringRW
-  implicit def mapW[V: Writer]: Writer[Map[String, V]] = apply[Map[String, V]] { v =>
-    v.asObj.value.map {
-      case (key, value) => key -> value.as[V]
-    }
+  implicit def mapW[V: Writer]: Writer[Map[String, V]] = apply[Map[String, V]] {
+    v =>
+      v.asObj.value.map { case (key, value) =>
+        key -> value.as[V]
+      }
   }
-  implicit def listW[V: Writer]: Writer[List[V]] = apply[List[V]](
-    v => v.asVector.map(_.as[V]).toList
-  )
-  implicit def vectorW[V: Writer]: Writer[Vector[V]] = apply[Vector[V]](
-    v => v.asVector.map(_.as[V])
-  )
+  implicit def listW[V: Writer]: Writer[List[V]] =
+    apply[List[V]](v => v.asVector.map(_.as[V]).toList)
+  implicit def vectorW[V: Writer]: Writer[Vector[V]] =
+    apply[Vector[V]](v => v.asVector.map(_.as[V]))
   implicit def setW[T](implicit w: Writer[T]): Writer[Set[T]] = apply[Set[T]] {
     case Arr(vector) => vector.toSet.map(w.write)
     case v => throw new RuntimeException(s"Unsupported set: $v")
   }
-  implicit def optionW[T](implicit w: Writer[T]): Writer[Option[T]] = apply[Option[T]] {
-    case Null => None
-    case v => Option(w.write(v))
-  }
+  implicit def optionW[T](implicit w: Writer[T]): Writer[Option[T]] =
+    apply[Option[T]] {
+      case Null => None
+      case v => Option(w.write(v))
+    }
 
   def apply[T](f: Json => T): Writer[T] = new Writer[T] {
     override def write(value: Json): T = f(value)

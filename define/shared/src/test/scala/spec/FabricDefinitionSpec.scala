@@ -1,3 +1,24 @@
+/*
+ * Copyright (c) 2021 Typelevel
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package spec
 
 import fabric._
@@ -24,54 +45,78 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       FabricDefinition(List(Null, num(5))) should be(DefType.Opt(DefType.Int))
     }
     "represent a simple obj" in {
-      FabricDefinition(obj(
-        "name" -> "John Doe",
-        "age" -> 50
-      )) should be(DefType.Obj(ListMap(
-        "name" -> DefType.Str,
-        "age" -> DefType.Int
-      )))
-    }
-    "represent a simple obj with optional value" in {
-      FabricDefinition(List(
+      FabricDefinition(
         obj(
           "name" -> "John Doe",
           "age" -> 50
-        ),
-        obj(
-          "name" -> "Jane Doe"
         )
-      )) should be(DefType.Obj(ListMap(
-        "name" -> DefType.Str,
-        "age" -> DefType.Opt(DefType.Int)
-      )))
+      ) should be(
+        DefType.Obj(
+          ListMap(
+            "name" -> DefType.Str,
+            "age" -> DefType.Int
+          )
+        )
+      )
+    }
+    "represent a simple obj with optional value" in {
+      FabricDefinition(
+        List(
+          obj(
+            "name" -> "John Doe",
+            "age" -> 50
+          ),
+          obj(
+            "name" -> "Jane Doe"
+          )
+        )
+      ) should be(
+        DefType.Obj(
+          ListMap(
+            "name" -> DefType.Str,
+            "age" -> DefType.Opt(DefType.Int)
+          )
+        )
+      )
     }
     "represent a simple optional obj" in {
-      val d = FabricDefinition(List(
-        Null,
-        obj(
-          "name" -> "Jane Doe",
-          "age" -> 50
+      val d = FabricDefinition(
+        List(
+          Null,
+          obj(
+            "name" -> "Jane Doe",
+            "age" -> 50
+          )
         )
-      ))
-      d should be(DefType.Opt(DefType.Obj(ListMap(
-        "name" -> DefType.Str,
-        "age" -> DefType.Int
-      ))))
+      )
+      d should be(
+        DefType.Opt(
+          DefType.Obj(
+            ListMap(
+              "name" -> DefType.Str,
+              "age" -> DefType.Int
+            )
+          )
+        )
+      )
     }
     "fail with conflicting types" in {
       assertThrows[RuntimeException](
-        FabricDefinition(List(
-          obj("name" -> "Bad"),
-          num(5)
-        ))
+        FabricDefinition(
+          List(
+            obj("name" -> "Bad"),
+            num(5)
+          )
+        )
       )
     }
     "validate a definition" in {
-      val definition = DefType.Obj(ListMap(
-        "name" -> DefType.Str,
-        "age" -> DefType.Opt(DefType.Int)
-      ))
+      val definition = DefType.Obj(
+        ListMap(
+          "name" -> DefType.Str,
+          "age" -> DefType.Opt(DefType.Int)
+        )
+      )
       val value = obj(
         "name" -> "Jane Doe",
         "age" -> 50
@@ -79,25 +124,29 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       definition.validate(value) should be(true)
     }
     "fail to validate a definition" in {
-      val definition = DefType.Obj(ListMap(
-        "name" -> DefType.Str,
-        "age" -> DefType.Int
-      ))
+      val definition = DefType.Obj(
+        ListMap(
+          "name" -> DefType.Str,
+          "age" -> DefType.Int
+        )
+      )
       val value = obj(
         "name" -> "Jane Doe"
       )
       definition.validate(value) should be(false)
     }
     "generate a case class based on a definition" in {
-      val definition = DefType.Obj(ListMap(
-        "name" -> DefType.Str,
-        "age" -> DefType.Int
-      ))
-      val generated = FabricGenerator.withMappings(definition, "com.example.Person")
+      val definition = DefType.Obj(
+        ListMap(
+          "name" -> DefType.Str,
+          "age" -> DefType.Int
+        )
+      )
+      val generated =
+        FabricGenerator.withMappings(definition, "com.example.Person")
       generated.packageName should be(Some("com.example"))
       generated.className should be("Person")
-      generated.code should be(
-        """package com.example
+      generated.code should be("""package com.example
           |
           |import fabric.rw._
           |
@@ -109,14 +158,18 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       generated.additional should be(Nil)
     }
     "generate two case classes based on a definition" in {
-      val definition = DefType.Obj(ListMap(
-        "name" -> DefType.Str,
-        "age" -> DefType.Int,
-        "location" -> DefType.Obj(ListMap(
-          "city" -> DefType.Str,
-          "state" -> DefType.Str
-        ))
-      ))
+      val definition = DefType.Obj(
+        ListMap(
+          "name" -> DefType.Str,
+          "age" -> DefType.Int,
+          "location" -> DefType.Obj(
+            ListMap(
+              "city" -> DefType.Str,
+              "state" -> DefType.Str
+            )
+          )
+        )
+      )
       val generated = FabricGenerator.withMappings(
         definition,
         "com.example.Person",
@@ -124,8 +177,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       )
       generated.packageName should be(Some("com.example"))
       generated.className should be("Person")
-      generated.code should be(
-        """package com.example
+      generated.code should be("""package com.example
           |
           |import fabric.rw._
           |
@@ -149,14 +201,20 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
                                 |}""".stripMargin)
     }
     "generate two case classes based on a definition with an array" in {
-      val definition = DefType.Obj(ListMap(
-        "name" -> DefType.Str,
-        "age" -> DefType.Int,
-        "locations" -> DefType.Arr(DefType.Obj(ListMap(
-          "city" -> DefType.Str,
-          "state" -> DefType.Str
-        )))
-      ))
+      val definition = DefType.Obj(
+        ListMap(
+          "name" -> DefType.Str,
+          "age" -> DefType.Int,
+          "locations" -> DefType.Arr(
+            DefType.Obj(
+              ListMap(
+                "city" -> DefType.Str,
+                "state" -> DefType.Str
+              )
+            )
+          )
+        )
+      )
       val generated = FabricGenerator.withMappings(
         definition,
         "com.example.Person",
@@ -164,8 +222,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       )
       generated.packageName should be(Some("com.example"))
       generated.className should be("Person")
-      generated.code should be(
-        """package com.example
+      generated.code should be("""package com.example
           |
           |import fabric.rw._
           |
@@ -178,8 +235,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       val location = generated.additional.head
       location.packageName should be(Some("com.example"))
       location.className should be("Location")
-      location.code should be(
-        """package com.example
+      location.code should be("""package com.example
           |
           |import fabric.rw._
           |
@@ -190,8 +246,10 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           |}""".stripMargin)
     }
     "generate complex case classes from large JSON" in {
-      val json: List[Json] = JsonParser(Source.fromInputStream(
-        getClass.getClassLoader.getResourceAsStream("large.json")),
+      val json: List[Json] = JsonParser(
+        Source.fromInputStream(
+          getClass.getClassLoader.getResourceAsStream("large.json")
+        ),
         Format.Json
       ).asVector.toList
       val dt = FabricDefinition(json)
@@ -199,9 +257,14 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
         dt = dt,
         rootName = "bench.event.Event",
         (key: String) => {
-          val name = "_(.)".r.replaceAllIn(key, m => {
-            m.group(1).toUpperCase
-          }).capitalize
+          val name = "_(.)".r
+            .replaceAllIn(
+              key,
+              m => {
+                m.group(1).toUpperCase
+              }
+            )
+            .capitalize
           s"bench.event.Event$name"
         }
       )

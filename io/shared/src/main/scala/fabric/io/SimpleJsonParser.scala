@@ -1,3 +1,24 @@
+/*
+ * Copyright (c) 2021 Typelevel
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package fabric.io
 
 import fabric._
@@ -7,7 +28,8 @@ import scala.collection.immutable.ListMap
 import scala.collection.mutable
 
 /**
- * Dead simple Json parser meant to be faster than larger alternatives. Still needs some work to be faster.
+ * Dead simple Json parser meant to be faster than larger alternatives. Still
+ * needs some work to be faster.
  */
 object SimpleJsonParser extends FormatParser {
   override def format: Format = Format.Json
@@ -24,13 +46,18 @@ object SimpleJsonParser extends FormatParser {
       case ']' | '}' => (None, start + 1)
       case c if c.isDigit => o(parseNumber(start))
       case c if c.isWhitespace | c == ',' => parse(start + 1)
-      case c => throw new RuntimeException(s"Unsupported Json start: $c (offset: $start) - $content")
+      case c =>
+        throw new RuntimeException(
+          s"Unsupported Json start: $c (offset: $start) - $content"
+        )
     }
 
-    def parseString(start: Int,
-                    escape: Boolean = false,
-                    offset: Int = 0,
-                    b: mutable.StringBuilder = new mutable.StringBuilder): (Json, Int) = {
+    def parseString(
+        start: Int,
+        escape: Boolean = false,
+        offset: Int = 0,
+        b: mutable.StringBuilder = new mutable.StringBuilder
+    ): (Json, Int) = {
       val char = content.charAt(start + offset)
       if (!escape && char == '"') {
         (Str(b.toString()), start + offset + 1)
@@ -56,10 +83,14 @@ object SimpleJsonParser extends FormatParser {
     def parseKey(offset: Int): (Option[String], Int) = parse(offset) match {
       case (Some(Str(key)), off) =>
         val colonIndex = content.indexOf(':', off)
-        assert(colonIndex != -1, s"Unable to find colon after key in object! (key: $key, value: ${content.substring(off)})")
+        assert(
+          colonIndex != -1,
+          s"Unable to find colon after key in object! (key: $key, value: ${content.substring(off)})"
+        )
         (Some(key), colonIndex + 1)
       case (None, off) => (None, off)
-      case (Some(json), _) => throw new RuntimeException(s"Expected key, but got: $json")
+      case (Some(json), _) =>
+        throw new RuntimeException(s"Expected key, but got: $json")
     }
     def parseArr(offset: Int): (Json, Int) = {
       var list = List.empty[Json]
@@ -83,24 +114,28 @@ object SimpleJsonParser extends FormatParser {
       def recurse(start: Int): Unit = {
         parseKey(start) match {
           case (None, off1) => adjust = off1 // Finished
-          case (Some(key), off1) => parse(off1) match {
-            case (Some(json), off2) =>
-              list = key -> json :: list
-              recurse(off2)
-            case (None, _) => throw new RuntimeException(s"Unable to find value for key: $key")
-          }
+          case (Some(key), off1) =>
+            parse(off1) match {
+              case (Some(json), off2) =>
+                list = key -> json :: list
+                recurse(off2)
+              case (None, _) =>
+                throw new RuntimeException(
+                  s"Unable to find value for key: $key"
+                )
+            }
         }
       }
       recurse(offset)
       (Obj(ListMap.from(list.reverse)), adjust)
     }
-    def parseNumber(offset: Int): (Json, Int) = content.substring(offset).takeWhile(c => c.isDigit || c == '.') match {
-      case s if s.contains('.') => (num(BigDecimal(s)), offset + s.length)
-      case s => (num(s.toLong), offset + s.length)
-    }
+    def parseNumber(offset: Int): (Json, Int) =
+      content.substring(offset).takeWhile(c => c.isDigit || c == '.') match {
+        case s if s.contains('.') => (num(BigDecimal(s)), offset + s.length)
+        case s => (num(s.toLong), offset + s.length)
+      }
 
-    parse(0)
-      ._1
+    parse(0)._1
       .getOrElse(throw new RuntimeException(s"Not valid JSON: $content"))
   }
 }
