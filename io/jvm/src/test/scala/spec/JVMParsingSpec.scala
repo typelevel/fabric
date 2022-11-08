@@ -22,8 +22,7 @@
 package spec
 
 import fabric._
-import fabric.filter.{ChainedFilter, RemoveEmptyFilter, RemoveNullsFilter}
-import fabric.io.{Format, JsonFormatter, JsonParser}
+import fabric.io.{Format, JsonParser}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
