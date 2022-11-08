@@ -5,7 +5,7 @@ val scala2 = List(scala213)
 val scalaVersions = scala3 ::: scala2
 
 name := "fabric"
-ThisBuild / tlBaseVersion := "0.4"
+ThisBuild / tlBaseVersion := "1.7"
 ThisBuild / organization := "org.typelevel"
 ThisBuild / startYear := Some(2021)
 ThisBuild / licenses := Seq(License.MIT)
