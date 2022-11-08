@@ -15,18 +15,18 @@ ThisBuild / crossScalaVersions := scalaVersions
 ThisBuild / tlSonatypeUseLegacyHost := false
 
 ThisBuild / publishTo := sonatypePublishToBundle.value
-ThisBuild / sonatypeProfileName := "com.outr"
+ThisBuild / sonatypeProfileName := "org.typelevel"
 ThisBuild / licenses := Seq(
-  "MIT" -> url("https://github.com/outr/fabric/blob/master/LICENSE")
+  "MIT" -> url("https://github.com/typelevel/fabric/blob/master/LICENSE")
 )
 ThisBuild / sonatypeProjectHosting := Some(
-  xerial.sbt.Sonatype.GitHubHosting("outr", "fabric", "matt@outr.com")
+  xerial.sbt.Sonatype.GitHubHosting("typelevel", "fabric", "matt@outr.com")
 )
-ThisBuild / homepage := Some(url("https://github.com/outr/fabric"))
+ThisBuild / homepage := Some(url("https://github.com/typelevel/fabric"))
 ThisBuild / scmInfo := Some(
   ScmInfo(
-    url("https://github.com/outr/fabric"),
-    "scm:git@github.com:outr/fabric.git"
+    url("https://github.com/typelevel/fabric"),
+    "scm:git@github.com:typelevel/fabric.git"
   )
 )
 ThisBuild / developers := List(
