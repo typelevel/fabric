@@ -21,7 +21,7 @@
 
 package fabric.rw
 
-import scala.language.experimental.macros
+//import scala.language.experimental.macros
 
 trait CompileRW {
   def gen[T]: RW[T] = macro RWMacros.caseClassRW[T]

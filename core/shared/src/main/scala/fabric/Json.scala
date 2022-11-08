@@ -476,7 +476,7 @@ case class Str(value: String) extends AnyVal with Json {
           )
         )
     case JsonType.NumInt =>
-      Try(NumInt(value.toInt)).toOption
+      Try(NumInt(value.toLong)).toOption
         .map(_.asInstanceOf[V])
         .getOrElse(
           throw ConversionException(

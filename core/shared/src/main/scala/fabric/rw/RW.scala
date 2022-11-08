@@ -38,7 +38,7 @@ object RW extends CompileRW {
   implicit lazy val boolRW: RW[Boolean] = from[Boolean](bool, _.asBool.value)
 
   implicit lazy val byteRW: RW[Byte] =
-    from[Byte](s => NumInt(s.toInt), _.asNum.asByte)
+    from[Byte](s => NumInt(s.toLong), _.asNum.asByte)
   implicit lazy val shortRW: RW[Short] =
     from[Short](s => num(s.toInt), _.asNum.asShort)
   implicit lazy val intRW: RW[Int] = from[Int](i => num(i), _.asNum.asInt)

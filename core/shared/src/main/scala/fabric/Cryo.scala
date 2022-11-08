@@ -79,20 +79,25 @@ object Cryo {
       bb.put(identifiers.Str)
       bb.putInt(s.length)
       bb.put(s.getBytes("UTF-8"))
+      ()
     case NumInt(l) =>
       bb.put(identifiers.NumInt)
       bb.putLong(l)
+      ()
     case NumDec(bd) =>
       bb.put(identifiers.NumDec)
       freeze(Str(bd.toString()), bb)
     case Bool(b) =>
       bb.put(identifiers.Bool)
       bb.put(if (b) 1.toByte else 0.toByte)
+      ()
     case Arr(v) =>
       bb.put(identifiers.Arr)
       bb.putInt(v.length)
       v.foreach(json => freeze(json, bb))
-    case Null => bb.put(identifiers.Null)
+    case Null =>
+      bb.put(identifiers.Null)
+      ()
   }
 
   def thaw(bb: ByteBuffer): Json = bb.get() match {

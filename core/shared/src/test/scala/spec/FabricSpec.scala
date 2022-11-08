@@ -72,7 +72,7 @@ class FabricSpec extends AnyWordSpec with Matchers {
       state should be(str("California"))
     }
     "update the hierarchy" in {
-      val updated = v.modify("address" \ "state") { value =>
+      val updated = v.modify("address" \ "state") { _ =>
         str("Tennessee")
       }
       updated should be(

@@ -26,5 +26,5 @@ import fabric.rw._
 case class Wrapper[T](name: String, value: T, other: Option[T])
 
 object Wrapper {
-  implicit def rw[T: RW]: RW[Wrapper[T]] = RW.gen
+  implicit def rw[T](implicit trw: RW[T]): RW[Wrapper[T]] = RW.gen
 }
