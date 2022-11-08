@@ -25,7 +25,7 @@ import fabric.*
 
 import scala.deriving.*
 import scala.compiletime.*
-import scala.quoted.{given, _}
+import scala.quoted._
 
 import scala.collection.immutable.ListMap
 
@@ -48,18 +48,21 @@ trait CompileRW {
   }
 
   inline def toMapElems[A <: Product, T <: Tuple, L <: Tuple](a: A, index: Int): ListMap[String, Json] = {
-    inline erasedValue[T] match
-      case _: (hd *: tl) =>
-        inline erasedValue[L] match
+    inline erasedValue[T] match {
+      case _: (hd *: tl) => {
+        inline erasedValue[L] match {
           case _: (hdLabel *: tlLabels) =>
-            import fabric.rw.given
+            import fabric.rw._
             val hdLabelValue = constValue[hdLabel].asInstanceOf[String]
             val hdValue = a.productElement(index).asInstanceOf[hd]
             val hdReader = summonInline[Reader[hd]]
             val value = hdReader.read(hdValue)
             toMapElems[A, tl, tlLabels](a, index + 1) ++ Map(hdLabelValue -> value)
           case EmptyTuple => sys.error("Not possible")
+        }
+      }
       case EmptyTuple => ListMap.empty
+    }
   }
 
   inline def fromMap[T <: Product](map: ListMap[String, Json])(using p: Mirror.ProductOf[T]): T = {
@@ -76,24 +79,27 @@ trait CompileRW {
   }
 
   inline def fromMapElems[A <: Product, T <: Tuple, L <: Tuple](map: ListMap[String, Json], index: Int, arr: Array[Any], defaults: Map[String, Any]): Unit = {
-    inline erasedValue[T] match
+    inline erasedValue[T] match {
       case _: (hd *: tl) =>
-        inline erasedValue[L] match
+        inline erasedValue[L] match {
           case _: (hdLabel *: tlLabels) =>
-            import fabric.rw.given
+            import fabric.rw._
             val hdLabelValue = constValue[hdLabel].asInstanceOf[String]
             val hdValueOption = map.get(hdLabelValue)
             val hdWritable = summonInline[Writer[hd]]
             val valueOption = hdValueOption.map(hdWritable.write)
-            def defaultAlternative = inline erasedValue[hd] match
+            def defaultAlternative = inline erasedValue[hd] match {
               case _: Option[optHd] => None
               case _ => sys.error(s"Unable to find field ${getClassName[A]}.$hdLabelValue (and no defaults set) in ${Obj(map)}")
+            }
             def default = defaults.getOrElse(hdLabelValue, defaultAlternative)
             val value = valueOption.getOrElse(default)
             arr(index) = value
             fromMapElems[A, tl, tlLabels](map, index + 1, arr, defaults)
           case EmptyTuple => sys.error("Not possible")
+      }
       case EmptyTuple => // Finished
+    }
   }
 
   inline def getDefaultParams[T]: Map[String, AnyRef] = ${ CompileRW.getDefaultParmasImpl[T] }
@@ -102,7 +108,7 @@ trait CompileRW {
 }
 
 object CompileRW {
-  def getDefaultParmasImpl[T](using Quotes, Type[T]): Expr[Map[String, AnyRef]] =
+  def getDefaultParmasImpl[T](using Quotes, Type[T]): Expr[Map[String, AnyRef]] = {
     import quotes.reflect._
     val sym = TypeTree.of[T].symbol
 
@@ -125,11 +131,11 @@ object CompileRW {
     } else {
       '{ Map.empty }
     }
-  end getDefaultParmasImpl
+  }
 
-  def getClassNameImpl[T](using Quotes, Type[T]): Expr[String] =
+  def getClassNameImpl[T](using Quotes, Type[T]): Expr[String] = {
     import quotes.reflect._
 
     Expr(TypeTree.of[T].symbol.companionClass.fullName)
-  end getClassNameImpl
+  }
 }
