@@ -34,8 +34,6 @@ ThisBuild / developers := List(
   tlGitHubDev("darkfrog26", "Matt Hicks")
 )
 
-ThisBuild / mimaFailOnNoPrevious := false
-
 // Dependency versions
 val collectionCompatVersion: String = "2.8.1"
 
@@ -65,6 +63,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .crossType(CrossType.Full)
   .settings(
     name := "fabric-core",
+    mimaPreviousArtifacts := Set.empty,
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
       "org.scalatestplus" %%% "scalacheck-1-16" % scalaCheckVersion % Test
@@ -92,6 +91,7 @@ lazy val io = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Full)
   .settings(
     name := "fabric-io",
+    mimaPreviousArtifacts := Set.empty,
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
       "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
@@ -112,6 +112,7 @@ lazy val define = crossProject(JVMPlatform)
   .crossType(CrossType.Full)
   .settings(
     name := "fabric-define",
+    mimaPreviousArtifacts := Set.empty,
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
       "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
