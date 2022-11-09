@@ -27,7 +27,7 @@ package object fabric {
   implicit def listMap2Obj(map: ListMap[String, Json]): Obj = Obj(map)
 
   implicit def map2Obj(map: Map[String, Json]): Obj = listMap2Obj(
-    ListMap.from(map)
+    ListMap(map.toList: _*)
   )
 
   implicit def seq2Arr(seq: Seq[Json]): Arr = Arr(seq.toVector)

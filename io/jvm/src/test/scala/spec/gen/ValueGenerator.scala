@@ -39,7 +39,7 @@ object ValueGenerator {
             2,
             Gen.zip(Arbitrary.arbitrary[String], recurse)
           )
-          .map(list => Obj(ListMap.from(list)))
+          .map(list => Obj(ListMap(list: _*)))
       )
     }
   )

@@ -22,7 +22,6 @@
 package fabric.rw
 
 import fabric._
-import fabric.rw._
 
 /**
  * RW provides a single class representation of a Reader and Writer for the same
