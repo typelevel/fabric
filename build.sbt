@@ -34,6 +34,8 @@ ThisBuild / developers := List(
   tlGitHubDev("darkfrog26", "Matt Hicks")
 )
 
+ThisBuild / mimaFailOnNoPrevious := false
+
 // Dependency versions
 val collectionCompatVersion: String = "2.8.1"
 
