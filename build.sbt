@@ -1,7 +1,8 @@
 // Scala versions
 val scala213 = "2.13.10"
+val scala212 = "2.12.17"
 val scala3 = List("3.2.0")
-val scala2 = List(scala213)
+val scala2 = List(scala213, scala212)
 val scalaVersions = scala3 ::: scala2
 
 name := "fabric"
@@ -62,6 +63,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .crossType(CrossType.Full)
   .settings(
     name := "fabric-core",
+    mimaPreviousArtifacts := Set.empty,
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
       "org.scalatestplus" %%% "scalacheck-1-16" % scalaCheckVersion % Test
@@ -89,6 +91,7 @@ lazy val io = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Full)
   .settings(
     name := "fabric-io",
+    mimaPreviousArtifacts := Set.empty,
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
       "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
@@ -109,6 +112,7 @@ lazy val define = crossProject(JVMPlatform)
   .crossType(CrossType.Full)
   .settings(
     name := "fabric-define",
+    mimaPreviousArtifacts := Set.empty,
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
       "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test

@@ -385,10 +385,13 @@ final class Obj private (val value: ListMap[String, Json])
   def keys: Set[String] = value.keySet
 
   override def filter(filter: ValueFilter): Option[Json] = {
-    val mutated = value.map { case (key, value) =>
-      value.filter(filter).map(v => key -> v)
-    }.flatten
-    filter(Obj(ListMap.from(mutated)))
+    val mutated = value
+      .map { case (key, value) =>
+        value.filter(filter).map(v => key -> v)
+      }
+      .flatten
+      .toList
+    filter(Obj(ListMap(mutated: _*)))
   }
 
   override def isEmpty: Boolean = value.isEmpty

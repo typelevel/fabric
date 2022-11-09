@@ -131,9 +131,9 @@ object DefType {
         m2: ListMap[String, DefType]
     ): ListMap[String, DefType] = {
       val keys = m1.keySet ++ m2.keySet
-      ListMap.from(keys.map { key =>
+      ListMap(keys.toList.map { key =>
         key -> m1.getOrElse(key, Null).merge(m2.getOrElse(key, Null))
-      })
+      }: _*)
     }
   }
   case class Arr(t: DefType) extends DefType {
