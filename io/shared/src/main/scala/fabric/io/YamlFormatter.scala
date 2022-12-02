@@ -32,8 +32,10 @@ object YamlFormatter extends Formatter {
     def pad(adjust: Int = 0): String = "".padTo((depth + adjust) * 2, ' ')
     json match {
       case Arr(v) =>
-        v.map(write(_, depth))
-          .map(s => s"${pad(-1)}- $s")
+        v.map(write(_, depth + 1))
+          .map { s =>
+            s"${pad()}- ${s.dropWhile(_.isWhitespace)}"
+          }
           .mkString("\n", "\n", "")
       case Bool(b) => b.toString
       case Null => ""
@@ -41,8 +43,13 @@ object YamlFormatter extends Formatter {
       case NumDec(n) => n.toString()
       case Obj(map) =>
         map.toList
-          .map { case (key, value) =>
-            s"${pad()}$key: ${write(value, depth + 1)}"
+          .map {
+            case (key, value) =>
+              val v = write(value, depth + 1) match {
+                case s if s.headOption.contains('\n') => s
+                case s => s" $s"
+              }
+              s"${pad()}$key:$v"
           }
           .mkString("\n", "\n", "")
       case Str(s) if s.contains("\n") =>
