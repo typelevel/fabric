@@ -94,11 +94,11 @@ jobs:
 
       - name: Make target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
-        run: mkdir -p target .js/target core/native/target documentation/target core/js/target core/jvm/target .jvm/target .native/target io/js/target define/jvm/target io/jvm/target bench/target project/target
+        run: mkdir -p util/target target .js/target core/native/target documentation/target core/js/target core/jvm/target .jvm/target .native/target io/js/target define/jvm/target io/jvm/target bench/target project/target
 
       - name: Compress target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
-        run: tar cf targets.tar target .js/target core/native/target documentation/target core/js/target core/jvm/target .jvm/target .native/target io/js/target define/jvm/target io/jvm/target bench/target project/target
+        run: tar cf targets.tar util/target target .js/target core/native/target documentation/target core/js/target core/jvm/target .jvm/target .native/target io/js/target define/jvm/target io/jvm/target bench/target project/target
 
       - name: Upload target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
