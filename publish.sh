@@ -2,6 +2,7 @@
 
 set -e
 
+sbt githubWorkflowGenerate
 sbt scalafmt
 sbt "Test / scalafmt"
 sbt +clean
