@@ -143,3 +143,6 @@ lazy val docs = project
     ),
     mdocOut := file(".")
   )
+
+lazy val util = project
+  .in(file("util"))

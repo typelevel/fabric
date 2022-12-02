@@ -2,7 +2,10 @@
 
 set -e
 
-sbt +clean +compile +test
+sbt scalafmt
+sbt "Test / scalafmt"
+sbt +clean
+sbt +compile
+sbt +test
 sbt docs/mdoc
-sbt +publishSigned
-sbt sonatypeBundleRelease
+sbt "util/runMain util.UpdateReadme"
