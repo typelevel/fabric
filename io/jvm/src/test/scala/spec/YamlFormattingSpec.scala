@@ -23,8 +23,11 @@ package spec
 
 import fabric.io.{Format, JsonParser, YamlFormatter}
 import fabric._
+import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+
+import scala.io.Source
 
 class YamlFormattingSpec extends AnyWordSpec with Matchers {
   "Yaml Formatting" should {
@@ -52,6 +55,34 @@ class YamlFormattingSpec extends AnyWordSpec with Matchers {
       val yamlString = YamlFormatter(v)
       val json = JsonParser(yamlString, Format.Yaml)
       json should be(v)
+    }
+    "format a minimal JSON file to YAML properly" in {
+      verifyToYaml("openapi-minimal")
+    }
+    "format a simple JSON file to YAML properly" in {
+      verifyToYaml("openapi-simple")
+    }
+    "format a complex JSON file to YAML properly" in {
+      verifyToYaml("openapi-tictactoe")
+    }
+  }
+
+  private def verifyToYaml(name: String): Assertion = {
+    val jsonName = s"$name.json"
+    val yamlName = s"$name.yml"
+    val jsonString = resource(jsonName)
+    val yamlString = resource(yamlName)
+    val json = JsonParser(jsonString)
+    val yaml = YamlFormatter(json)
+    yaml should be(yamlString)
+  }
+
+  private def resource(name: String): String = {
+    val source = Source.fromInputStream(getClass.getClassLoader.getResourceAsStream(name))
+    try {
+      source.mkString
+    } finally {
+      source.close()
     }
   }
 }
