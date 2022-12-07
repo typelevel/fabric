@@ -19,7 +19,9 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package fabric
+package fabric.define
+
+import fabric.{Arr, Bool, Json, Null, NumDec, NumInt, Obj, Str}
 
 object FabricDefinition {
   def apply(json: List[Json]): DefType = if (json.isEmpty) {
