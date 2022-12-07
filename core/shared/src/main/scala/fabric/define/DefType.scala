@@ -127,9 +127,9 @@ object DefType {
     }
 
     private def mergeMap(
-                          m1: ListMap[String, DefType],
-                          m2: ListMap[String, DefType]
-                        ): ListMap[String, DefType] = {
+        m1: ListMap[String, DefType],
+        m2: ListMap[String, DefType]
+    ): ListMap[String, DefType] = {
       val keys = m1.keySet ++ m2.keySet
       ListMap(keys.toList.map { key =>
         key -> m1.getOrElse(key, Null).merge(m2.getOrElse(key, Null))

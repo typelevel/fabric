@@ -10,7 +10,8 @@ package object define {
 
     def write(baseDirectory: File, writeAdditional: Boolean = true): Unit = {
       val alreadyWritten = written.get()
-      val fullName = gc.packageName.map(p => s"$p.${gc.className}").getOrElse(gc.className)
+      val fullName =
+        gc.packageName.map(p => s"$p.${gc.className}").getOrElse(gc.className)
       if (alreadyWritten.contains(fullName)) {
         // Already written
       } else {
