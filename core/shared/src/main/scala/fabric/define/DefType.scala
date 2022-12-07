@@ -18,9 +18,9 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+package fabric.define
 
-package fabric
-
+import fabric._
 import fabric.rw.RW
 
 import scala.collection.immutable.ListMap
@@ -127,9 +127,9 @@ object DefType {
     }
 
     private def mergeMap(
-        m1: ListMap[String, DefType],
-        m2: ListMap[String, DefType]
-    ): ListMap[String, DefType] = {
+                          m1: ListMap[String, DefType],
+                          m2: ListMap[String, DefType]
+                        ): ListMap[String, DefType] = {
       val keys = m1.keySet ++ m2.keySet
       ListMap(keys.toList.map { key =>
         key -> m1.getOrElse(key, Null).merge(m2.getOrElse(key, Null))

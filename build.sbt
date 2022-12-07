@@ -55,8 +55,7 @@ lazy val root = tlCrossRootProject.aggregate(
   core.jvm,
   core.native,
   io.js,
-  io.jvm,
-  define.jvm
+  io.jvm
 )
 
 lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
@@ -107,18 +106,6 @@ lazy val io = crossProject(JSPlatform, JVMPlatform)
     )
   )
   .dependsOn(core)
-
-lazy val define = crossProject(JVMPlatform)
-  .crossType(CrossType.Full)
-  .settings(
-    name := "fabric-define",
-    mimaPreviousArtifacts := Set.empty,
-    libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
-      "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
-    )
-  )
-  .dependsOn(io)
 
 lazy val bench = project
   .in(file("bench"))

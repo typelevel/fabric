@@ -21,14 +21,12 @@
 
 package spec
 
-import fabric._
-import fabric.io.{Format, JsonParser}
+import fabric.define.{DefType, FabricDefinition, FabricGenerator}
+import fabric.{define, _}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import java.io.File
 import scala.collection.immutable.ListMap
-import scala.io.Source
 
 class FabricDefinitionSpec extends AnyWordSpec with Matchers {
   "FabricDefinition" should {
@@ -36,7 +34,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       FabricDefinition(num(5)) should be(DefType.Int)
     }
     "represent a Null properly" in {
-      FabricDefinition(Null) should be(DefType.Null)
+      define.FabricDefinition(Null) should be(DefType.Null)
     }
     "represent an optional Int properly" in {
       FabricDefinition(List(num(5), Null)) should be(DefType.Opt(DefType.Int))
@@ -45,7 +43,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       FabricDefinition(List(Null, num(5))) should be(DefType.Opt(DefType.Int))
     }
     "represent a simple obj" in {
-      FabricDefinition(
+      define.FabricDefinition(
         obj(
           "name" -> "John Doe",
           "age" -> 50
@@ -245,7 +243,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           |  implicit val rw: RW[Location] = RW
           |}""".stripMargin)
     }
-    "generate complex case classes from large JSON" in {
+    /*"generate complex case classes from large JSON" in {
       val json: List[Json] = JsonParser(
         Source.fromInputStream(
           getClass.getClassLoader.getResourceAsStream("large.json")
@@ -269,6 +267,6 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
         }
       )
       generated.write(new File("bench/src/main/scala/"))
-    }
+    }*/
   }
 }
