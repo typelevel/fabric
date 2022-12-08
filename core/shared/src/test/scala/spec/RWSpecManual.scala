@@ -22,6 +22,7 @@
 package spec
 
 import fabric._
+import fabric.define.DefType
 import fabric.rw._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -39,6 +40,11 @@ class RWSpecManual extends AnyWordSpec with Matchers {
       city = map("city").as[String],
       state = map("state").as[String]
     )
+
+    override def definition: DefType = DefType.Obj(
+      "city" -> DefType.Str,
+      "state" -> DefType.Str
+    )
   }
   implicit val personRW: RW[Person] = new ClassRW[Person] {
     override protected def t2Map(t: Person): ListMap[String, Json] = ListMap(
@@ -51,6 +57,12 @@ class RWSpecManual extends AnyWordSpec with Matchers {
       name = map("name").as[String],
       age = map("age").as[Int],
       address = map("address").as[Address]
+    )
+
+    override def definition: DefType = DefType.Obj(
+      "name" -> DefType.Str,
+      "age" -> DefType.Int,
+      "address" -> addressRW.definition
     )
   }
 

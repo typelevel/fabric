@@ -21,9 +21,40 @@
 
 package fabric.rw
 
+import fabric.define.DefType
+
 import scala.reflect.macros.blackbox
 
 object RWMacros {
+  def caseClassD[T](
+      context: blackbox.Context
+  )(implicit t: context.WeakTypeTag[T]): context.Expr[DefType] = {
+    import context.universe._
+
+    val tpe = t.tpe
+    tpe.decls.collectFirst {
+      case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
+    } match {
+      case Some(fields) =>
+        val fieldDefs = fields.map { field =>
+          val name = field.asTerm.name
+          val key = name.decodedName.toString
+          val returnType =
+            tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
+          q"$key -> implicitly[RW[$returnType]].definition"
+        }
+        context.Expr[DefType](q"""
+            import _root_.fabric._
+            import _root_.fabric.define._
+            import _root_.scala.collection.immutable.ListMap
+
+            DefType.Obj(ListMap(..$fieldDefs))
+           """)
+      case None =>
+        context.abort(context.enclosingPosition, "Not a valid case class")
+    }
+  }
+
   def caseClassR[T](
       context: blackbox.Context
   )(implicit t: context.WeakTypeTag[T]): context.Expr[Reader[T]] = {
@@ -33,7 +64,7 @@ object RWMacros {
     tpe.decls.collectFirst {
       case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
     } match {
-      case Some(fields) => {
+      case Some(fields) =>
         val toMap = fields.map { field =>
           val name = field.asTerm.name
           val key = name.decodedName.toString
@@ -48,7 +79,6 @@ object RWMacros {
               override protected def t2Map(t: $tpe): ListMap[String, Json] = ListMap(..$toMap)
             }
            """)
-      }
       case None =>
         val caseObjects = tpe.companion.members.collect {
           case s if s.typeSignature <:< t.tpe => s.name
@@ -154,10 +184,12 @@ object RWMacros {
     val tpe = t.tpe
     val reader = caseClassR[T](context)
     val writer = caseClassW[T](context)
+    val definition = caseClassD[T](context)
     context.Expr[RW[T]](
       q"""
          import _root_.fabric._
          import _root_.fabric.rw._
+         import _root_.fabric.define._
 
          new RW[$tpe] {
             private val r = $reader
@@ -165,6 +197,7 @@ object RWMacros {
 
             override def read(t: $tpe): Json = r.read(t)
             override def write(value: Json): $tpe = w.write(value)
+            override def definition: DefType = $definition
          }
        """
     )

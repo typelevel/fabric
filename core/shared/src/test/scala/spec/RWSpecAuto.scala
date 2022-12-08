@@ -22,6 +22,7 @@
 package spec
 
 import fabric._
+import fabric.define.DefType
 import fabric.rw._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -94,6 +95,18 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
           ),
           "other" -> obj(
             "city" -> "Norman"
+          )
+        )
+      )
+    }
+    "verify Person's DefType" in {
+      Person.rw.definition should be(
+        DefType.Obj(
+          "name" -> DefType.Str,
+          "age" -> DefType.Int,
+          "address" -> DefType.Obj(
+            "city" -> DefType.Str,
+            "state" -> DefType.Str
           )
         )
       )

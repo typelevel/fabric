@@ -54,7 +54,8 @@ sealed trait DefType {
 object DefType {
   implicit def rw: RW[DefType] = RW.from[DefType](
     r = dt2V,
-    w = v2dt
+    w = v2dt,
+    d = DefType.Null
   )
 
   private def dt2V(dt: DefType): Json = dt match {
@@ -135,6 +136,9 @@ object DefType {
         key -> m1.getOrElse(key, Null).merge(m2.getOrElse(key, Null))
       }: _*)
     }
+  }
+  object Obj {
+    def apply(entries: (String, DefType)*): Obj = Obj(ListMap(entries: _*))
   }
   case class Arr(t: DefType) extends DefType {
     override def merge(that: DefType): DefType = that match {
