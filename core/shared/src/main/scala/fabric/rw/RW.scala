@@ -22,54 +22,64 @@
 package fabric.rw
 
 import fabric._
+import fabric.define.DefType
 
 /**
  * RW provides a single class representation of a Reader and Writer for the same
  * type
  */
-trait RW[T] extends Reader[T] with Writer[T]
+trait RW[T] extends Reader[T] with Writer[T] {
+  def definition: DefType
+}
 
 object RW extends CompileRW {
-  implicit lazy val unitRW: RW[Unit] = from(_ => Null, _ => ())
-  implicit lazy val valueRW: RW[Json] = from(identity, identity)
-  implicit lazy val objRW: RW[Obj] = from(o => o, v => v.asObj)
+  implicit lazy val unitRW: RW[Unit] = from(_ => Null, _ => (), DefType.Null)
+  implicit lazy val valueRW: RW[Json] = from(identity, identity, DefType.Null)
+  implicit lazy val objRW: RW[Obj] = from(o => o, v => v.asObj, DefType.Null)
 
-  implicit lazy val boolRW: RW[Boolean] = from[Boolean](bool, _.asBool.value)
+  implicit lazy val boolRW: RW[Boolean] =
+    from[Boolean](bool, _.asBool.value, DefType.Bool)
 
   implicit lazy val byteRW: RW[Byte] =
-    from[Byte](s => NumInt(s.toLong), _.asNum.asByte)
+    from[Byte](s => NumInt(s.toLong), _.asNum.asByte, DefType.Int)
   implicit lazy val shortRW: RW[Short] =
-    from[Short](s => num(s.toInt), _.asNum.asShort)
-  implicit lazy val intRW: RW[Int] = from[Int](i => num(i), _.asNum.asInt)
-  implicit lazy val longRW: RW[Long] = from[Long](l => num(l), _.asNum.asLong)
+    from[Short](s => num(s.toInt), _.asNum.asShort, DefType.Int)
+  implicit lazy val intRW: RW[Int] =
+    from[Int](i => num(i), _.asNum.asInt, DefType.Int)
+  implicit lazy val longRW: RW[Long] =
+    from[Long](l => num(l), _.asNum.asLong, DefType.Int)
   implicit lazy val floatRW: RW[Float] =
-    from[Float](f => num(f.toDouble), _.asNum.asFloat)
-  implicit lazy val doubleRW: RW[Double] = from[Double](num, _.asNum.asDouble)
+    from[Float](f => num(f.toDouble), _.asNum.asFloat, DefType.Dec)
+  implicit lazy val doubleRW: RW[Double] =
+    from[Double](num, _.asNum.asDouble, DefType.Dec)
   implicit lazy val bigIntRW: RW[BigInt] =
-    from[BigInt](i => num(BigDecimal(i)), _.asNum.asBigInt)
+    from[BigInt](i => num(BigDecimal(i)), _.asNum.asBigInt, DefType.Dec)
   implicit lazy val bigDecimalRW: RW[BigDecimal] =
-    from[BigDecimal](num, _.asNum.asBigDecimal)
+    from[BigDecimal](num, _.asNum.asBigDecimal, DefType.Dec)
 
-  implicit lazy val stringRW: RW[String] = from[String](str, _.asStr.value)
+  implicit lazy val stringRW: RW[String] =
+    from[String](str, _.asStr.value, DefType.Str)
 
   implicit def mapRW[V: RW]: RW[Map[String, V]] = from[Map[String, V]](
     _.map { case (key, value) =>
       key -> value.json
     },
-    v =>
-      v.asObj.value.map { case (key, value) =>
-        key -> value.as[V]
-      }
+    _.asObj.value.map { case (key, value) =>
+      key -> value.as[V]
+    },
+    DefType.Null
   )
 
   implicit def listRW[V: RW]: RW[List[V]] = from[List[V]](
     v => Arr(v.map(_.json).toVector),
-    v => v.asVector.map(_.as[V]).toList
+    v => v.asVector.map(_.as[V]).toList,
+    DefType.Arr(implicitly[RW[V]].definition)
   )
 
   implicit def vectorRW[V: RW]: RW[Vector[V]] = from[Vector[V]](
     v => Arr(v.map(_.json)),
-    v => v.asVector.map(_.as[V])
+    v => v.asVector.map(_.as[V]),
+    DefType.Arr(implicitly[RW[V]].definition)
   )
 
   implicit def setRW[V: RW]: RW[Set[V]] = from[Set[V]](
@@ -77,18 +87,22 @@ object RW extends CompileRW {
     {
       case Arr(vector) => vector.map(_.as[V]).toSet
       case v => throw new RuntimeException(s"Unsupported set: $v")
-    }
+    },
+    DefType.Arr(implicitly[RW[V]].definition)
   )
 
   implicit def optionRW[V: RW]: RW[Option[V]] = from[Option[V]](
     v => v.map(_.json).getOrElse(Null),
-    v => if (v.isNull) None else Some(v.as[V])
+    v => if (v.isNull) None else Some(v.as[V]),
+    DefType.Opt(implicitly[RW[V]].definition)
   )
 
-  def from[T](r: T => Json, w: Json => T): RW[T] = new RW[T] {
+  def from[T](r: T => Json, w: Json => T, d: DefType): RW[T] = new RW[T] {
     override def write(value: Json): T = w(value)
 
     override def read(t: T): Json = r(t)
+
+    override def definition: DefType = d
   }
 
   def enumeration[T](
@@ -105,6 +119,8 @@ object RW extends CompileRW {
     override def write(value: Json): T = map(fixString(value.asString))
 
     override def read(t: T): Json = str(asString(t))
+
+    override def definition: DefType = DefType.Str
   }
 
   def string[T](asString: T => String, fromString: String => T): RW[T] =
@@ -112,6 +128,8 @@ object RW extends CompileRW {
       override def write(value: Json): T = fromString(value.asString)
 
       override def read(t: T): Json = str(asString(t))
+
+      override def definition: DefType = DefType.Str
     }
 
   /**
@@ -121,7 +139,7 @@ object RW extends CompileRW {
    * @param value
    *   the singleton value to use
    */
-  def static[T](value: T): RW[T] = from(_ => obj(), _ => value)
+  def static[T](value: T): RW[T] = from(_ => obj(), _ => value, DefType.Obj())
 
   /**
    * Convenience functionality for working with enumerations
@@ -138,7 +156,8 @@ object RW extends CompileRW {
 
     from(
       (t: T) => obj(fieldName -> t2F(t)),
-      (v: Json) => f2T(v.asObj.value(fieldName).asStr.value)
+      (v: Json) => f2T(v.asObj.value(fieldName).asStr.value),
+      DefType.Null
     )
   }
 
@@ -179,7 +198,8 @@ object RW extends CompileRW {
           s"Type not found [${`type`}] converting from value $v"
         )
       }
-    }
+    },
+    DefType.Null
   )
 
   /**

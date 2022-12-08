@@ -22,6 +22,7 @@
 package fabric.rw
 
 import fabric.*
+import fabric.define.*
 
 import scala.deriving.*
 import scala.compiletime.*
@@ -33,6 +34,7 @@ trait CompileRW {
   inline def gen[T <: Product](using Mirror.ProductOf[T]): RW[T] = new ClassRW[T] {
     override protected def t2Map(t: T): ListMap[String, Json] = toMap(t)
     override protected def map2T(map: ListMap[String, Json]): T = fromMap[T](map)
+    override def definition: DefType = toDefinition[T]
   }
 
   inline def genR[T <: Product](using Mirror.ProductOf[T]): Reader[T] = new ClassR[T] {
@@ -41,6 +43,25 @@ trait CompileRW {
 
   inline def genW[T <: Product](using Mirror.ProductOf[T]): Writer[T] = new ClassW[T] {
     override protected def map2T(map: ListMap[String, Json]): T = fromMap[T](map)
+  }
+
+  inline def toDefinition[T <: Product](using p: Mirror.ProductOf[T]): DefType = {
+    DefType.Obj(toDefinitionElems[T, p.MirroredElemTypes, p.MirroredElemLabels](0))
+  }
+
+  inline def toDefinitionElems[A <: Product, T <: Tuple, L <: Tuple](index: Int): ListMap[String, DefType] = {
+    inline erasedValue[T] match {
+      case _: (hd *: tl) => {
+        inline erasedValue[L] match {
+          case _: (hdLabel *: tlLabels) =>
+            val hdLabelValue = constValue[hdLabel].asInstanceOf[String]
+            val rw = summonInline[RW[hd]]
+            toDefinitionElems[A, tl, tlLabels](index + 1) ++ Map(hdLabelValue -> rw.definition)
+          case EmptyTuple => sys.error("Not possible")
+        }
+      }
+      case EmptyTuple => ListMap.empty
+    }
   }
 
   inline def toMap[T <: Product](t: T)(using p: Mirror.ProductOf[T]): ListMap[String, Json] = {
