@@ -5,7 +5,14 @@ import sys.process._
 
 object UpdateReadme {
   def main(args: Array[String]): Unit = {
-    val version = nextVersion()
+    val version = if (args.length == 0) {
+      nextVersion()
+    } else if (args.length == 1) {
+      Version(args.head)
+    } else {
+      println("Must have either zero or one argument (version override)")
+      sys.exit(1)
+    }
     updateReadme(version)
     gitCommit(version)
     gitTag(version)
@@ -63,7 +70,7 @@ object UpdateReadme {
   }
 
   private object Version {
-    private val Regex = """v(\d+)[.](\d+)[.](\d+)""".r
+    private val Regex = """v?(\d+)[.](\d+)[.](\d+)""".r
 
     def apply(version: String): Version = version match {
       case Regex(major, minor, build) => Version(major.toInt, minor.toInt, build.toInt)
