@@ -97,7 +97,7 @@ object RW extends CompileRW {
     DefType.Opt(implicitly[RW[V]].definition)
   )
 
-  def from[T](r: T => Json, w: Json => T, d: DefType): RW[T] = new RW[T] {
+  def from[T](r: T => Json, w: Json => T, d: => DefType): RW[T] = new RW[T] {
     override def write(value: Json): T = w(value)
 
     override def read(t: T): Json = r(t)
