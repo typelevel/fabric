@@ -1,23 +1,44 @@
 package util
 
+import java.nio.charset.Charset
 import java.nio.file.{Files, Paths}
+import scala.jdk.CollectionConverters._
 import sys.process._
 
-object UpdateReadme {
+object DoRelease {
   def main(args: Array[String]): Unit = {
-    // TODO: Support tlBaseVersion lookup from build.sbt to determine release to build from and fail if different version is specified in argument
-    val version = if (args.length == 0) {
+    val baseVersion = getBaseVersion()
+    val version = (if (args.length == 0) {
       nextVersion()
     } else if (args.length == 1) {
       Version(args.head)
     } else {
       println("Must have either zero or one argument (version override)")
       sys.exit(1)
+    }) match {
+      case v if baseVersion > v && args.isEmpty => baseVersion
+      case v if baseVersion.major != v.major => throw new RuntimeException(s"Base version ($baseVersion) major is not the same as version ($v)")
+      case v if baseVersion.minor != v.minor => throw new RuntimeException(s"Base version ($baseVersion) minor is not the same as version ($v)")
+      case v => v
     }
+    assert(baseVersion.major == version.major && baseVersion.minor == version.minor, s"Base version ($baseVersion) major and minor do not equal the new version: $version")
     updateReadme(version)
     gitCommit(version)
     gitTag(version)
     gitPush()
+  }
+
+  private def getBaseVersion(): Version = {
+    val file = Paths.get("build.sbt")
+    Files
+      .readAllLines(file, Charset.forName("UTF-8"))
+      .asScala
+      .find(_.startsWith("ThisBuild / tlBaseVersion :="))
+      .map { s =>
+        s.substring(s.indexOf('"') + 1, s.lastIndexOf('"')).split('.')
+      }
+      .map(a => Version(a(0).toInt, a(1).toInt, 0))
+      .getOrElse(throw new RuntimeException(s"Unable to find tlBaseVersion in build.sbt!"))
   }
 
   private def nextVersion(): Version = {
@@ -48,7 +69,7 @@ object UpdateReadme {
   }
 
   private def gitPush(): Unit = {
-    "git push origin master".! match {
+    "git push origin master --tags".! match {
       case 0 => // Success
       case n => throw new RuntimeException(s"Git Push Failure: $n")
     }
