@@ -24,8 +24,6 @@ package spec.gen
 import fabric.{Arr, Bool, Json, NumDec, Obj, Str}
 import org.scalacheck.{Arbitrary, Gen}
 
-import scala.collection.immutable.ListMap
-
 object ValueGenerator {
   lazy val arbitraryValue: Arbitrary[Json] = Arbitrary(
     Gen.recursive[Json] { recurse =>
@@ -39,7 +37,7 @@ object ValueGenerator {
             2,
             Gen.zip(Arbitrary.arbitrary[String], recurse)
           )
-          .map(list => Obj(ListMap(list: _*)))
+          .map(list => Obj(list: _*))
       )
     }
   )

@@ -22,7 +22,7 @@
 package fabric
 
 import java.nio.ByteBuffer
-import scala.collection.immutable.ListMap
+import scala.collection.immutable.VectorMap
 
 object Cryo {
   private object identifiers {
@@ -103,7 +103,7 @@ object Cryo {
   def thaw(bb: ByteBuffer): Json = bb.get() match {
     case identifiers.Obj =>
       val size = bb.getInt
-      val map = ListMap((0 until size).map { _ =>
+      val map = VectorMap((0 until size).map { _ =>
         val key = thaw(bb).asString
         val value = thaw(bb)
         key -> value

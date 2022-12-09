@@ -46,9 +46,8 @@ object RWMacros {
         context.Expr[DefType](q"""
             import _root_.fabric._
             import _root_.fabric.define._
-            import _root_.scala.collection.immutable.ListMap
 
-            DefType.Obj(ListMap(..$fieldDefs))
+            DefType.Obj(..$fieldDefs)
            """)
       case None =>
         context.abort(context.enclosingPosition, "Not a valid case class")
@@ -73,10 +72,10 @@ object RWMacros {
         context.Expr[Reader[T]](q"""
             import _root_.fabric._
             import _root_.fabric.rw._
-            import _root_.scala.collection.immutable.ListMap
+            import _root_.scala.collection.immutable.VectorMap
 
             new ClassR[$tpe] {
-              override protected def t2Map(t: $tpe): ListMap[String, Json] = ListMap(..$toMap)
+              override protected def t2Map(t: $tpe): Map[String, Json] = VectorMap(..$toMap)
             }
            """)
       case None =>
@@ -93,7 +92,6 @@ object RWMacros {
             q"""
                import _root_.fabric._
                import _root_.fabric.rw._
-               import _root_.scala.collection.immutable.ListMap
 
                RW.enumeration[$t](List(..$caseObjects))
              """
@@ -146,10 +144,9 @@ object RWMacros {
         context.Expr[Writer[T]](q"""
             import _root_.fabric._
             import _root_.fabric.rw._
-            import _root_.scala.collection.immutable.ListMap
 
             new ClassW[$tpe] {
-              override protected def map2T(map: ListMap[String, Json]): $tpe = $companion(..$fromMap)
+              override protected def map2T(map: Map[String, Json]): $tpe = $companion(..$fromMap)
             }
            """)
       }
@@ -167,7 +164,6 @@ object RWMacros {
             q"""
                import _root_.fabric._
                import _root_.fabric.rw._
-               import _root_.scala.collection.immutable.ListMap
 
                RW.enumeration[$t](List(..$caseObjects))
              """

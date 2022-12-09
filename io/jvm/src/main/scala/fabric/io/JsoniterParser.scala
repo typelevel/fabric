@@ -25,7 +25,6 @@ import com.jsoniter.JsonIterator
 import fabric._
 
 import scala.annotation.tailrec
-import scala.collection.immutable.ListMap
 
 object JsoniterParser extends FormatParser {
   override def format: Format = Format.Json
@@ -79,6 +78,6 @@ object JsoniterParser extends FormatParser {
     }
     recurse()
 
-    Obj(ListMap(list.reverse: _*))
+    Obj(list.reverse: _*)
   }
 }

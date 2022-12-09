@@ -27,16 +27,16 @@ import fabric.rw._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import scala.collection.immutable.ListMap
+import scala.collection.immutable.VectorMap
 
 class RWSpecManual extends AnyWordSpec with Matchers {
   implicit val addressRW: RW[Address] = new ClassRW[Address] {
-    override protected def t2Map(t: Address): ListMap[String, Json] = ListMap(
+    override protected def t2Map(t: Address): Map[String, Json] = VectorMap(
       "city" -> t.city.json,
       "state" -> t.state.json
     )
 
-    override protected def map2T(map: ListMap[String, Json]): Address = Address(
+    override protected def map2T(map: Map[String, Json]): Address = Address(
       city = map("city").as[String],
       state = map("state").as[String]
     )
@@ -47,13 +47,13 @@ class RWSpecManual extends AnyWordSpec with Matchers {
     )
   }
   implicit val personRW: RW[Person] = new ClassRW[Person] {
-    override protected def t2Map(t: Person): ListMap[String, Json] = ListMap(
+    override protected def t2Map(t: Person): Map[String, Json] = VectorMap(
       "name" -> t.name.json,
       "age" -> t.age.json,
       "address" -> t.address.json
     )
 
-    override protected def map2T(map: ListMap[String, Json]): Person = Person(
+    override protected def map2T(map: Map[String, Json]): Person = Person(
       name = map("name").as[String],
       age = map("age").as[Int],
       address = map("address").as[Address]

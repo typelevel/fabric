@@ -24,7 +24,6 @@ package fabric.io
 import fabric._
 
 import scala.annotation.tailrec
-import scala.collection.immutable.ListMap
 import scala.collection.mutable
 
 /**
@@ -127,7 +126,7 @@ object SimpleJsonParser extends FormatParser {
         }
       }
       recurse(offset)
-      (Obj(ListMap(list.reverse: _*)), adjust)
+      (Obj(list.reverse: _*), adjust)
     }
     def parseNumber(offset: Int): (Json, Int) =
       content.substring(offset).takeWhile(c => c.isDigit || c == '.') match {

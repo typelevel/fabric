@@ -24,7 +24,7 @@ package fabric.define
 import fabric._
 import fabric.rw.RW
 
-import scala.collection.immutable.ListMap
+import scala.collection.immutable.VectorMap
 import scala.util.Try
 
 sealed trait DefType {
@@ -121,7 +121,7 @@ object DefType {
     }
   }
 
-  case class Obj(map: ListMap[String, DefType]) extends DefType {
+  case class Obj(map: Map[String, DefType]) extends DefType {
     override def merge(that: DefType): DefType = that match {
       case Obj(thatMap) => Obj(mergeMap(map, thatMap))
       case Opt(Obj(thatMap)) => Opt(Obj(mergeMap(map, thatMap)))
@@ -129,17 +129,17 @@ object DefType {
     }
 
     private def mergeMap(
-        m1: ListMap[String, DefType],
-        m2: ListMap[String, DefType]
-    ): ListMap[String, DefType] = {
+        m1: Map[String, DefType],
+        m2: Map[String, DefType]
+    ): Map[String, DefType] = {
       val keys = m1.keySet ++ m2.keySet
-      ListMap(keys.toList.map { key =>
+      VectorMap(keys.toList.map { key =>
         key -> m1.getOrElse(key, Null).merge(m2.getOrElse(key, Null))
       }: _*)
     }
   }
   object Obj {
-    def apply(entries: (String, DefType)*): Obj = Obj(ListMap(entries: _*))
+    def apply(entries: (String, DefType)*): Obj = Obj(VectorMap(entries: _*))
   }
   case class Arr(t: DefType) extends DefType {
     override def merge(that: DefType): DefType = that match {
