@@ -56,7 +56,7 @@ trait CompileRW {
           case _: (hdLabel *: tlLabels) =>
             val hdLabelValue = constValue[hdLabel].asInstanceOf[String]
             val rw = summonInline[RW[hd]]
-            toDefinitionElems[A, tl, tlLabels](index + 1) ++ Map(hdLabelValue -> rw.definition)
+            Map(hdLabelValue -> rw.definition) ++ toDefinitionElems[A, tl, tlLabels](index + 1)
           case EmptyTuple => sys.error("Not possible")
         }
       }
