@@ -5,6 +5,7 @@ import sys.process._
 
 object UpdateReadme {
   def main(args: Array[String]): Unit = {
+    // TODO: Support tlBaseVersion lookup from build.sbt to determine release to build from and fail if different version is specified in argument
     val version = if (args.length == 0) {
       nextVersion()
     } else if (args.length == 1) {
@@ -16,6 +17,7 @@ object UpdateReadme {
     updateReadme(version)
     gitCommit(version)
     gitTag(version)
+    gitPush()
   }
 
   private def nextVersion(): Version = {
@@ -42,6 +44,13 @@ object UpdateReadme {
     s"git tag $version".! match {
       case 0 => // Success
       case n => throw new RuntimeException(s"Git Tag Failure: $n")
+    }
+  }
+
+  private def gitPush(): Unit = {
+    "git push origin master".! match {
+      case 0 => // Success
+      case n => throw new RuntimeException(s"Git Push Failure: $n")
     }
   }
 
