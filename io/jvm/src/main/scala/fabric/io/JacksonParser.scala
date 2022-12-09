@@ -29,7 +29,7 @@ import com.fasterxml.jackson.core.{
 import fabric.{Arr, Bool, Json, Null, NumDec, NumInt, Obj, Str}
 
 import scala.annotation.tailrec
-import scala.collection.immutable.ListMap
+import scala.collection.immutable.VectorMap
 
 object JacksonParser extends FormatParser {
   private lazy val factory = new JsonFactory()
@@ -54,7 +54,7 @@ object JacksonParser extends FormatParser {
 
   private def parseToken(parser: JParser, token: JsonToken): Json =
     token match {
-      case JsonToken.START_OBJECT => parseObj(parser, ListMap.empty)
+      case JsonToken.START_OBJECT => parseObj(parser, VectorMap.empty)
       case JsonToken.START_ARRAY => parseArr(parser, Vector.empty)
       case JsonToken.VALUE_STRING => Str(parser.getValueAsString)
       case JsonToken.VALUE_NUMBER_FLOAT =>
@@ -67,7 +67,7 @@ object JacksonParser extends FormatParser {
     }
 
   @tailrec
-  private def parseObj(parser: JParser, map: ListMap[String, Json]): Obj = {
+  private def parseObj(parser: JParser, map: Map[String, Json]): Obj = {
     val next = parser.nextToken()
     if (next == JsonToken.END_OBJECT) {
       Obj(map)

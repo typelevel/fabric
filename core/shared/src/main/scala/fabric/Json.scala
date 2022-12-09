@@ -24,7 +24,7 @@ package fabric
 import fabric.filter.ValueFilter
 import fabric.merge.MergeConfig
 
-import scala.collection.immutable.ListMap
+import scala.collection.immutable.VectorMap
 import scala.util.Try
 
 /**
@@ -299,7 +299,7 @@ sealed trait Json extends Any {
   /**
    * Convenience method for asObj.value
    */
-  def asMap: ListMap[String, Json] = asObj.value
+  def asMap: Map[String, Json] = asObj.value
 
   /**
    * Convenience method for asArr.value
@@ -377,7 +377,7 @@ object Json {
 /**
  * Obj represents a Map of key-value pairs (String, Json)
  */
-final class Obj private (val value: ListMap[String, Json])
+final class Obj private (val value: Map[String, Json])
     extends AnyVal
     with Json {
   override type Type = Obj
@@ -391,7 +391,7 @@ final class Obj private (val value: ListMap[String, Json])
       }
       .flatten
       .toList
-    filter(Obj(ListMap(mutated: _*)))
+    filter(Obj(mutated: _*))
   }
 
   override def isEmpty: Boolean = value.isEmpty
@@ -408,9 +408,9 @@ final class Obj private (val value: ListMap[String, Json])
 object Obj {
   var ExcludeNullValues: Boolean = false
 
-  val empty: Obj = Obj(ListMap.empty)
+  val empty: Obj = Obj()
 
-  private def clean(map: ListMap[String, Json]): ListMap[String, Json] = if (
+  private def clean(map: Map[String, Json]): Map[String, Json] = if (
     ExcludeNullValues
   ) {
     map.filter { case (_, value) =>
@@ -420,9 +420,11 @@ object Obj {
     map
   }
 
-  def apply(value: ListMap[String, Json]): Obj = new Obj(clean(value))
+  def apply(value: Map[String, Json]): Obj = new Obj(clean(value))
 
-  def unapply(obj: Obj): Some[ListMap[String, Json]] = Some(obj.value)
+  def apply(values: (String, Json)*): Obj = apply(VectorMap(values: _*))
+
+  def unapply(obj: Obj): Some[Map[String, Json]] = Some(obj.value)
 
   /**
    * Processes the supplied map creating an Obj for it. If `parsePath` is set,

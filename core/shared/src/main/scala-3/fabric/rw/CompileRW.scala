@@ -28,28 +28,28 @@ import scala.deriving.*
 import scala.compiletime.*
 import scala.quoted._
 
-import scala.collection.immutable.ListMap
+import scala.collection.immutable.VectorMap
 
 trait CompileRW {
   inline def gen[T <: Product](using Mirror.ProductOf[T]): RW[T] = new ClassRW[T] {
-    override protected def t2Map(t: T): ListMap[String, Json] = toMap(t)
-    override protected def map2T(map: ListMap[String, Json]): T = fromMap[T](map)
+    override protected def t2Map(t: T): Map[String, Json] = toMap(t)
+    override protected def map2T(map: Map[String, Json]): T = fromMap[T](map)
     override def definition: DefType = toDefinition[T]
   }
 
   inline def genR[T <: Product](using Mirror.ProductOf[T]): Reader[T] = new ClassR[T] {
-    override protected def t2Map(t: T): ListMap[String, Json] = toMap(t)
+    override protected def t2Map(t: T): Map[String, Json] = toMap(t)
   }
 
   inline def genW[T <: Product](using Mirror.ProductOf[T]): Writer[T] = new ClassW[T] {
-    override protected def map2T(map: ListMap[String, Json]): T = fromMap[T](map)
+    override protected def map2T(map: Map[String, Json]): T = fromMap[T](map)
   }
 
   inline def toDefinition[T <: Product](using p: Mirror.ProductOf[T]): DefType = {
     DefType.Obj(toDefinitionElems[T, p.MirroredElemTypes, p.MirroredElemLabels](0))
   }
 
-  inline def toDefinitionElems[A <: Product, T <: Tuple, L <: Tuple](index: Int): ListMap[String, DefType] = {
+  inline def toDefinitionElems[A <: Product, T <: Tuple, L <: Tuple](index: Int): Map[String, DefType] = {
     inline erasedValue[T] match {
       case _: (hd *: tl) => {
         inline erasedValue[L] match {
@@ -60,15 +60,15 @@ trait CompileRW {
           case EmptyTuple => sys.error("Not possible")
         }
       }
-      case EmptyTuple => ListMap.empty
+      case EmptyTuple => Map.empty
     }
   }
 
-  inline def toMap[T <: Product](t: T)(using p: Mirror.ProductOf[T]): ListMap[String, Json] = {
+  inline def toMap[T <: Product](t: T)(using p: Mirror.ProductOf[T]): Map[String, Json] = {
     toMapElems[T, p.MirroredElemTypes, p.MirroredElemLabels](t, 0)
   }
 
-  inline def toMapElems[A <: Product, T <: Tuple, L <: Tuple](a: A, index: Int): ListMap[String, Json] = {
+  inline def toMapElems[A <: Product, T <: Tuple, L <: Tuple](a: A, index: Int): Map[String, Json] = {
     inline erasedValue[T] match {
       case _: (hd *: tl) => {
         inline erasedValue[L] match {
@@ -78,15 +78,15 @@ trait CompileRW {
             val hdValue = a.productElement(index).asInstanceOf[hd]
             val hdReader = summonInline[Reader[hd]]
             val value = hdReader.read(hdValue)
-            toMapElems[A, tl, tlLabels](a, index + 1) ++ Map(hdLabelValue -> value)
+            toMapElems[A, tl, tlLabels](a, index + 1) ++ VectorMap(hdLabelValue -> value)
           case EmptyTuple => sys.error("Not possible")
         }
       }
-      case EmptyTuple => ListMap.empty
+      case EmptyTuple => Map.empty
     }
   }
 
-  inline def fromMap[T <: Product](map: ListMap[String, Json])(using p: Mirror.ProductOf[T]): T = {
+  inline def fromMap[T <: Product](map: Map[String, Json])(using p: Mirror.ProductOf[T]): T = {
     inline val size = constValue[Tuple.Size[p.MirroredElemTypes]]
     val defaults = getDefaultParams[T]
     val arr = new Array[Any](size)
@@ -99,7 +99,7 @@ trait CompileRW {
     p.fromProduct(product)
   }
 
-  inline def fromMapElems[A <: Product, T <: Tuple, L <: Tuple](map: ListMap[String, Json], index: Int, arr: Array[Any], defaults: Map[String, Any]): Unit = {
+  inline def fromMapElems[A <: Product, T <: Tuple, L <: Tuple](map: Map[String, Json], index: Int, arr: Array[Any], defaults: Map[String, Any]): Unit = {
     inline erasedValue[T] match {
       case _: (hd *: tl) =>
         inline erasedValue[L] match {
