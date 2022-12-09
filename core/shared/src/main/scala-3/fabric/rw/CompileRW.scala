@@ -56,7 +56,7 @@ trait CompileRW {
           case _: (hdLabel *: tlLabels) =>
             val hdLabelValue = constValue[hdLabel].asInstanceOf[String]
             val rw = summonInline[RW[hd]]
-            Map(hdLabelValue -> rw.definition) ++ toDefinitionElems[A, tl, tlLabels](index + 1)
+            VectorMap(hdLabelValue -> rw.definition) ++ toDefinitionElems[A, tl, tlLabels](index + 1)
           case EmptyTuple => sys.error("Not possible")
         }
       }
@@ -78,7 +78,7 @@ trait CompileRW {
             val hdValue = a.productElement(index).asInstanceOf[hd]
             val hdReader = summonInline[Reader[hd]]
             val value = hdReader.read(hdValue)
-            toMapElems[A, tl, tlLabels](a, index + 1) ++ VectorMap(hdLabelValue -> value)
+            VectorMap(hdLabelValue -> value) ++ toMapElems[A, tl, tlLabels](a, index + 1)
           case EmptyTuple => sys.error("Not possible")
         }
       }

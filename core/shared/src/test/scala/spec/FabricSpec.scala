@@ -139,6 +139,8 @@ class FabricSpec extends AnyWordSpec with Matchers {
       s.name should be(None)
       s.age should be(21)
       s.data should be(None)
+      val json = s.json
+      json.toString should be("{\"name\": null, \"age\": 21, \"data\": null}")
     }
     "use polymorphic values" in {
       val json1 = obj("type" -> "blank")
