@@ -24,11 +24,11 @@ package fabric
 import java.io.{File, FileOutputStream}
 
 package object define {
-  implicit class GeneratedClassExtras(gc: GeneratedClass) {
-    private val written = new ThreadLocal[Set[String]] {
-      override def initialValue(): Set[String] = Set.empty
-    }
+  private val written = new ThreadLocal[Set[String]] {
+    override def initialValue(): Set[String] = Set.empty
+  }
 
+  implicit class GeneratedClassExtras(gc: GeneratedClass) {
     def write(baseDirectory: File, writeAdditional: Boolean = true): Unit = {
       val alreadyWritten = written.get()
       val fullName =
