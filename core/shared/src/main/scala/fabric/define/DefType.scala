@@ -169,6 +169,7 @@ object DefType {
   case object Int extends DefType
   case object Dec extends DefType
   case object Bool extends DefType
+  case class Enum(values: List[Json]) extends DefType
   case object Null extends DefType {
     override def isNull: Boolean = true
 
