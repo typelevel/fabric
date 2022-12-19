@@ -60,6 +60,7 @@ object FabricGenerator {
         case DefType.Int => "Long"
         case DefType.Dec => "BigDecimal"
         case DefType.Bool => "Boolean"
+        case DefType.Enum(_) => throw new RuntimeException("Unsupported")
         case DefType.Null =>
           throw new RuntimeException(
             "Null type found in definition! Not supported for code generation!"
