@@ -95,6 +95,11 @@ object DefType {
       obj(
         "type" -> "boolean"
       )
+    case Enum(values) =>
+      obj(
+        "type" -> "enum",
+        "values" -> values
+      )
     case Null =>
       obj(
         "type" -> "null"
@@ -117,6 +122,7 @@ object DefType {
           case "decimal" => Dec
         }
       case "boolean" => Bool
+      case "enum" => Enum(o.value("values").asVector.toList)
       case "null" => Null
     }
   }

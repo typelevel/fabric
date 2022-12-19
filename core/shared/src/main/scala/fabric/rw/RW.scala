@@ -120,7 +120,8 @@ object RW extends CompileRW {
 
     override def read(t: T): Json = str(asString(t))
 
-    override val definition: DefType = DefType.Enum(list.map(t => Str(asString(t))))
+    override val definition: DefType =
+      DefType.Enum(list.map(t => Str(asString(t))))
   }
 
   def string[T](asString: T => String, fromString: String => T): RW[T] =
