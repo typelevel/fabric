@@ -137,7 +137,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           |case class Person(name: String, age: Long)
           |
           |object Person {
-          |  implicit val rw: RW[Person] = RW
+          |  implicit val rw: RW[Person] = RW.gen
           |}""".stripMargin)
       generated.additional should be(Nil)
     }
@@ -164,7 +164,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           |case class Person(name: String, age: Long, location: com.example.Location)
           |
           |object Person {
-          |  implicit val rw: RW[Person] = RW
+          |  implicit val rw: RW[Person] = RW.gen
           |}""".stripMargin)
       generated.additional.length should be(1)
       val location = generated.additional.head
@@ -177,7 +177,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
                                 |case class Location(city: String, state: String)
                                 |
                                 |object Location {
-                                |  implicit val rw: RW[Location] = RW
+                                |  implicit val rw: RW[Location] = RW.gen
                                 |}""".stripMargin)
     }
     "generate two case classes based on a definition with an array" in {
@@ -205,7 +205,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           |case class Person(name: String, age: Long, locations: Vector[com.example.Location])
           |
           |object Person {
-          |  implicit val rw: RW[Person] = RW
+          |  implicit val rw: RW[Person] = RW.gen
           |}""".stripMargin)
       generated.additional.length should be(1)
       val location = generated.additional.head
@@ -218,33 +218,8 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           |case class Location(city: String, state: String)
           |
           |object Location {
-          |  implicit val rw: RW[Location] = RW
+          |  implicit val rw: RW[Location] = RW.gen
           |}""".stripMargin)
     }
-    /*"generate complex case classes from large JSON" in {
-      val json: List[Json] = JsonParser(
-        Source.fromInputStream(
-          getClass.getClassLoader.getResourceAsStream("large.json")
-        ),
-        Format.Json
-      ).asVector.toList
-      val dt = FabricDefinition(json)
-      val generated = FabricGenerator(
-        dt = dt,
-        rootName = "bench.event.Event",
-        (key: String) => {
-          val name = "_(.)".r
-            .replaceAllIn(
-              key,
-              m => {
-                m.group(1).toUpperCase
-              }
-            )
-            .capitalize
-          s"bench.event.Event$name"
-        }
-      )
-      generated.write(new File("bench/src/main/scala/"))
-    }*/
   }
 }
