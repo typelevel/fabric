@@ -79,6 +79,9 @@ object FabricGenerator {
       packageName.foreach { n =>
         b.append(s"package $n\n\n")
       }
+      classExtras.imports.foreach { i =>
+        b.append(s"import $i\n")
+      }
       b.append("import fabric.rw._\n\n")
       val classLine = s"case class $className("
       b.append(classLine)
