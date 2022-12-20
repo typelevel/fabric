@@ -23,7 +23,7 @@ package fabric.filter
 
 import fabric.Json
 
-case class ReplaceFilter(find: Json, replacement: Json) extends ValueFilter {
+case class ReplaceFilter(find: Json, replacement: Json) extends JsonFilter {
   override def apply(value: Json): Option[Json] = if (value == find) {
     Some(replacement)
   } else {

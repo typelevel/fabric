@@ -21,12 +21,31 @@
 
 package fabric.filter
 
-import fabric._
+import fabric.Json
 
-object RemoveNullsFilter extends JsonFilter {
-  override def apply(value: Json): Option[Json] = if (value.isNull) {
-    None
-  } else {
-    Some(value)
+import scala.annotation.tailrec
+
+case class JsonFilters(filters: List[JsonFilter]) extends JsonFilter {
+  override def apply(json: Json): Option[Json] = {
+    @tailrec
+    def recurse(json: Json, filters: List[JsonFilter]): Option[Json] = if (
+      filters.isEmpty
+    ) {
+      Some(json)
+    } else {
+      val f = filters.head
+      f(json) match {
+        case None => None
+        case Some(v) => recurse(v, filters.tail)
+      }
+    }
+
+    recurse(json, filters)
   }
+}
+
+object JsonFilters {
+  def apply(filters: JsonFilter*): JsonFilters = JsonFilters(
+    filters.toList
+  )
 }

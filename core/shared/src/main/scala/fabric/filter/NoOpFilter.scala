@@ -23,6 +23,6 @@ package fabric.filter
 
 import fabric.Json
 
-object NoOpFilter extends ValueFilter {
+object NoOpFilter extends JsonFilter {
   override def apply(value: Json): Option[Json] = Some(value)
 }

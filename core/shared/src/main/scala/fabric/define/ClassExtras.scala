@@ -19,14 +19,10 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package fabric.filter
+package fabric.define
 
-import fabric._
+case class ClassExtras(fields: List[ClassField], bodyContent: Option[String])
 
-object RemoveNullsFilter extends JsonFilter {
-  override def apply(value: Json): Option[Json] = if (value.isNull) {
-    None
-  } else {
-    Some(value)
-  }
+object ClassExtras {
+  lazy val Empty: ClassExtras = ClassExtras(Nil, None)
 }

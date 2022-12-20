@@ -21,7 +21,7 @@
 
 package spec
 
-import fabric.define.{DefType, FabricDefinition, FabricGenerator}
+import fabric.define._
 import fabric.{define, _}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -134,7 +134,8 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           |
           |import fabric.rw._
           |
-          |case class Person(name: String, age: Long)
+          |case class Person(name: String,
+          |                  age: Long)
           |
           |object Person {
           |  implicit val rw: RW[Person] = RW.gen
@@ -161,7 +162,9 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           |
           |import fabric.rw._
           |
-          |case class Person(name: String, age: Long, location: com.example.Location)
+          |case class Person(name: String,
+          |                  age: Long,
+          |                  location: com.example.Location)
           |
           |object Person {
           |  implicit val rw: RW[Person] = RW.gen
@@ -174,7 +177,8 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
                                 |
                                 |import fabric.rw._
                                 |
-                                |case class Location(city: String, state: String)
+                                |case class Location(city: String,
+                                |                    state: String)
                                 |
                                 |object Location {
                                 |  implicit val rw: RW[Location] = RW.gen
@@ -191,10 +195,26 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           )
         )
       )
-      val generated = FabricGenerator.withMappings(
-        definition,
-        "com.example.Person",
-        "locations" -> "com.example.Location"
+      val generated = FabricGenerator(
+        dt = definition,
+        rootName = "com.example.Person",
+        resolver = (key: String) => {
+          val name = if (key.endsWith("s")) {
+            key.substring(0, key.length - 1)
+          } else {
+            key
+          }
+          s"com.example.${name.capitalize}"
+        },
+        extras = (className: String) =>
+          ClassExtras(
+            fields = List(
+              ClassField("id", "Int", Some("-1"))
+            ) ::: (if (className == "com.example.Location")
+                     List(ClassField("state", "String", Some("\"Unknown\"")))
+                   else Nil),
+            bodyContent = Some("  // Extra content")
+          )
       )
       generated.packageName should be(Some("com.example"))
       generated.className should be("Person")
@@ -202,23 +222,33 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           |
           |import fabric.rw._
           |
-          |case class Person(name: String, age: Long, locations: Vector[com.example.Location])
+          |case class Person(name: String,
+          |                  age: Long,
+          |                  locations: Vector[com.example.Location],
+          |                  id: Int = -1)
           |
           |object Person {
           |  implicit val rw: RW[Person] = RW.gen
+          |
+          |  // Extra content
           |}""".stripMargin)
       generated.additional.length should be(1)
       val location = generated.additional.head
       location.packageName should be(Some("com.example"))
       location.className should be("Location")
+      println(location.code)
       location.code should be("""package com.example
           |
           |import fabric.rw._
           |
-          |case class Location(city: String, state: String)
+          |case class Location(city: String,
+          |                    state: String = "Unknown",
+          |                    id: Int = -1)
           |
           |object Location {
           |  implicit val rw: RW[Location] = RW.gen
+          |
+          |  // Extra content
           |}""".stripMargin)
     }
   }
