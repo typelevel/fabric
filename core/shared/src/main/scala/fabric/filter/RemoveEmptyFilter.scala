@@ -23,7 +23,7 @@ package fabric.filter
 
 import fabric.{Arr, Obj, Json}
 
-object RemoveEmptyFilter extends ValueFilter {
+object RemoveEmptyFilter extends JsonFilter {
   override def apply(value: Json): Option[Json] = value match {
     case Obj(map) if map.isEmpty => None
     case Arr(vector) if vector.isEmpty => None

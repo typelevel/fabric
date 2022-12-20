@@ -36,7 +36,8 @@ object FabricGenerator {
   def apply(
       dt: DefType,
       rootName: String,
-      resolver: String => String
+      resolver: String => String,
+      extras: String => ClassExtras = _ => ClassExtras.Empty
   ): GeneratedClass = {
     var additional = List.empty[GeneratedClass]
 
@@ -44,7 +45,8 @@ object FabricGenerator {
         rootName: String,
         original: Map[String, DefType]
     ): GeneratedClass = {
-      val map = original.filterNot {
+      val classExtras = extras(rootName)
+      val map: Map[String, DefType] = original.filterNot {
         case (_, DefType.Null) => true
         case (_, DefType.Arr(DefType.Null)) => true
         case _ => false
@@ -78,23 +80,30 @@ object FabricGenerator {
         b.append(s"package $n\n\n")
       }
       b.append("import fabric.rw._\n\n")
-      b.append(s"case class $className(")
+      val classLine = s"case class $className("
+      b.append(classLine)
+      val classPadding = "".padTo(classLine.length, ' ')
       def fixName(name: String): String = name match {
         case "type" => "`type`"
         case "private" => "`private`"
         case _ if name.contains('+') | name.contains('-') => s"`$name`"
         case _ => name
       }
+      val definedFields = map.map {
+        case (name, _) if classExtras.fields.exists(_.name == name) =>
+          classExtras.fields.find(_.name == name).get.output
+        case (name, value) => s"${fixName(name)}: ${typeFor(name, value)}"
+      }.toList
+      val extraFields =
+        classExtras.fields.filterNot(cf => map.contains(cf.name)).map(_.output)
+      val fields = definedFields ::: extraFields
       b.append(
-        map
-          .map { case (name, value) =>
-            s"${fixName(name)}: ${typeFor(name, value)}"
-          }
-          .mkString(", ")
+        fields.mkString(s",\n$classPadding")
       )
       b.append(")\n\n")
       b.append(s"object $className {\n")
       b.append(s"  implicit val rw: RW[$className] = RW.gen\n")
+      classExtras.bodyContent.foreach(s => b.append(s"\n$s\n"))
       b.append("}")
       GeneratedClass(packageName, className, b.toString(), additional.reverse)
     }

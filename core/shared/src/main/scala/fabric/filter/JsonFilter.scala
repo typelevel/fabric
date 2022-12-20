@@ -23,6 +23,6 @@ package fabric.filter
 
 import fabric.Json
 
-trait ValueFilter {
+trait JsonFilter {
   def apply(value: Json): Option[Json]
 }
