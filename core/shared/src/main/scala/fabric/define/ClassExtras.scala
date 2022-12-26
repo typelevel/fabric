@@ -25,8 +25,8 @@ case class ClassExtras(
     fields: List[ClassField],
     bodyContent: Option[String] = None,
     imports: List[String] = Nil,
-    extending: Option[String] = None,
-    mixins: List[String] = Nil
+    classMixins: List[String] = Nil,
+    objectMixins: List[String] = Nil
 )
 
 object ClassExtras {
