@@ -103,7 +103,14 @@ object FabricGenerator {
       b.append(
         fields.mkString(s",\n$classPadding")
       )
-      b.append(")\n\n")
+      val extending = classExtras.extending match {
+        case Some(e) =>
+          s" extends $e${classExtras.mixins.map(m => s" with $m")}"
+        case None if classExtras.mixins.nonEmpty =>
+          s" extends ${classExtras.mixins.mkString(" with ")}"
+        case None => ""
+      }
+      b.append(s")$extending\n\n")
       b.append(s"object $className {\n")
       b.append(s"  implicit val rw: RW[$className] = RW.gen\n")
       classExtras.bodyContent.foreach(s => b.append(s"\n$s\n"))

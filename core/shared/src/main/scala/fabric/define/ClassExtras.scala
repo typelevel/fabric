@@ -24,9 +24,11 @@ package fabric.define
 case class ClassExtras(
     fields: List[ClassField],
     bodyContent: Option[String] = None,
-    imports: List[String] = Nil
+    imports: List[String] = Nil,
+    extending: Option[String] = None,
+    mixins: List[String] = Nil
 )
 
 object ClassExtras {
-  lazy val Empty: ClassExtras = ClassExtras(Nil, None, Nil)
+  lazy val Empty: ClassExtras = ClassExtras(Nil)
 }
