@@ -112,7 +112,7 @@ sealed trait Json extends Any {
    * @return
    *   Option[Json]
    */
-  def filter(filter: JsonFilter): Option[Json] = filter(this)
+  final def filter(filter: JsonFilter): Option[Json] = JsonFilter(filter, this)
 
   /**
    * Convenience functionality for #modify to set a specific value at a path.
@@ -384,16 +384,6 @@ final class Obj private (val value: Map[String, Json])
 
   def keys: Set[String] = value.keySet
 
-  override def filter(filter: JsonFilter): Option[Json] = {
-    val mutated = value
-      .map { case (key, value) =>
-        value.filter(filter).map(v => key -> v)
-      }
-      .flatten
-      .toList
-    filter(Obj(mutated: _*))
-  }
-
   override def isEmpty: Boolean = value.isEmpty
 
   override def `type`: JsonType[Obj] = JsonType.Obj
@@ -616,11 +606,6 @@ case class Arr(value: Vector[Json]) extends AnyVal with Json {
   override type Type = Arr
 
   override def `type`: JsonType[Arr] = JsonType.Arr
-
-  override def filter(filter: JsonFilter): Option[Json] = {
-    val mutated = value.flatMap(v => v.filter(filter))
-    filter(Arr(mutated))
-  }
 
   override def isEmpty: Boolean = value.isEmpty
 

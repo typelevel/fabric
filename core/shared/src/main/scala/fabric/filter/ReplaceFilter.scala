@@ -21,10 +21,12 @@
 
 package fabric.filter
 
-import fabric.Json
+import fabric.{Json, Path}
 
 case class ReplaceFilter(find: Json, replacement: Json) extends JsonFilter {
-  override def apply(value: Json): Option[Json] = if (value == find) {
+  override def apply(value: Json, path: Path): Option[Json] = if (
+    value == find
+  ) {
     Some(replacement)
   } else {
     Some(value)

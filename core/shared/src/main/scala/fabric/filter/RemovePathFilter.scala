@@ -21,12 +21,10 @@
 
 package fabric.filter
 
-import fabric._
+import fabric.{Json, Path}
 
-object RemoveNullsFilter extends JsonFilter {
-  override def apply(value: Json, path: Path): Option[Json] = if (
-    value.isNull
-  ) {
+case class RemovePathFilter(path: Path) extends JsonFilter {
+  override def apply(value: Json, path: Path): Option[Json] = if (path == this.path) {
     None
   } else {
     Some(value)
