@@ -21,8 +21,8 @@
 
 package fabric.filter
 
-import fabric.Json
+import fabric.{Json, Path}
 
 object NoOpFilter extends JsonFilter {
-  override def apply(value: Json): Option[Json] = Some(value)
+  override def apply(value: Json, path: Path): Option[Json] = Some(value)
 }

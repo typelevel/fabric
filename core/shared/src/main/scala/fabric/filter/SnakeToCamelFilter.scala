@@ -27,7 +27,7 @@ import fabric._
  * Converts snake_case to camelCase in obj keys
  */
 object SnakeToCamelFilter extends JsonFilter {
-  override def apply(value: Json): Option[Json] = value match {
+  override def apply(value: Json, path: Path): Option[Json] = value match {
     case Obj(map) =>
       Some(Obj(map.map { case (key, value) =>
         toCamel(key) -> value

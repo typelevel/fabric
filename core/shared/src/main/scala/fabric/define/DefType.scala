@@ -150,6 +150,7 @@ object DefType {
   case class Arr(t: DefType) extends DefType {
     override def merge(that: DefType): DefType = that match {
       case Arr(thatType) => Arr(t.merge(thatType))
+      case Null => this
       case _ => super.merge(that)
     }
   }
@@ -172,8 +173,18 @@ object DefType {
     }
   }
   case object Str extends DefType
-  case object Int extends DefType
-  case object Dec extends DefType
+  case object Int extends DefType {
+    override def merge(that: DefType): DefType = that match {
+      case DefType.Dec => that
+      case _ => super.merge(that)
+    }
+  }
+  case object Dec extends DefType {
+    override def merge(that: DefType): DefType = that match {
+      case DefType.Int => this
+      case _ => super.merge(that)
+    }
+  }
   case object Bool extends DefType
   case class Enum(values: List[Json]) extends DefType
   case object Null extends DefType {
@@ -182,7 +193,7 @@ object DefType {
     override def merge(that: DefType): DefType = that match {
       case o: Opt => o
       case Null => Null
-      case _ => Opt(that)
+      case _ => that.merge(Null)
     }
   }
 }

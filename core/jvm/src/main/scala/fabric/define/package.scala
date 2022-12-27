@@ -22,6 +22,7 @@
 package fabric
 
 import java.io.{File, FileOutputStream}
+import java.nio.file.Files
 
 package object define {
   private val written = new ThreadLocal[Set[String]] {
@@ -29,7 +30,11 @@ package object define {
   }
 
   implicit class GeneratedClassExtras(gc: GeneratedClass) {
-    def write(baseDirectory: File, writeAdditional: Boolean = true): Unit = {
+    def write(
+        baseDirectory: File,
+        writeAdditional: Boolean = true,
+        validate: Boolean = false
+    ): Unit = {
       val alreadyWritten = written.get()
       val fullName =
         gc.packageName.map(p => s"$p.${gc.className}").getOrElse(gc.className)
@@ -42,6 +47,18 @@ package object define {
         }
         directory.mkdirs()
         val file = new File(directory, s"${gc.className}.scala")
+        if (file.isFile) {
+          val existing = new String(Files.readAllBytes(file.toPath), "UTF-8")
+          if (gc.code != existing) {
+            val msg =
+              s"Validation failed for existing file: ${gc.className} attempting to write modified code:\n${gc.code}\nOriginal:\n$existing"
+            if (validate) {
+              throw new RuntimeException(msg)
+            } else {
+              println(msg)
+            }
+          }
+        }
         val io = new FileOutputStream(file)
         try {
           io.write(gc.code.getBytes("UTF-8"))
@@ -50,7 +67,10 @@ package object define {
           io.close()
         }
         written.set(alreadyWritten + fullName)
-        if (writeAdditional) gc.additional.foreach(_.write(baseDirectory))
+        if (writeAdditional)
+          gc.additional.foreach(
+            _.write(baseDirectory, writeAdditional, validate)
+          )
       }
     }
   }

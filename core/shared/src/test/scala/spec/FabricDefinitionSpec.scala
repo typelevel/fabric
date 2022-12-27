@@ -90,6 +90,34 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
         )
       )
     }
+    "represent null lists" in {
+      val d = FabricDefinition(
+        List(
+          obj(),
+          obj(
+            "list" -> arr(
+              obj("name" -> "Test")
+            )
+          ),
+          obj(
+            "list" -> Null
+          )
+        )
+      )
+      d should be(
+        DefType.Obj(
+          "list" -> DefType.Arr(
+            DefType.Obj(
+              "name" -> DefType.Str
+            )
+          )
+        )
+      )
+    }
+    "represent multiple numeric types" in {
+      DefType.Dec.merge(DefType.Int) should be(DefType.Dec)
+      DefType.Int.merge(DefType.Dec) should be(DefType.Dec)
+    }
     "fail with conflicting types" in {
       assertThrows[RuntimeException](
         FabricDefinition(
@@ -164,7 +192,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           |
           |case class Person(name: String,
           |                  age: Long,
-          |                  location: com.example.Location)
+          |                  location: Location)
           |
           |object Person {
           |  implicit val rw: RW[Person] = RW.gen
@@ -224,7 +252,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           |
           |case class Person(name: String,
           |                  age: Long,
-          |                  locations: Vector[com.example.Location],
+          |                  locations: Vector[Location],
           |                  id: Int = -1)
           |
           |object Person {
@@ -236,7 +264,6 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       val location = generated.additional.head
       location.packageName should be(Some("com.example"))
       location.className should be("Location")
-      println(location.code)
       location.code should be("""package com.example
           |
           |import fabric.rw._

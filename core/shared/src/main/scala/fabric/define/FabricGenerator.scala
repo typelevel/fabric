@@ -55,7 +55,12 @@ object FabricGenerator {
         case DefType.Obj(map) =>
           val className = resolver(name)
           additional = generate(className, map) :: additional
-          className
+          if (className.contains('.')) {
+            className.substring(className.lastIndexOf('.') + 1)
+          } else {
+            className
+          }
+        case DefType.Arr(DefType.Opt(t)) => s"Vector[${typeFor(name, t)}]"
         case DefType.Arr(t) => s"Vector[${typeFor(name, t)}]"
         case DefType.Opt(t) => s"Option[${typeFor(name, t)}]"
         case DefType.Str => "String"

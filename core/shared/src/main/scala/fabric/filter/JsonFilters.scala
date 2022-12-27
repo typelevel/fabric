@@ -21,27 +21,12 @@
 
 package fabric.filter
 
-import fabric.Json
+import fabric.{Json, Path}
 
-import scala.annotation.tailrec
-
-case class JsonFilters(filters: List[JsonFilter]) extends JsonFilter {
-  override def apply(json: Json): Option[Json] = {
-    @tailrec
-    def recurse(json: Json, filters: List[JsonFilter]): Option[Json] = if (
-      filters.isEmpty
-    ) {
-      Some(json)
-    } else {
-      val f = filters.head
-      f(json) match {
-        case None => None
-        case Some(v) => recurse(v, filters.tail)
-      }
-    }
-
-    recurse(json, filters)
-  }
+case class JsonFilters(override val filters: List[JsonFilter])
+    extends JsonFilter {
+  override def apply(json: Json, path: Path): Option[Json] =
+    throw new RuntimeException("Should not be executed directly")
 }
 
 object JsonFilters {

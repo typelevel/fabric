@@ -202,6 +202,44 @@ class FabricSpec extends AnyWordSpec with Matchers {
       val camel2Snake = camel.camel2Snake
       camel2Snake should be(snake)
     }
+    "apply SnakeToCamelFilter" in {
+      val json = obj(
+        "first_level" -> obj(
+          "second_level" -> obj(
+            "third_level" -> true
+          )
+        )
+      )
+      json.filter(SnakeToCamelFilter) should be(
+        Some(
+          obj(
+            "firstLevel" -> obj(
+              "secondLevel" -> obj(
+                "thirdLevel" -> true
+              )
+            )
+          )
+        )
+      )
+    }
+    "apply RemovePathFilter" in {
+      val json = obj(
+        "first_level" -> obj(
+          "second_level" -> obj(
+            "third_level" -> true
+          )
+        )
+      )
+      val filter =
+        SnakeToCamelFilter && RemovePathFilter("firstLevel" \ "secondLevel")
+      json.filter(filter) should be(
+        Some(
+          obj(
+            "firstLevel" -> obj()
+          )
+        )
+      )
+    }
     "merge with a custom override" in {
       val json1 = obj(
         "test1" -> obj(

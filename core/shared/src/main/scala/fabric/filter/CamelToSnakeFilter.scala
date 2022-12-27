@@ -21,13 +21,13 @@
 
 package fabric.filter
 
-import fabric.{Obj, Json}
+import fabric.{Json, Obj, Path}
 
 /**
  * Converts camelCase to snake_case in obj keys
  */
 object CamelToSnakeFilter extends JsonFilter {
-  override def apply(value: Json): Option[Json] = value match {
+  override def apply(value: Json, path: Path): Option[Json] = value match {
     case Obj(map) =>
       Some(Obj(map.map { case (key, value) =>
         toSnake(key) -> value
