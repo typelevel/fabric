@@ -30,6 +30,12 @@ import fabric.define.DefType
  */
 trait RW[T] extends Reader[T] with Writer[T] {
   def definition: DefType
+
+  override def +(that: Reader[T]): RW[T] =
+    CompoundRW[T](super.+(that), this, definition)
+
+  override def +(that: Writer[T])(implicit merge: (T, T) => T): RW[T] =
+    CompoundRW[T](this, super.+(that), definition)
 }
 
 object RW extends CompileRW {

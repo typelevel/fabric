@@ -28,6 +28,8 @@ import fabric._
  */
 trait Writer[T] {
   def write(value: Json): T
+  def +(that: Writer[T])(implicit merge: (T, T) => T): Writer[T] =
+    MultiWriter(this, that)
 }
 
 object Writer {

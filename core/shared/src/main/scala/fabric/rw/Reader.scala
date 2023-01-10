@@ -28,6 +28,7 @@ import fabric._
  */
 trait Reader[T] {
   def read(t: T): Json
+  def +(that: Reader[T]): Reader[T] = MultiReader(this, that)
 }
 
 object Reader {
