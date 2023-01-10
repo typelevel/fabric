@@ -111,11 +111,30 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
         )
       )
     }
+    "verify multi reader support works" in {
+      val user = User("John Doe", _id = "user/1234")
+      val json = user.json
+      json should be(
+        obj(
+          "name" -> "John Doe",
+          "_id" -> "user/1234",
+          "num" -> 1234
+        )
+      )
+    }
     // TODO: Enable once Scala 3 support for sealed traits is working
 //    "supporting sealed traits" in {
 //      val car: VehicleType = VehicleType.Car
 //      car.json should be(Str("Car"))
 //      "SUV".json.as[VehicleType] should be(VehicleType.SUV)
 //    }
+  }
+
+  case class User(name: String, _id: String) {
+    lazy val num: Int = _id.substring(_id.lastIndexOf('/') + 1).toInt
+  }
+
+  object User {
+    implicit val rw: RW[User] = RW.gen + Reader[User](u => obj("num" -> u.num))
   }
 }
