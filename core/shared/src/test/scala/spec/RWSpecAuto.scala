@@ -135,6 +135,7 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
   }
 
   object User {
-    implicit val rw: RW[User] = RW.gen + Reader[User](u => obj("num" -> u.num))
+    implicit val rw: RW[User] =
+      RW.gen[User] + Reader[User](u => obj("num" -> u.num))
   }
 }
