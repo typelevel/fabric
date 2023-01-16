@@ -21,16 +21,25 @@
 
 package fabric
 
+import scala.util.Try
+
+sealed trait PathEntry extends Any
+
+object PathEntry {
+  case class Named(val name: String) extends AnyVal with PathEntry
+  case class Indexed(val index: Int) extends AnyVal with PathEntry
+}
+
 /**
  * Path is a convenience wrapper to represent paths for lookups or changes in
  * Json
  */
-case class Path(entries: List[String]) extends AnyVal {
+case class Path(entries: List[PathEntry]) extends AnyVal {
 
   /**
    * Convenience DSL to build paths
    */
-  def \(entry: String): Path = new Path(entries ::: List(entry))
+  def \(entry: PathEntry): Path = new Path(entries ::: List(entry))
 
   def \\(that: Path): Path = new Path(entries ::: that.entries)
 
@@ -41,7 +50,7 @@ case class Path(entries: List[String]) extends AnyVal {
   /**
    * Retrieves the head path element
    */
-  def apply(): String = entries.head
+  def apply(): PathEntry = entries.head
 
   /**
    * Returns a new Path with the tail of this path
@@ -58,7 +67,7 @@ case class Path(entries: List[String]) extends AnyVal {
 object Path {
   lazy val empty: Path = new Path(Nil)
 
-  def apply(entries: String*): Path = new Path(entries.toList)
+  def apply(entries: PathEntry*): Path = new Path(entries.toList)
 
   /**
    * Simple splitting functionality to separate a string into a path by
@@ -67,6 +76,13 @@ object Path {
    * The separation character defaults to '.'
    */
   def parse(path: String, sep: Char = '.'): Path = new Path(
-    path.split(sep).map(_.trim).filter(_ != "").toList
+    path
+      .split(sep)
+      .map(_.trim)
+      .filter(_ != "")
+      .map { s =>
+        Try(PathEntry.Indexed(s.toInt)).getOrElse(PathEntry.Named(s))
+      }
+      .toList
   )
 }

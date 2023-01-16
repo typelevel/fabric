@@ -30,6 +30,10 @@ package object fabric {
 
   implicit def doubles2Arr(seq: Seq[Double]): Arr = Arr(seq.map(num).toVector)
 
+  implicit def string2PathEntry(name: String): PathEntry = PathEntry.Named(name)
+
+  implicit def int2PathEntry(index: Int): PathEntry = PathEntry.Indexed(index)
+
   /**
    * Create an Obj from the params
    */
