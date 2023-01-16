@@ -71,6 +71,20 @@ class FabricSpec extends AnyWordSpec with Matchers {
       val state = v("address" \ "state")
       state should be(str("California"))
     }
+    "extract a complex path including indexes" in {
+      val json = obj(
+        "first" -> List(
+          obj(
+            "second" -> List(
+              obj("third" -> 3),
+              obj("fourth" -> 4)
+            )
+          )
+        )
+      )
+      val fourth = json("first" \ 0 \ "second" \ 1 \ "fourth")
+      fourth should be(num(4))
+    }
     "update the hierarchy" in {
       val updated = v.modify("address" \ "state") { _ =>
         str("Tennessee")

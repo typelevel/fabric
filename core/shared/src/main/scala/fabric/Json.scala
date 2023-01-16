@@ -50,6 +50,19 @@ sealed trait Json extends Any {
     case _ => None
   }
 
+  final def get(lookup: PathEntry): Option[Json] = lookup match {
+    case PathEntry.Named(name) =>
+      this match {
+        case Obj(map) => map.get(name)
+        case _ => None
+      }
+    case PathEntry.Indexed(index) =>
+      this match {
+        case Arr(vec) => Try(vec(index)).toOption
+        case _ => None
+      }
+  }
+
   /**
    * Looks up a Json based on Path
    *
@@ -75,7 +88,14 @@ sealed trait Json extends Any {
    * Looks up a Json by name in the children or creates a new Obj if it doesn't
    * exist.
    */
-  final def getOrCreate(lookup: String): Json = get(lookup).getOrElse(obj())
+  final def getOrCreate(lookup: PathEntry): Json =
+    get(lookup).getOrElse(lookup match {
+      case _: PathEntry.Named => obj()
+      case PathEntry.Indexed(index) =>
+        throw new RuntimeException(
+          s"Expecting indexed value: $index, but nothing found"
+        )
+    })
 
   /**
    * Modifies the value at the specified path and returns back a new root Json
@@ -96,10 +116,29 @@ sealed trait Json extends Any {
   } else {
     val child = this.getOrCreate(path())
     child.modify(path.next())(f) match {
-      case Null => Obj(asObj.value - path())
+      case Null =>
+        path() match {
+          case PathEntry.Named(name) => Obj(asMap - name)
+          case PathEntry.Indexed(index) => Arr(asVector.patch(index, Nil, 1))
+        }
       case v if v == child => this
-      case v if isObj => Obj(asObj.value + (path() -> v))
-      case v => obj(path() -> v)
+      case v if isObj =>
+        path() match {
+          case PathEntry.Named(name) => Obj(asMap + (name -> v))
+          case pe =>
+            throw new RuntimeException(s"Unsupported PathEntry: $pe on obj: $v")
+        }
+      case v if isArr =>
+        throw new RuntimeException(s"Unsupported scenario: $v on ${path()}")
+      case v =>
+        path() match {
+          case PathEntry.Named(name) => obj(name -> v)
+          case PathEntry.Indexed(0) => arr(v)
+          case PathEntry.Indexed(index) =>
+            throw new RuntimeException(
+              s"Unsupported index for new array: $index - $v"
+            )
+        }
     }
   }
 
