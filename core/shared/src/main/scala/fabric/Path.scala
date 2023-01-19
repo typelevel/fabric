@@ -21,8 +21,6 @@
 
 package fabric
 
-import scala.util.Try
-
 sealed trait PathEntry extends Any
 
 object PathEntry {
@@ -80,9 +78,7 @@ object Path {
       .split(sep)
       .map(_.trim)
       .filter(_ != "")
-      .map { s =>
-        Try(PathEntry.Indexed(s.toInt)).getOrElse(PathEntry.Named(s))
-      }
+      .map(PathEntry.Named.apply)
       .toList
   )
 }
