@@ -12,13 +12,16 @@ import java.util.concurrent.TimeUnit
 @OperationsPerInvocation(1000)
 class ParseJsonMedium extends AbstractParseJson {
   @Benchmark
-  def fabricJacksonMedium(): Unit = parseFabric(Samples.mediumJsonString, JacksonParser)
+  def fabricJacksonMedium(): Unit =
+    parseFabric(Samples.mediumJsonString, JacksonParser)
 
   @Benchmark
-  def fabricJsoniterMedium(): Unit = parseFabric(Samples.mediumJsonString, JsoniterParser)
+  def fabricJsoniterMedium(): Unit =
+    parseFabric(Samples.mediumJsonString, JsoniterParser)
 
   @Benchmark
-  def fabricSimpleJsonMedium(): Unit = parseFabric(Samples.mediumJsonString, SimpleJsonParser)
+  def fabricSimpleJsonMedium(): Unit =
+    parseFabric(Samples.mediumJsonString, SimpleJsonParser)
 
   @Benchmark
   def circeMedium(): Unit = parseCirce(Samples.mediumJsonString)
