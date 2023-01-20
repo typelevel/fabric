@@ -9,19 +9,30 @@ object DoRelease {
   def main(args: Array[String]): Unit = {
     val baseVersion = getBaseVersion()
     val version = (if (args.length == 0) {
-      nextVersion()
-    } else if (args.length == 1) {
-      Version(args.head)
-    } else {
-      println("Must have either zero or one argument (version override)")
-      sys.exit(1)
-    }) match {
+                     nextVersion()
+                   } else if (args.length == 1) {
+                     Version(args.head)
+                   } else {
+                     println(
+                       "Must have either zero or one argument (version override)"
+                     )
+                     sys.exit(1)
+                   }) match {
       case v if baseVersion > v && args.isEmpty => baseVersion
-      case v if baseVersion.major != v.major => throw new RuntimeException(s"Base version ($baseVersion) major is not the same as version ($v)")
-      case v if baseVersion.minor != v.minor => throw new RuntimeException(s"Base version ($baseVersion) minor is not the same as version ($v)")
+      case v if baseVersion.major != v.major =>
+        throw new RuntimeException(
+          s"Base version ($baseVersion) major is not the same as version ($v)"
+        )
+      case v if baseVersion.minor != v.minor =>
+        throw new RuntimeException(
+          s"Base version ($baseVersion) minor is not the same as version ($v)"
+        )
       case v => v
     }
-    assert(baseVersion.major == version.major && baseVersion.minor == version.minor, s"Base version ($baseVersion) major and minor do not equal the new version: $version")
+    assert(
+      baseVersion.major == version.major && baseVersion.minor == version.minor,
+      s"Base version ($baseVersion) major and minor do not equal the new version: $version"
+    )
     updateReadme(version)
     gitCommit(version)
     gitTag(version)
@@ -38,7 +49,11 @@ object DoRelease {
         s.substring(s.indexOf('"') + 1, s.lastIndexOf('"')).split('.')
       }
       .map(a => Version(a(0).toInt, a(1).toInt, 0))
-      .getOrElse(throw new RuntimeException(s"Unable to find tlBaseVersion in build.sbt!"))
+      .getOrElse(
+        throw new RuntimeException(
+          s"Unable to find tlBaseVersion in build.sbt!"
+        )
+      )
   }
 
   private def nextVersion(): Version = {
@@ -83,15 +98,17 @@ object DoRelease {
     ()
   }
 
-  private case class Version(major: Int, minor: Int, build: Int) extends Ordered[Version] {
+  private case class Version(major: Int, minor: Int, build: Int)
+      extends Ordered[Version] {
     def next: Version = copy(build = build + 1)
 
     override def compare(that: Version): Int = this.major - that.major match {
       case n if n != 0 => n
-      case _ => this.minor - that.minor match {
-        case n if n != 0 => n
-        case _ => this.build - that.build
-      }
+      case _ =>
+        this.minor - that.minor match {
+          case n if n != 0 => n
+          case _ => this.build - that.build
+        }
     }
 
     lazy val number: String = s"$major.$minor.$build"
@@ -103,7 +120,8 @@ object DoRelease {
     private val Regex = """v?(\d+)[.](\d+)[.](\d+)""".r
 
     def apply(version: String): Version = version match {
-      case Regex(major, minor, build) => Version(major.toInt, minor.toInt, build.toInt)
+      case Regex(major, minor, build) =>
+        Version(major.toInt, minor.toInt, build.toInt)
       case _ => throw new RuntimeException(s"Invalid version: $version")
     }
   }
