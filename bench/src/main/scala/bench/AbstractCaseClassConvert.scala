@@ -9,7 +9,8 @@ trait AbstractCaseClassConvert {
   def json: String
 
   lazy val fabricJson: Json = JsonParser(json, Format.Json)
-  lazy val circeJson: io.circe.Json = io.circe.parser.parse(json)
+  lazy val circeJson: io.circe.Json = io.circe.parser
+    .parse(json)
     .getOrElse(throw new RuntimeException("Parse Error"))
   lazy val uPickleJson: ujson.Value = ujson.read(json)
 

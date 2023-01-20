@@ -5,7 +5,11 @@ import fabric.io.{FormatParser, JacksonParser}
 object TightLoop {
   private val jsonString: String = Samples.largeJsonString
 
-  private def parseFabric(jsonString: String, parser: FormatParser, count: Int): Unit = {
+  private def parseFabric(
+      jsonString: String,
+      parser: FormatParser,
+      count: Int
+  ): Unit = {
     (0 until count).foreach { _ =>
       val value = parser(jsonString)
       assert(value.isObj)

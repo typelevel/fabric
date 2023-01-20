@@ -24,7 +24,9 @@ class CaseClassConvertSmall extends AbstractCaseClassConvert {
 
   @Benchmark
   def circe(): Unit = (0 until count).foreach { _ =>
-    val person = circeJson.as[Person].getOrElse(throw new RuntimeException("Unable to convert to Person"))
+    val person = circeJson
+      .as[Person]
+      .getOrElse(throw new RuntimeException("Unable to convert to Person"))
     assert(person.age == 123)
   }
 
@@ -37,7 +39,9 @@ class CaseClassConvertSmall extends AbstractCaseClassConvert {
   case class Person(name: String, age: Int)
   object Person {
     implicit val hRW: RW[Person] = RW.gen
-    implicit val cDecoder: io.circe.Decoder[Person] = io.circe.generic.semiauto.deriveDecoder[Person]
-    implicit val uRW: uPickleSupport.ReadWriter[Person] = uPickleSupport.macroRW[Person]
+    implicit val cDecoder: io.circe.Decoder[Person] =
+      io.circe.generic.semiauto.deriveDecoder[Person]
+    implicit val uRW: uPickleSupport.ReadWriter[Person] =
+      uPickleSupport.macroRW[Person]
   }
 }
