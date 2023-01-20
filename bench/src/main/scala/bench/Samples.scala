@@ -16,7 +16,9 @@ object Samples {
       | }
       |}""".stripMargin
   val largeJsonString: String = {
-    val source = Source.fromInputStream(getClass.getClassLoader.getResourceAsStream("large.json"))
+    val source = Source.fromInputStream(
+      getClass.getClassLoader.getResourceAsStream("large.json")
+    )
     try {
       source.mkString
     } finally {
