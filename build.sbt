@@ -42,7 +42,7 @@ val scalaTestVersion: String = "3.2.15"
 val scalaCheckVersion: String = "3.2.14.0"
 
 // Parse module dependencies
-val jacksonVersion: String = "2.14.1"
+val jacksonVersion: String = "2.14.2"
 val typesafeConfigVersion: String = "1.4.2"
 val jsoniterJavaVersion: String = "0.9.23"
 
