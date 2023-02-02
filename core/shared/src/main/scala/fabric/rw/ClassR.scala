@@ -21,10 +21,17 @@
 
 package fabric.rw
 
-import fabric.{Json, Obj}
+import fabric.{Json, JsonWrapper, Obj}
 
 trait ClassR[T] extends Reader[T] {
   protected def t2Map(t: T): Map[String, Json]
 
-  override def read(t: T): Json = Obj(t2Map(t))
+  override def read(t: T): Json = {
+    val map = t2Map(t)
+    val updatedMap = t match {
+      case jw: JsonWrapper => jw.json.asMap ++ map.filterNot(_._1 == "json")
+      case _ => map
+    }
+    Obj(updatedMap)
+  }
 }

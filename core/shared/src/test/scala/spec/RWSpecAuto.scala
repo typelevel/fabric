@@ -122,6 +122,32 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
         )
       )
     }
+    "validate loading of JsonWrapper from Json" in {
+      val json = obj(
+        "color" -> "Red",
+        "size" -> 5.4,
+        "quantity" -> 10
+      )
+      val sample = json.as[WrapperSample]
+      sample.color should be("Red")
+      sample.size should be(5.4)
+      sample.json should be(json)
+    }
+    "validate persistence of JsonWrapper to Json" in {
+      val sample = WrapperSample(
+        color = "Green",
+        size = 9.2,
+        json = obj("quantity" -> 15, "color" -> "Blue")
+      )
+      val json: Json = sample.asJson
+      json should be(
+        obj(
+          "color" -> "Green",
+          "size" -> 9.2,
+          "quantity" -> 15
+        )
+      )
+    }
     // TODO: Enable once Scala 3 support for sealed traits is working
 //    "supporting sealed traits" in {
 //      val car: VehicleType = VehicleType.Car
@@ -137,5 +163,12 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
   object User {
     implicit val rw: RW[User] =
       RW.gen[User] + Reader[User](u => obj("num" -> u.num))
+  }
+
+  case class WrapperSample(color: String, size: Double, json: Json)
+      extends JsonWrapper
+
+  object WrapperSample {
+    implicit val rw: RW[WrapperSample] = RW.gen
   }
 }
