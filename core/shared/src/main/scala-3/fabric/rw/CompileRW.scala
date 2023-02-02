@@ -100,18 +100,26 @@ trait CompileRW {
   }
 
   inline def fromMapElems[A <: Product, T <: Tuple, L <: Tuple](map: Map[String, Json], index: Int, arr: Array[Any], defaults: Map[String, Any]): Unit = {
+    val isJsonWrapper = inline erasedValue[A] match {
+      case _: JsonWrapper => true
+      case _ => false
+    }
     inline erasedValue[T] match {
       case _: (hd *: tl) =>
         inline erasedValue[L] match {
           case _: (hdLabel *: tlLabels) =>
             import fabric.rw._
-            val hdLabelValue = constValue[hdLabel].asInstanceOf[String]
-            val hdValueOption = map.get(hdLabelValue)
-            val hdWritable = summonInline[Writer[hd]]
-            val valueOption = hdValueOption.map(hdWritable.write)
-            def defaultAlternative = inline erasedValue[hd] match {
-              case _: Option[optHd] => None
-              case _ => sys.error(s"Unable to find field ${getClassName[A]}.$hdLabelValue (and no defaults set) in ${Obj(map)}")
+            val hdLabelValue: String = constValue[hdLabel].asInstanceOf[String]
+            val hdValueOption: Option[Json] = map.get(hdLabelValue)
+            val hdWritable: Writer[hd] = summonInline[Writer[hd]]
+            val valueOption: Option[hd] = hdValueOption.map(hdWritable.write)
+            def defaultAlternative = if (hdLabelValue == "json" && isJsonWrapper) {
+              Obj(map)
+            } else {
+              inline erasedValue[hd] match {
+                case _: Option[optHd] => None
+                case _ => sys.error(s"Unable to find field ${getClassName[A]}.$hdLabelValue (and no defaults set) in ${Obj(map)}")
+              }
             }
             def default = defaults.getOrElse(hdLabelValue, defaultAlternative)
             val value = valueOption.getOrElse(default)

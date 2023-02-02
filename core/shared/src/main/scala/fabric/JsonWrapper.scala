@@ -21,13 +21,14 @@
 
 package fabric
 
-package object rw {
-  implicit class Convertible[T](value: T) {
-    def json(implicit reader: Reader[T]): Json = asJson
-    def asJson(implicit reader: Reader[T]): Json = reader.read(value)
-  }
-
-  implicit class Asable(value: Json) {
-    def as[T](implicit writer: Writer[T]): T = writer.write(value)
-  }
+/**
+ * JsonWrapper mix-in provides insight to Reader and Writer generation to
+ * synchronize to and from the `json` value. When writing to a type, the `json`
+ * value is provided a reference to the original Json used to build it. When
+ * reading into Json, the additional values in the `json` are retained, although
+ * the values in the case class of the same name will overwrite those within the
+ * `json`.
+ */
+trait JsonWrapper {
+  def json: Json
 }
