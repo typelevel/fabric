@@ -40,8 +40,8 @@ trait RW[T] extends Reader[T] with Writer[T] {
 
 object RW extends CompileRW {
   implicit lazy val unitRW: RW[Unit] = from(_ => Null, _ => (), DefType.Null)
-  implicit lazy val valueRW: RW[Json] = from(identity, identity, DefType.Null)
-  implicit lazy val objRW: RW[Obj] = from(o => o, v => v.asObj, DefType.Null)
+  implicit lazy val valueRW: RW[Json] = from(identity, identity, DefType.Dynamic)
+  implicit lazy val objRW: RW[Obj] = from(o => o, v => v.asObj, DefType.Dynamic)
 
   implicit lazy val boolRW: RW[Boolean] =
     from[Boolean](bool, _.asBool.value, DefType.Bool)
@@ -73,7 +73,7 @@ object RW extends CompileRW {
     _.asObj.value.map { case (key, value) =>
       key -> value.as[V]
     },
-    DefType.Null
+    DefType.Dynamic
   )
 
   implicit def listRW[V: RW]: RW[List[V]] = from[List[V]](
@@ -164,7 +164,7 @@ object RW extends CompileRW {
     from(
       (t: T) => obj(fieldName -> t2F(t)),
       (v: Json) => f2T(v.asObj.value(fieldName).asStr.value),
-      DefType.Null
+      DefType.Dynamic
     )
   }
 
@@ -206,7 +206,7 @@ object RW extends CompileRW {
         )
       }
     },
-    DefType.Null
+    DefType.Dynamic
   )
 
   /**
