@@ -77,10 +77,7 @@ object DefType {
         "type" -> "optional",
         "value" -> dt2V(t)
       )
-    case Str =>
-      obj(
-        "type" -> "string"
-      )
+    case Str => obj("type" -> "string")
     case Int =>
       obj(
         "type" -> "numeric",
@@ -91,19 +88,14 @@ object DefType {
         "type" -> "numeric",
         "precision" -> "decimal"
       )
-    case Bool =>
-      obj(
-        "type" -> "boolean"
-      )
+    case Bool => obj("type" -> "boolean")
     case Enum(values) =>
       obj(
         "type" -> "enum",
         "values" -> values
       )
-    case Null =>
-      obj(
-        "type" -> "null"
-      )
+    case Dynamic => obj("type" -> "dynamic")
+    case Null => obj("type" -> "null")
   }
 
   private def v2dt(v: Json): DefType = {
@@ -186,6 +178,7 @@ object DefType {
     }
   }
   case object Bool extends DefType
+  case object Dynamic extends DefType
   case class Enum(values: List[Json]) extends DefType
   case object Null extends DefType {
     override def isNull: Boolean = true
