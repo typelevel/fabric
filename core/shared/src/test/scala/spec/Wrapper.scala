@@ -21,7 +21,10 @@
 
 package spec
 
+import fabric._
+import fabric.define.DefType
 import fabric.rw._
+import izumi.reflect.Tag
 
 import scala.annotation.nowarn
 
@@ -29,5 +32,19 @@ case class Wrapper[T](name: String, value: T, other: Option[T])
 
 @nowarn
 object Wrapper {
-  implicit def rw[T](implicit trw: RW[T]): RW[Wrapper[T]] = RW.gen
+  // TODO: Fix this!
+  implicit def rw[T](implicit trw: RW[T], tag: Tag[T]): RW[Wrapper[T]] = RW.gen
+//  implicit def rw[T](implicit trw: RW[T], tag: Tag[T]): RW[Wrapper[T]] = RW.from[Wrapper[T]](
+//    r = w => obj(
+//      "name" -> w.name,
+//      "value" -> trw.read(w.value),
+//      "other" -> w.other.json
+//    ),
+//    w = j => Wrapper[T](
+//      name = j("name").asString,
+//      value = trw.write(j("value")),
+//      other = j.get("other").flatMap(_.as[Option[T]])
+//    ),
+//    d = DefType.Dynamic
+//  )
 }

@@ -24,6 +24,7 @@ package spec
 import fabric._
 import fabric.define.DefType
 import fabric.rw._
+import izumi.reflect.Tag
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -45,6 +46,8 @@ class RWSpecManual extends AnyWordSpec with Matchers {
       "city" -> DefType.Str,
       "state" -> DefType.Str
     )
+
+    override def tag: Tag[Address] = Tag[Address]
   }
   implicit val personRW: RW[Person] = new ClassRW[Person] {
     override protected def t2Map(t: Person): Map[String, Json] = VectorMap(
@@ -64,6 +67,8 @@ class RWSpecManual extends AnyWordSpec with Matchers {
       "age" -> DefType.Int,
       "address" -> addressRW.definition
     )
+
+    override def tag: Tag[Person] = Tag[Person]
   }
 
   "manual conversion" should {

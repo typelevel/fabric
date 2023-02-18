@@ -23,6 +23,9 @@ package fabric.rw
 
 import fabric._
 import fabric.define.DefType
+import izumi.reflect.Tag
+
+import scala.annotation.unused
 
 /**
  * RW provides a single class representation of a Reader and Writer for the same
@@ -30,12 +33,13 @@ import fabric.define.DefType
  */
 trait RW[T] extends Reader[T] with Writer[T] {
   def definition: DefType
+  def tag: Tag[T]
 
   override def +(that: Reader[T]): RW[T] =
-    CompoundRW[T](super.+(that), this, definition)
+    CompoundRW[T](super.+(that), this, definition, tag)
 
   override def +(that: Writer[T])(implicit merge: (T, T) => T): RW[T] =
-    CompoundRW[T](this, super.+(that), definition)
+    CompoundRW[T](this, super.+(that), definition, tag)
 }
 
 object RW extends CompileRW {
@@ -66,7 +70,7 @@ object RW extends CompileRW {
   implicit lazy val stringRW: RW[String] =
     from[String](str, _.asStr.value, DefType.Str)
 
-  implicit def mapRW[V: RW]: RW[Map[String, V]] = from[Map[String, V]](
+  implicit def mapRW[V: RW](implicit @unused tag: Tag[V]): RW[Map[String, V]] = from[Map[String, V]](
     _.map { case (key, value) =>
       key -> value.json
     },
@@ -76,19 +80,19 @@ object RW extends CompileRW {
     DefType.Dynamic
   )
 
-  implicit def listRW[V: RW]: RW[List[V]] = from[List[V]](
+  implicit def listRW[V: RW](implicit @unused tag: Tag[V]): RW[List[V]] = from[List[V]](
     v => Arr(v.map(_.json).toVector),
     v => v.asVector.map(_.as[V]).toList,
     DefType.Arr(implicitly[RW[V]].definition)
   )
 
-  implicit def vectorRW[V: RW]: RW[Vector[V]] = from[Vector[V]](
+  implicit def vectorRW[V: RW](implicit @unused tag: Tag[V]): RW[Vector[V]] = from[Vector[V]](
     v => Arr(v.map(_.json)),
     v => v.asVector.map(_.as[V]),
     DefType.Arr(implicitly[RW[V]].definition)
   )
 
-  implicit def setRW[V: RW]: RW[Set[V]] = from[Set[V]](
+  implicit def setRW[V: RW](implicit @unused tag: Tag[V]): RW[Set[V]] = from[Set[V]](
     v => Arr(v.map(_.json).toVector),
     {
       case Arr(vector) => vector.map(_.as[V]).toSet
@@ -97,18 +101,19 @@ object RW extends CompileRW {
     DefType.Arr(implicitly[RW[V]].definition)
   )
 
-  implicit def optionRW[V: RW]: RW[Option[V]] = from[Option[V]](
+  implicit def optionRW[V: RW](implicit @unused tag: Tag[V]): RW[Option[V]] = from[Option[V]](
     v => v.map(_.json).getOrElse(Null),
     v => if (v.isNull) None else Some(v.as[V]),
     DefType.Opt(implicitly[RW[V]].definition)
   )
 
-  def from[T](r: T => Json, w: Json => T, d: => DefType): RW[T] = new RW[T] {
+  def from[T](r: T => Json,
+              w: Json => T,
+              d: => DefType)(implicit t: Tag[T]): RW[T] = new RW[T] {
     override def write(value: Json): T = w(value)
-
     override def read(t: T): Json = r(t)
-
     override def definition: DefType = d
+    override def tag: Tag[T] = t
   }
 
   def enumeration[T](
@@ -116,7 +121,7 @@ object RW extends CompileRW {
       asString: T => String = (t: T) =>
         t.getClass.getSimpleName.replace("$", ""),
       caseSensitive: Boolean = false
-  ): RW[T] = new RW[T] {
+  )(implicit t: Tag[T]): RW[T] = new RW[T] {
     private def fixString(s: String): String =
       if (caseSensitive) s else s.toLowerCase
 
@@ -128,15 +133,19 @@ object RW extends CompileRW {
 
     override val definition: DefType =
       DefType.Enum(list.map(t => Str(asString(t))))
+
+    override def tag: Tag[T] = t
   }
 
-  def string[T](asString: T => String, fromString: String => T): RW[T] =
+  def string[T](asString: T => String, fromString: String => T)(implicit t: Tag[T]): RW[T] =
     new RW[T] {
       override def write(value: Json): T = fromString(value.asString)
 
       override def read(t: T): Json = str(asString(t))
 
       override def definition: DefType = DefType.Str
+
+      override def tag: Tag[T] = t
     }
 
   /**
@@ -146,7 +155,7 @@ object RW extends CompileRW {
    * @param value
    *   the singleton value to use
    */
-  def static[T](value: T): RW[T] = from(_ => obj(), _ => value, DefType.Obj())
+  def static[T](value: T)(implicit tag: Tag[T]): RW[T] = from(_ => obj(), _ => value, DefType.Obj())
 
   /**
    * Convenience functionality for working with enumerations
@@ -157,7 +166,7 @@ object RW extends CompileRW {
    *   a mapping of key/value pairs representing the String in fieldName to the
    *   representative value
    */
-  def enumeration[T](fieldName: String, mapping: (String, T)*): RW[T] = {
+  def enumeration[T](fieldName: String, mapping: (String, T)*)(implicit tag: Tag[T]): RW[T] = {
     val f2T: Map[String, T] = mapping.toMap
     val t2F: Map[T, String] = f2T.map(_.swap)
 
@@ -182,7 +191,7 @@ object RW extends CompileRW {
   def poly[P](
       fieldName: String = "type",
       getType: P => String = defaultGetType _
-  )(matcher: PartialFunction[String, RW[_ <: P]]): RW[P] = from(
+  )(matcher: PartialFunction[String, RW[_ <: P]])(implicit tag: Tag[P]): RW[P] = from(
     p => {
       val `type` = getType(p)
       if (matcher.isDefinedAt(`type`)) {

@@ -195,6 +195,7 @@ object RWMacros {
          import _root_.fabric._
          import _root_.fabric.rw._
          import _root_.fabric.define._
+         import _root_.izumi.reflect.Tag
 
          new RW[$tpe] {
             private val r = $reader
@@ -203,6 +204,7 @@ object RWMacros {
             override def read(t: $tpe): Json = r.read(t)
             override def write(value: Json): $tpe = w.write(value)
             override def definition: DefType = $definition
+            override val tag: Tag[$tpe] = Tag[$tpe]
          }
        """
     )

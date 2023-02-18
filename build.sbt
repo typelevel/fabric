@@ -37,6 +37,8 @@ ThisBuild / developers := List(
 // Dependency versions
 val collectionCompatVersion: String = "2.9.0"
 
+val izumiVersion: String = "2.2.5"
+
 val scalaTestVersion: String = "3.2.15"
 
 val scalaCheckVersion: String = "3.2.14.0"
@@ -64,6 +66,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     name := "fabric-core",
     mimaPreviousArtifacts := Set.empty,
     libraryDependencies ++= Seq(
+      "dev.zio" %%% "izumi-reflect" % izumiVersion,
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
       "org.scalatestplus" %%% "scalacheck-1-16" % scalaCheckVersion % Test
     ),
