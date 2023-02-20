@@ -40,7 +40,8 @@ trait RW[T] extends Reader[T] with Writer[T] {
 
 object RW extends CompileRW {
   implicit lazy val unitRW: RW[Unit] = from(_ => Null, _ => (), DefType.Null)
-  implicit lazy val valueRW: RW[Json] = from(identity, identity, DefType.Dynamic)
+  implicit lazy val valueRW: RW[Json] =
+    from(identity, identity, DefType.Dynamic)
   implicit lazy val objRW: RW[Obj] = from(o => o, v => v.asObj, DefType.Dynamic)
 
   implicit lazy val boolRW: RW[Boolean] =
