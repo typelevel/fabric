@@ -19,23 +19,24 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package spec
+package fabric
 
-import fabric._
-import fabric.io._
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
+import org.typelevel.literally.Literally
 
-class JsonParsingSpec extends AnyWordSpec with Matchers {
-  "Json Parsing" should {
-    "parse a simple use-case" in {
-      val json =
-        JsonParser("""{"name": "Matt Hicks", "age": 41}""", Format.Json)
-      json should be(obj("name" -> "Matt Hicks", "age" -> 41))
-    }
-    "parse using interpolation" in {
-      val json = json"""{"name": "Matt Hicks", "age": 41}"""
-      json should be(obj("name" -> "Matt Hicks", "age" -> 41))
-    }
+package object io extends IOFeatures {
+  extension (inline ctx: StringContext) {
+    inline def json(inline args: Any*): Json =
+      ${JsonLiteral('ctx, 'args)}
+  }
+
+  object JsonLiteral extends Literally[Json] {
+    def validate(s: String)(using Quotes): Either[String, Expr[Json]] =
+      try {
+        JsonParser(s)
+        val string = Expr(s)
+        Right('{JsonParser($string)})
+      } catch {
+        case t: Throwable => Left(s"$s is not valid JSON: ${t.getMessage}")
+      }
   }
 }

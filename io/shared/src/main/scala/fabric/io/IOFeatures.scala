@@ -19,23 +19,23 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package spec
+package fabric.io
 
-import fabric._
-import fabric.io._
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
+import fabric.Json
+import fabric.rw.{Asable, RW}
 
-class JsonParsingSpec extends AnyWordSpec with Matchers {
-  "Json Parsing" should {
-    "parse a simple use-case" in {
-      val json =
-        JsonParser("""{"name": "Matt Hicks", "age": 41}""", Format.Json)
-      json should be(obj("name" -> "Matt Hicks", "age" -> 41))
+trait IOFeatures {
+  implicit class StringIOExtras(s: String) {
+    def as[T: RW](format: Format): T = {
+      val json: Json = JsonParser(s, format)
+      json.as[T]
     }
-    "parse using interpolation" in {
-      val json = json"""{"name": "Matt Hicks", "age": 41}"""
-      json should be(obj("name" -> "Matt Hicks", "age" -> 41))
+  }
+
+  implicit class ByteArrayIOExtras(array: Array[Byte]) {
+    def as[T: RW](format: Format): T = {
+      val json: Json = JsonParser(array, format)
+      json.as[T]
     }
   }
 }
