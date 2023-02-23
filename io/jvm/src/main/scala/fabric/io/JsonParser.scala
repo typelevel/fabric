@@ -27,18 +27,12 @@ import java.io.File
 import java.nio.file.Path
 import scala.io.Source
 
-/**
- * Json provides convenience functionality to parse and format JSON to/from
- * fabric Values
- */
+/** Json provides convenience functionality to parse and format JSON to/from
+  * fabric Values
+  */
 object JsonParser extends MultiFormatParser {
-  override def parsers: List[FormatParser] = List(
-    HoconParser,
-    JacksonParser,
-    PropertiesParser,
-    XMLParser,
-    YamlParser
-  )
+  override def parsers: List[FormatParser] =
+    List(HoconParser, JacksonParser, PropertiesParser, XMLParser, YamlParser)
 
   def apply(file: File, format: Format): Json =
     apply(Source.fromFile(file, "UTF-8"), format)

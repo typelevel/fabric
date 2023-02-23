@@ -38,11 +38,7 @@ class JsonFormattingSpec extends AnyWordSpec with Matchers {
         "four" -> obj(
           "test1" -> "Testing 1",
           "test2" -> Null,
-          "test3" -> arr(
-            1,
-            2,
-            3
-          ),
+          "test3" -> arr(1, 2, 3),
           "test4" ->
             """This
               |is

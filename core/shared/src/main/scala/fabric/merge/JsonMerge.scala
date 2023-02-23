@@ -21,8 +21,8 @@
 
 package fabric.merge
 
-import fabric.{Json, Path}
+import fabric.{Json, JsonPath}
 
 trait JsonMerge[T <: Json] {
-  def merge(path: Path, json1: T, json2: T, config: MergeConfig): T
+  def merge(path: JsonPath, json1: T, json2: T, config: MergeConfig): T
 }

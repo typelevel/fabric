@@ -28,7 +28,7 @@ import scala.reflect.macros.blackbox
 
 object RWMacros {
   def caseClassD[T](
-      context: blackbox.Context
+    context: blackbox.Context
   )(implicit t: context.WeakTypeTag[T]): context.Expr[DefType] = {
     import context.universe._
 
@@ -56,7 +56,7 @@ object RWMacros {
   }
 
   def caseClassR[T](
-      context: blackbox.Context
+    context: blackbox.Context
   )(implicit t: context.WeakTypeTag[T]): context.Expr[Reader[T]] = {
     import context.universe._
 
@@ -89,20 +89,18 @@ object RWMacros {
             s"$t is not a valid case class (no primary constructor found)"
           )
         } else {
-          context.Expr[Reader[T]](
-            q"""
+          context.Expr[Reader[T]](q"""
                import _root_.fabric._
                import _root_.fabric.rw._
 
                RW.enumeration[$t](List(..$caseObjects))
-             """
-          )
+             """)
         }
     }
   }
 
   def caseClassW[T](
-      context: blackbox.Context
+    context: blackbox.Context
   )(implicit t: context.WeakTypeTag[T]): context.Expr[Writer[T]] = {
     import context.universe._
 
@@ -169,20 +167,18 @@ object RWMacros {
             s"$t is not a valid case class (no primary constructor found)"
           )
         } else {
-          context.Expr[Writer[T]](
-            q"""
+          context.Expr[Writer[T]](q"""
                import _root_.fabric._
                import _root_.fabric.rw._
 
                RW.enumeration[$t](List(..$caseObjects))
-             """
-          )
+             """)
         }
     }
   }
 
   def caseClassRW[T](
-      context: blackbox.Context
+    context: blackbox.Context
   )(implicit t: context.WeakTypeTag[T]): context.Expr[RW[T]] = {
     import context.universe._
 
@@ -190,8 +186,7 @@ object RWMacros {
     val reader = caseClassR[T](context)
     val writer = caseClassW[T](context)
     val definition = caseClassD[T](context)
-    context.Expr[RW[T]](
-      q"""
+    context.Expr[RW[T]](q"""
          import _root_.fabric._
          import _root_.fabric.rw._
          import _root_.fabric.define._
@@ -204,7 +199,6 @@ object RWMacros {
             override def write(value: Json): $tpe = w.write(value)
             override def definition: DefType = $definition
          }
-       """
-    )
+       """)
   }
 }

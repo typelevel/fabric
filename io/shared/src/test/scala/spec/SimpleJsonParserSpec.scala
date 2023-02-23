@@ -50,12 +50,7 @@ class SimpleJsonParserSpec extends AnyWordSpec with Matchers {
     }
     "parse a slightly more complex object" in {
       val json = SimpleJsonParser("""{"name": "Matt Hicks", "age": 41}""")
-      json should be(
-        obj(
-          "name" -> "Matt Hicks",
-          "age" -> 41
-        )
-      )
+      json should be(obj("name" -> "Matt Hicks", "age" -> 41))
     }
   }
 }

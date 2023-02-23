@@ -21,13 +21,13 @@
 
 package fabric.merge
 
-import fabric.{Obj, Path}
+import fabric.{Obj, JsonPath}
 
 object ObjReplaceMerge extends JsonMerge[Obj] {
   override def merge(
-      path: Path,
-      json1: Obj,
-      json2: Obj,
-      config: MergeConfig
+    path: JsonPath,
+    json1: Obj,
+    json2: Obj,
+    config: MergeConfig
   ): Obj = json2
 }

@@ -53,11 +53,8 @@ sealed trait DefType {
 }
 
 object DefType {
-  implicit def rw: RW[DefType] = RW.from[DefType](
-    r = dt2V,
-    w = v2dt,
-    d = DefType.Null
-  )
+  implicit def rw: RW[DefType] =
+    RW.from[DefType](r = dt2V, w = v2dt, d = DefType.Null)
 
   private def dt2V(dt: DefType): Json = dt match {
     case Obj(map) =>
@@ -68,34 +65,19 @@ object DefType {
         })
       )
     case Arr(t) =>
-      obj(
-        "type" -> "array",
-        "value" -> dt2V(t)
-      )
+      obj("type" -> "array", "value" -> dt2V(t))
     case Opt(t) =>
-      obj(
-        "type" -> "optional",
-        "value" -> dt2V(t)
-      )
+      obj("type" -> "optional", "value" -> dt2V(t))
     case Str => obj("type" -> "string")
     case Int =>
-      obj(
-        "type" -> "numeric",
-        "precision" -> "integer"
-      )
+      obj("type" -> "numeric", "precision" -> "integer")
     case Dec =>
-      obj(
-        "type" -> "numeric",
-        "precision" -> "decimal"
-      )
+      obj("type" -> "numeric", "precision" -> "decimal")
     case Bool => obj("type" -> "boolean")
     case Enum(values) =>
-      obj(
-        "type" -> "enum",
-        "values" -> values
-      )
+      obj("type" -> "enum", "values" -> values)
     case Dynamic => obj("type" -> "dynamic")
-    case Null => obj("type" -> "null")
+    case Null    => obj("type" -> "null")
   }
 
   private def v2dt(v: Json): DefType = {
@@ -105,30 +87,30 @@ object DefType {
         Obj(o.value("values").asMap.map { case (key, value) =>
           key -> v2dt(value)
         })
-      case "array" => Arr(v2dt(o.value("value")))
+      case "array"    => Arr(v2dt(o.value("value")))
       case "optional" => Opt(v2dt(o.value("value")))
-      case "string" => Str
+      case "string"   => Str
       case "numeric" =>
         o.value("precision").asString match {
           case "integer" => Int
           case "decimal" => Dec
         }
       case "boolean" => Bool
-      case "enum" => Enum(o.value("values").asVector.toList)
-      case "null" => Null
+      case "enum"    => Enum(o.value("values").asVector.toList)
+      case "null"    => Null
     }
   }
 
   case class Obj(map: Map[String, DefType]) extends DefType {
     override def merge(that: DefType): DefType = that match {
-      case Obj(thatMap) => Obj(mergeMap(map, thatMap))
+      case Obj(thatMap)      => Obj(mergeMap(map, thatMap))
       case Opt(Obj(thatMap)) => Opt(Obj(mergeMap(map, thatMap)))
-      case _ => super.merge(that)
+      case _                 => super.merge(that)
     }
 
     private def mergeMap(
-        m1: Map[String, DefType],
-        m2: Map[String, DefType]
+      m1: Map[String, DefType],
+      m2: Map[String, DefType]
     ): Map[String, DefType] = {
       val keys = m1.keySet ++ m2.keySet
       VectorMap(keys.toList.map { key =>
@@ -142,8 +124,8 @@ object DefType {
   case class Arr(t: DefType) extends DefType {
     override def merge(that: DefType): DefType = that match {
       case Arr(thatType) => Arr(t.merge(thatType))
-      case Null => this
-      case _ => super.merge(that)
+      case Null          => this
+      case _             => super.merge(that)
     }
   }
   case class Opt(t: DefType) extends DefType {
@@ -168,13 +150,13 @@ object DefType {
   case object Int extends DefType {
     override def merge(that: DefType): DefType = that match {
       case DefType.Dec => that
-      case _ => super.merge(that)
+      case _           => super.merge(that)
     }
   }
   case object Dec extends DefType {
     override def merge(that: DefType): DefType = that match {
       case DefType.Int => this
-      case _ => super.merge(that)
+      case _           => super.merge(that)
     }
   }
   case object Bool extends DefType
@@ -185,8 +167,8 @@ object DefType {
 
     override def merge(that: DefType): DefType = that match {
       case o: Opt => o
-      case Null => Null
-      case _ => that.merge(Null)
+      case Null   => Null
+      case _      => that.merge(Null)
     }
   }
 }

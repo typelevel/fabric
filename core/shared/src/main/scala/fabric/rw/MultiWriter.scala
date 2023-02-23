@@ -35,7 +35,7 @@ object MultiWriter {
   def apply[T](writers: Writer[T]*)(implicit merge: (T, T) => T): Writer[T] = {
     val list = writers.toList.flatMap {
       case mw: MultiWriter[T] => mw.writers
-      case w => List(w)
+      case w                  => List(w)
     }
     new MultiWriter[T](list, merge)
   }

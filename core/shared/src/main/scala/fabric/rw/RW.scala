@@ -24,10 +24,9 @@ package fabric.rw
 import fabric._
 import fabric.define.DefType
 
-/**
- * RW provides a single class representation of a Reader and Writer for the same
- * type
- */
+/** RW provides a single class representation of a Reader and Writer for the
+  * same type
+  */
 trait RW[T] extends Reader[T] with Writer[T] {
   def definition: DefType
 
@@ -93,7 +92,7 @@ object RW extends CompileRW {
     v => Arr(v.map(_.json).toVector),
     {
       case Arr(vector) => vector.map(_.as[V]).toSet
-      case v => throw new RuntimeException(s"Unsupported set: $v")
+      case v           => throw new RuntimeException(s"Unsupported set: $v")
     },
     DefType.Arr(implicitly[RW[V]].definition)
   )
@@ -113,10 +112,9 @@ object RW extends CompileRW {
   }
 
   def enumeration[T](
-      list: List[T],
-      asString: T => String = (t: T) =>
-        t.getClass.getSimpleName.replace("$", ""),
-      caseSensitive: Boolean = false
+    list: List[T],
+    asString: T => String = (t: T) => t.getClass.getSimpleName.replace("$", ""),
+    caseSensitive: Boolean = false
   ): RW[T] = new RW[T] {
     private def fixString(s: String): String =
       if (caseSensitive) s else s.toLowerCase
@@ -140,24 +138,22 @@ object RW extends CompileRW {
       override def definition: DefType = DefType.Str
     }
 
-  /**
-   * Convenience functionality to provide a static / singleton value that
-   * represents that type
-   *
-   * @param value
-   *   the singleton value to use
-   */
+  /** Convenience functionality to provide a static / singleton value that
+    * represents that type
+    *
+    * @param value
+    *   the singleton value to use
+    */
   def static[T](value: T): RW[T] = from(_ => obj(), _ => value, DefType.Obj())
 
-  /**
-   * Convenience functionality for working with enumerations
-   *
-   * @param fieldName
-   *   the field name to refer to in the Json
-   * @param mapping
-   *   a mapping of key/value pairs representing the String in fieldName to the
-   *   representative value
-   */
+  /** Convenience functionality for working with enumerations
+    *
+    * @param fieldName
+    *   the field name to refer to in the Json
+    * @param mapping
+    *   a mapping of key/value pairs representing the String in fieldName to the
+    *   representative value
+    */
   def enumeration[T](fieldName: String, mapping: (String, T)*): RW[T] = {
     val f2T: Map[String, T] = mapping.toMap
     val t2F: Map[T, String] = f2T.map(_.swap)
@@ -169,20 +165,19 @@ object RW extends CompileRW {
     )
   }
 
-  /**
-   * Convenience functionality for working with polymorphic types
-   *
-   * @param fieldName
-   *   the field name stored in the value (defaults to "type")
-   * @param getType
-   *   a function to determine the field value from an instance (defaults to the
-   *   class name with the first character lowercase - defaultGetType)
-   * @param matcher
-   *   a matcher for field values to get the representative RW for that type
-   */
+  /** Convenience functionality for working with polymorphic types
+    *
+    * @param fieldName
+    *   the field name stored in the value (defaults to "type")
+    * @param getType
+    *   a function to determine the field value from an instance (defaults to
+    *   the class name with the first character lowercase - defaultGetType)
+    * @param matcher
+    *   a matcher for field values to get the representative RW for that type
+    */
   def poly[P](
-      fieldName: String = "type",
-      getType: P => String = defaultGetType _
+    fieldName: String = "type",
+    getType: P => String = defaultGetType _
   )(matcher: PartialFunction[String, RW[_ <: P]]): RW[P] = from(
     p => {
       val `type` = getType(p)
@@ -210,10 +205,9 @@ object RW extends CompileRW {
     DefType.Dynamic
   )
 
-  /**
-   * Used by poly by default to getType using the class name with the first
-   * character lowercase
-   */
+  /** Used by poly by default to getType using the class name with the first
+    * character lowercase
+    */
   private def defaultGetType[P](p: P): String = {
     val name = p.getClass.getSimpleName.replace("$", "")
     s"${name.charAt(0).toLower}${name.substring(1)}"

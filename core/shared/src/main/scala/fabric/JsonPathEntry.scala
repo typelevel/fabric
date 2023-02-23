@@ -19,14 +19,11 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package fabric.filter
+package fabric
 
-import fabric.{Arr, Json, Obj, JsonPath}
+sealed trait JsonPathEntry extends Any
 
-object RemoveEmptyFilter extends JsonFilter {
-  override def apply(value: Json, path: JsonPath): Option[Json] = value match {
-    case Obj(map) if map.isEmpty       => None
-    case Arr(vector) if vector.isEmpty => None
-    case _                             => Some(value)
-  }
+object JsonPathEntry {
+  case class Named(name: String) extends AnyVal with JsonPathEntry
+  case class Indexed(index: Int) extends AnyVal with JsonPathEntry
 }

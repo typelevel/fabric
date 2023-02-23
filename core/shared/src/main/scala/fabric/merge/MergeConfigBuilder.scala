@@ -21,21 +21,21 @@
 
 package fabric.merge
 
-import fabric.{Arr, Json, MergeType, Obj, Path}
+import fabric.{Arr, Json, MergeType, Obj, JsonPath}
 
 case class MergeConfigBuilder(
-    `type`: MergeType = MergeType.Overwrite,
-    defaultArr: JsonMerge[Arr] = ArrReplaceMerge,
-    defaultObj: JsonMerge[Obj] = ObjMerge,
-    overrides: Map[Path, JsonMerge[Json]] = Map.empty
+  `type`: MergeType = MergeType.Overwrite,
+  defaultArr: JsonMerge[Arr] = ArrReplaceMerge,
+  defaultObj: JsonMerge[Obj] = ObjMerge,
+  overrides: Map[JsonPath, JsonMerge[Json]] = Map.empty
 ) extends MergeConfig {
-  override def merge(json1: Json, json2: Json, path: Path): Json = {
+  override def merge(json1: Json, json2: Json, path: JsonPath): Json = {
     overrides.get(path) match {
       case Some(merge) => merge.merge(path, json1, json2, this)
       case None if json1.`type` != json2.`type` =>
         `type` match {
           case MergeType.Overwrite => json2
-          case MergeType.Add => json1
+          case MergeType.Add       => json1
           case MergeType.ErrorOnDuplicate =>
             throw new RuntimeException(
               s"Cannot merge different types: $json1 -> $json2 ($path)"
@@ -49,7 +49,7 @@ case class MergeConfigBuilder(
         } else {
           `type` match {
             case MergeType.Overwrite => json2
-            case MergeType.Add => json1
+            case MergeType.Add       => json1
             case MergeType.ErrorOnDuplicate =>
               throw new RuntimeException(
                 s"Duplicate found at $path, existing: $json1, new: $json2"
@@ -60,8 +60,8 @@ case class MergeConfigBuilder(
   }
 
   def withOverride[T <: Json](
-      path: Path,
-      jsonMerge: JsonMerge[T]
+    path: JsonPath,
+    jsonMerge: JsonMerge[T]
   ): MergeConfigBuilder = copy(overrides =
     overrides + (path -> jsonMerge.asInstanceOf[JsonMerge[Json]])
   )

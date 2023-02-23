@@ -33,7 +33,7 @@ object MultiReader {
   def apply[T](readers: Reader[T]*): Reader[T] = {
     val list = readers.toList.flatMap {
       case mr: MultiReader[T] => mr.readers
-      case r => List(r)
+      case r                  => List(r)
     }
     new MultiReader[T](list)
   }

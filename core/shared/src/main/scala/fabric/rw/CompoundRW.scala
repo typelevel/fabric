@@ -25,9 +25,9 @@ import fabric.Json
 import fabric.define.DefType
 
 case class CompoundRW[T](
-    reader: Reader[T],
-    writer: Writer[T],
-    definition: DefType
+  reader: Reader[T],
+  writer: Writer[T],
+  definition: DefType
 ) extends RW[T] {
   override def read(t: T): Json = reader.read(t)
 

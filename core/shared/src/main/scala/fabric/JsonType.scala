@@ -21,9 +21,8 @@
 
 package fabric
 
-/**
- * JsonType represents the possible types of Json
- */
+/** JsonType represents the possible types of Json
+  */
 sealed trait JsonType[T] {
   def is(`type`: JsonType[_]): Boolean = this == `type`
 }

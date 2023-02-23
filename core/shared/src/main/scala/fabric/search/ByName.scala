@@ -19,14 +19,21 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package fabric.filter
+package fabric.search
 
-import fabric.{Arr, Json, Obj, JsonPath}
+import fabric.{Json, JsonPath, Obj}
 
-object RemoveEmptyFilter extends JsonFilter {
-  override def apply(value: Json, path: JsonPath): Option[Json] = value match {
-    case Obj(map) if map.isEmpty       => None
-    case Arr(vector) if vector.isEmpty => None
-    case _                             => Some(value)
+case class ByName(name: String) extends AnyVal with SearchEntry {
+  override def search(
+    json: Json,
+    entries: List[SearchEntry],
+    jsonPath: JsonPath
+  ): List[JsonPath] = json match {
+    case Obj(map) =>
+      map.get(name) match {
+        case Some(value) => SearchEntry.search(value, entries, jsonPath \ name)
+        case None        => Nil
+      }
+    case _ => Nil
   }
 }

@@ -55,14 +55,14 @@ object JacksonParser extends FormatParser {
   private def parseToken(parser: JParser, token: JsonToken): Json =
     token match {
       case JsonToken.START_OBJECT => parseObj(parser, VectorMap.empty)
-      case JsonToken.START_ARRAY => parseArr(parser, Vector.empty)
+      case JsonToken.START_ARRAY  => parseArr(parser, Vector.empty)
       case JsonToken.VALUE_STRING => Str(parser.getValueAsString)
       case JsonToken.VALUE_NUMBER_FLOAT =>
         NumDec(BigDecimal(parser.getValueAsDouble))
       case JsonToken.VALUE_NUMBER_INT => NumInt(parser.getValueAsLong)
-      case JsonToken.VALUE_NULL => Null
-      case JsonToken.VALUE_TRUE => Bool(true)
-      case JsonToken.VALUE_FALSE => Bool(false)
+      case JsonToken.VALUE_NULL       => Null
+      case JsonToken.VALUE_TRUE       => Bool(true)
+      case JsonToken.VALUE_FALSE      => Bool(false)
       case t => throw new RuntimeException(s"Unsupported token: $t")
     }
 

@@ -30,7 +30,7 @@ trait ClassR[T] extends Reader[T] {
     val map = t2Map(t)
     val updatedMap = t match {
       case jw: JsonWrapper => jw.json.asMap ++ map.filterNot(_._1 == "json")
-      case _ => map
+      case _               => map
     }
     Obj(updatedMap)
   }

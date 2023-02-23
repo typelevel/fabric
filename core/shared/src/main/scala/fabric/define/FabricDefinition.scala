@@ -41,10 +41,10 @@ object FabricDefinition {
         k -> apply(v)
       })
     case Arr(value) => DefType.Arr(apply(value.toList))
-    case Str(_) => DefType.Str
-    case NumInt(_) => DefType.Int
-    case NumDec(_) => DefType.Dec
-    case Bool(_) => DefType.Bool
-    case Null => DefType.Null
+    case Str(_)     => DefType.Str
+    case NumInt(_)  => DefType.Int
+    case NumDec(_)  => DefType.Dec
+    case Bool(_)    => DefType.Bool
+    case Null       => DefType.Null
   }
 }

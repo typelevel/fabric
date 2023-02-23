@@ -74,12 +74,7 @@ class FabricSpec extends AnyWordSpec with Matchers {
     "extract a complex path including indexes" in {
       val json = obj(
         "first" -> List(
-          obj(
-            "second" -> List(
-              obj("third" -> 3),
-              obj("fourth" -> 4)
-            )
-          )
+          obj("second" -> List(obj("third" -> 3), obj("fourth" -> 4)))
         )
       )
       val fourth = json("first" \ 0 \ "second" \ 1 \ "fourth")
@@ -123,17 +118,12 @@ class FabricSpec extends AnyWordSpec with Matchers {
         "name" -> "Matt Hicks",
         "age" -> 41,
         "numbers" -> List(1, 2, 3),
-        "address" -> obj(
-          "street" -> "123 Somewhere Rd.",
-          "city" -> "San Jose"
-        )
+        "address" -> obj("street" -> "123 Somewhere Rd.", "city" -> "San Jose")
       )
       val v2 = obj(
         "age" -> 42,
         "numbers" -> List(4, 5, 6),
-        "address" -> obj(
-          "state" -> "California"
-        )
+        "address" -> obj("state" -> "California")
       )
       val merged = v1.merge(v2)
       val expected = obj(
@@ -169,46 +159,21 @@ class FabricSpec extends AnyWordSpec with Matchers {
       p2.json should be(json2)
     }
     "include or exclude null fields" in {
-      val json1 = obj(
-        "one" -> Null,
-        "two" -> 2,
-        "three" -> "three"
-      )
+      val json1 = obj("one" -> Null, "two" -> 2, "three" -> "three")
       Obj.ExcludeNullValues = true
-      val json2 = obj(
-        "one" -> Null,
-        "two" -> 2,
-        "three" -> "three"
-      )
+      val json2 = obj("one" -> Null, "two" -> 2, "three" -> "three")
       Obj.ExcludeNullValues = false
-      json1 should be(
-        obj(
-          "one" -> Null,
-          "two" -> 2,
-          "three" -> "three"
-        )
-      )
-      json2 should be(
-        obj(
-          "two" -> 2,
-          "three" -> "three"
-        )
-      )
+      json1 should be(obj("one" -> Null, "two" -> 2, "three" -> "three"))
+      json2 should be(obj("two" -> 2, "three" -> "three"))
     }
     "convert snake-case to camel-case" in {
       val snake = obj(
         "first_level" -> obj(
-          "second_level" -> obj(
-            "third_level_and_last" -> "Test"
-          )
+          "second_level" -> obj("third_level_and_last" -> "Test")
         )
       )
       val camel = obj(
-        "firstLevel" -> obj(
-          "secondLevel" -> obj(
-            "thirdLevelAndLast" -> "Test"
-          )
-        )
+        "firstLevel" -> obj("secondLevel" -> obj("thirdLevelAndLast" -> "Test"))
       )
       val snake2Camel = snake.snake2Camel
       snake2Camel should be(camel)
@@ -217,60 +182,32 @@ class FabricSpec extends AnyWordSpec with Matchers {
       camel2Snake should be(snake)
     }
     "apply SnakeToCamelFilter" in {
-      val json = obj(
-        "first_level" -> obj(
-          "second_level" -> obj(
-            "third_level" -> true
-          )
-        )
-      )
+      val json =
+        obj("first_level" -> obj("second_level" -> obj("third_level" -> true)))
       json.filter(SnakeToCamelFilter) should be(
         Some(
-          obj(
-            "firstLevel" -> obj(
-              "secondLevel" -> obj(
-                "thirdLevel" -> true
-              )
-            )
-          )
+          obj("firstLevel" -> obj("secondLevel" -> obj("thirdLevel" -> true)))
         )
       )
     }
     "apply RemovePathFilter" in {
-      val json = obj(
-        "first_level" -> obj(
-          "second_level" -> obj(
-            "third_level" -> true
-          )
-        )
-      )
+      val json =
+        obj("first_level" -> obj("second_level" -> obj("third_level" -> true)))
       val filter =
         SnakeToCamelFilter && RemovePathFilter("firstLevel" \ "secondLevel")
-      json.filter(filter) should be(
-        Some(
-          obj(
-            "firstLevel" -> obj()
-          )
-        )
-      )
+      json.filter(filter) should be(Some(obj("firstLevel" -> obj())))
     }
     "merge with a custom override" in {
-      val json1 = obj(
-        "test1" -> obj(
-          "test2" -> arr(1, 2, 3),
-          "test3" -> arr(1, 2, 3)
-        )
-      )
-      val json2 = obj(
-        "test1" -> obj(
-          "test2" -> arr(4, 5, 6),
-          "test3" -> arr(4, 5, 6)
-        )
-      )
+      val json1 =
+        obj("test1" -> obj("test2" -> arr(1, 2, 3), "test3" -> arr(1, 2, 3)))
+      val json2 =
+        obj("test1" -> obj("test2" -> arr(4, 5, 6), "test3" -> arr(4, 5, 6)))
       val merged = json1.merge(
         json2,
-        config =
-          MergeConfig.withOverride(Path.parse("test1.test2"), ArrConcatMerge)
+        config = MergeConfig.withOverride(
+          JsonPath.parse("test1.test2"),
+          ArrConcatMerge
+        )
       )
       merged should be(
         obj(
@@ -294,7 +231,7 @@ sealed trait Polymorphic
 
 object Polymorphic {
   implicit val rw: RW[Polymorphic] = RW.poly[Polymorphic]() {
-    case "blank" => RW.static(Blank)
+    case "blank"     => RW.static(Blank)
     case "polyValue" => PolyValue.rw
   }
 

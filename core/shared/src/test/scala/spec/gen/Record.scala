@@ -38,19 +38,19 @@ import org.scalacheck.Arbitrary
 import spec.gen.Structure.arbitraryStructure
 
 final case class Record(
-    string: String,
-    boolean: Boolean,
-    byte: Byte,
-    short: Short,
-    int: Option[Int],
-    long: Long,
-    float: Float,
-    double: Double,
-    enumeration: Enum,
-    list: List[String],
-    map: Map[String, Int],
-    structure: Option[Structure],
-    none: Option[String]
+  string: String,
+  boolean: Boolean,
+  byte: Byte,
+  short: Short,
+  int: Option[Int],
+  long: Long,
+  float: Float,
+  double: Double,
+  enumeration: Enum,
+  list: List[String],
+  map: Map[String, Int],
+  structure: Option[Structure],
+  none: Option[String]
 )
 
 object Record {

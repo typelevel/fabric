@@ -22,9 +22,9 @@
 package fabric.define
 
 case class ClassField(
-    name: String,
-    `type`: String,
-    defaultValue: Option[String] = None
+  name: String,
+  `type`: String,
+  defaultValue: Option[String] = None
 ) {
   def output: String = {
     val d = defaultValue.map(s => s" = $s").getOrElse("")
