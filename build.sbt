@@ -86,13 +86,13 @@ lazy val io = crossProject(JSPlatform, JVMPlatform)
     name := "fabric-io",
     mimaPreviousArtifacts := Set.empty,
     libraryDependencies ++= Seq(
+      "org.typelevel" %%% "literally" % literallyVersion,
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
       "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
     )
   )
   .jvmSettings(
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "literally" % literallyVersion,
       "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonVersion,
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-xml" % jacksonVersion,
