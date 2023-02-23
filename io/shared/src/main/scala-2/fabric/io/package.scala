@@ -21,20 +21,24 @@
 
 package fabric
 
-import fabric.rw.{Asable, RW}
+import org.typelevel.literally.Literally
 
-package object io {
-  implicit class StringIOExtras(s: String) {
-    def as[T: RW](format: Format): T = {
-      val json: Json = JsonParser(s, format)
-      json.as[T]
-    }
+package object io extends IOFeatures {
+  implicit class interpolation(val sc: StringContext) extends AnyVal {
+    def json(args: Any*): Json = macro JsonLiteral.make
   }
 
-  implicit class ByteArrayIOExtras(array: Array[Byte]) {
-    def as[T: RW](format: Format): T = {
-      val json: Json = JsonParser(array, format)
-      json.as[T]
+  object JsonLiteral extends Literally[Json] {
+    def validate(c: Context)(s: String): Either[String, c.Expr[Json]] = {
+      import c.universe._
+      try {
+        JsonParser(s)
+        Right(c.Expr(q"_root_.fabric.io.JsonParser($s)"))
+      } catch {
+        case t: Throwable => Left(s"$s is not valid JSON: ${t.getMessage}")
+      }
     }
+
+    def make(c: Context)(args: c.Expr[Any]*): c.Expr[Json] = apply(c)(args: _*)
   }
 }
