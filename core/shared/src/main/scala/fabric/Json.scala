@@ -146,6 +146,12 @@ sealed trait Json extends Any {
     */
   final def filter(filter: JsonFilter): Option[Json] = JsonFilter(filter, this)
 
+  final def filterOne(filter: JsonFilter): Json = this
+    .filter(filter)
+    .getOrElse(
+      throw new RuntimeException(s"No results returns for filter: $filter")
+    )
+
   /** Convenience functionality for #modify to set a specific value at a path.
     *
     * @param path
