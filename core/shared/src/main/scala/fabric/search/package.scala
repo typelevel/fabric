@@ -29,11 +29,6 @@ package object search {
     ByOffset(index, OffsetDirection.FromTop)
   implicit def regex2Search(regex: Regex): SearchEntry = ByRegex(regex)
 
-  implicit class JsonSearchExtras(val json: Json) extends AnyVal {
-    def search(entries: SearchEntry*): List[JsonPath] =
-      SearchEntry.search(json, entries.toList, JsonPath.empty)
-  }
-
   def * : Wildcard.type = Wildcard
   def ** : DoubleWildcard.type = DoubleWildcard
   val first: SearchEntry = ByOffset(0, OffsetDirection.FromTop)
