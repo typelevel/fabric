@@ -19,11 +19,25 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package fabric.search
+package fabric.transform
 
-sealed trait OffsetDirection
+import fabric.{Json, JsonPath}
 
-object OffsetDirection {
-  case object FromTop extends OffsetDirection
-  case object FromBottom extends OffsetDirection
+class Transformer(json: Json, paths: List[JsonPath]) {
+  def modify(modifier: Json => Json): Json =
+    paths.foldLeft(json)((json, path) => json.modify(path)(modifier))
+
+  def move(to: JsonPath = JsonPath.empty): Json = {
+    paths.foldLeft(json)((json, path) => {
+      val value = json(path)
+      json.remove(path).modify(to)(_.merge(value))
+    })
+  }
+
+  def copy(to: JsonPath = JsonPath.empty): Json = {
+    paths.foldLeft(json)((json, path) => {
+      val value = json(path)
+      json.modify(to)(_.merge(value))
+    })
+  }
 }

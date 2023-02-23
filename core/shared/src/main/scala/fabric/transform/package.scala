@@ -19,11 +19,13 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package fabric.search
+package fabric
 
-sealed trait OffsetDirection
+import fabric.search._
 
-object OffsetDirection {
-  case object FromTop extends OffsetDirection
-  case object FromBottom extends OffsetDirection
+package object transform {
+  implicit class JsonTransformExtras(val json: Json) extends AnyVal {
+    def transform(entries: SearchEntry*): Transformer =
+      new Transformer(json, json.search(entries: _*))
+  }
 }
