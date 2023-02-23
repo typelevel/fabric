@@ -19,14 +19,24 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package fabric.filter
+package fabric
 
-import fabric.{Arr, Json, Obj, JsonPath}
+import scala.util.matching.Regex
 
-object RemoveEmptyFilter extends JsonFilter {
-  override def apply(value: Json, path: JsonPath): Option[Json] = value match {
-    case Obj(map) if map.isEmpty       => None
-    case Arr(vector) if vector.isEmpty => None
-    case _                             => Some(value)
+package object search {
+  implicit def string2Search(name: String): SearchEntry = ByName(name)
+  implicit def int2Search(index: Int): SearchEntry = ByOffset(index, OffsetDirection.FromTop)
+  implicit def regex2Search(regex: Regex): SearchEntry = ByRegex(regex)
+
+  implicit class JsonSearchExtras(val json: Json) extends AnyVal {
+    def search(entries: SearchEntry*): List[JsonPath] =
+      SearchEntry.search(json, entries.toList, JsonPath.empty)
   }
+
+  def * : Wildcard.type = Wildcard
+  def ** : DoubleWildcard.type = DoubleWildcard
+  val first: SearchEntry = ByOffset(0, OffsetDirection.FromTop)
+  val last: SearchEntry = ByOffset(0, OffsetDirection.FromBottom)
+  def nth(index: Int): SearchEntry = ByOffset(index, OffsetDirection.FromTop)
+  def nthFromBottom(index: Int): SearchEntry = ByOffset(index, OffsetDirection.FromBottom)
 }

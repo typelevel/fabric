@@ -41,77 +41,34 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       FabricDefinition(List(Null, num(5))) should be(DefType.Opt(DefType.Int))
     }
     "represent a simple obj" in {
-      define.FabricDefinition(
-        obj(
-          "name" -> "John Doe",
-          "age" -> 50
-        )
-      ) should be(
-        DefType.Obj(
-          "name" -> DefType.Str,
-          "age" -> DefType.Int
-        )
+      define.FabricDefinition(obj("name" -> "John Doe", "age" -> 50)) should be(
+        DefType.Obj("name" -> DefType.Str, "age" -> DefType.Int)
       )
     }
     "represent a simple obj with optional value" in {
       FabricDefinition(
-        List(
-          obj(
-            "name" -> "John Doe",
-            "age" -> 50
-          ),
-          obj(
-            "name" -> "Jane Doe"
-          )
-        )
+        List(obj("name" -> "John Doe", "age" -> 50), obj("name" -> "Jane Doe"))
       ) should be(
-        DefType.Obj(
-          "name" -> DefType.Str,
-          "age" -> DefType.Opt(DefType.Int)
-        )
+        DefType.Obj("name" -> DefType.Str, "age" -> DefType.Opt(DefType.Int))
       )
     }
     "represent a simple optional obj" in {
-      val d = FabricDefinition(
-        List(
-          Null,
-          obj(
-            "name" -> "Jane Doe",
-            "age" -> 50
-          )
-        )
-      )
+      val d =
+        FabricDefinition(List(Null, obj("name" -> "Jane Doe", "age" -> 50)))
       d should be(
-        DefType.Opt(
-          DefType.Obj(
-            "name" -> DefType.Str,
-            "age" -> DefType.Int
-          )
-        )
+        DefType.Opt(DefType.Obj("name" -> DefType.Str, "age" -> DefType.Int))
       )
     }
     "represent null lists" in {
       val d = FabricDefinition(
         List(
           obj(),
-          obj(
-            "list" -> arr(
-              obj("name" -> "Test")
-            )
-          ),
-          obj(
-            "list" -> Null
-          )
+          obj("list" -> arr(obj("name" -> "Test"))),
+          obj("list" -> Null)
         )
       )
       d should be(
-        DefType.Obj(
-          "list" -> DefType.Arr(
-            DefType.Obj(
-              "name" -> DefType.Str
-            )
-          )
-        )
+        DefType.Obj("list" -> DefType.Arr(DefType.Obj("name" -> DefType.Str)))
       )
     }
     "represent multiple numeric types" in {
@@ -120,40 +77,22 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
     }
     "fail with conflicting types" in {
       assertThrows[RuntimeException](
-        FabricDefinition(
-          List(
-            obj("name" -> "Bad"),
-            num(5)
-          )
-        )
+        FabricDefinition(List(obj("name" -> "Bad"), num(5)))
       )
     }
     "validate a definition" in {
-      val definition = DefType.Obj(
-        "name" -> DefType.Str,
-        "age" -> DefType.Opt(DefType.Int)
-      )
-      val value = obj(
-        "name" -> "Jane Doe",
-        "age" -> 50
-      )
+      val definition =
+        DefType.Obj("name" -> DefType.Str, "age" -> DefType.Opt(DefType.Int))
+      val value = obj("name" -> "Jane Doe", "age" -> 50)
       definition.validate(value) should be(true)
     }
     "fail to validate a definition" in {
-      val definition = DefType.Obj(
-        "name" -> DefType.Str,
-        "age" -> DefType.Int
-      )
-      val value = obj(
-        "name" -> "Jane Doe"
-      )
+      val definition = DefType.Obj("name" -> DefType.Str, "age" -> DefType.Int)
+      val value = obj("name" -> "Jane Doe")
       definition.validate(value) should be(false)
     }
     "generate a case class based on a definition" in {
-      val definition = DefType.Obj(
-        "name" -> DefType.Str,
-        "age" -> DefType.Int
-      )
+      val definition = DefType.Obj("name" -> DefType.Str, "age" -> DefType.Int)
       val generated =
         FabricGenerator.withMappings(definition, "com.example.Person")
       generated.packageName should be(Some("com.example"))
@@ -174,10 +113,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       val definition = DefType.Obj(
         "name" -> DefType.Str,
         "age" -> DefType.Int,
-        "location" -> DefType.Obj(
-          "city" -> DefType.Str,
-          "state" -> DefType.Str
-        )
+        "location" -> DefType.Obj("city" -> DefType.Str, "state" -> DefType.Str)
       )
       val generated = FabricGenerator.withMappings(
         definition,
@@ -217,10 +153,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
         "name" -> DefType.Str,
         "age" -> DefType.Int,
         "locations" -> DefType.Arr(
-          DefType.Obj(
-            "city" -> DefType.Str,
-            "state" -> DefType.Str
-          )
+          DefType.Obj("city" -> DefType.Str, "state" -> DefType.Str)
         )
       )
       val generated = FabricGenerator(
@@ -236,11 +169,20 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
         },
         extras = (className: String) =>
           ClassExtras(
-            fields = List(
-              ClassField("id", "Int", Some("-1"))
-            ) ::: (if (className == "com.example.Location")
-                     List(ClassField("state", "String", Some("\"Unknown\"")))
-                   else Nil),
+            fields =
+              List(ClassField("id", "Int", Some("-1"))) ::: (if (
+                                                               className == "com.example.Location"
+                                                             )
+                                                               List(
+                                                                 ClassField(
+                                                                   "state",
+                                                                   "String",
+                                                                   Some(
+                                                                     "\"Unknown\""
+                                                                   )
+                                                                 )
+                                                               )
+                                                             else Nil),
             bodyContent = Some("  // Extra content")
           )
       )

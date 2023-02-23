@@ -36,10 +36,7 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
         obj(
           "name" -> "Matt Hicks",
           "age" -> 41,
-          "address" -> obj(
-            "city" -> "San Jose",
-            "state" -> "California"
-          )
+          "address" -> obj("city" -> "San Jose", "state" -> "California")
         )
       )
       val back = value.as[Person]
@@ -67,14 +64,8 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       value should be(
         obj(
           "name" -> "Test1",
-          "value" -> obj(
-            "city" -> "San Jose",
-            "state" -> "California"
-          ),
-          "other" -> obj(
-            "city" -> "Norman",
-            "state" -> "Oklahoma"
-          )
+          "value" -> obj("city" -> "San Jose", "state" -> "California"),
+          "other" -> obj("city" -> "Norman", "state" -> "Oklahoma")
         )
       )
       val w2 = value.as[Wrapper[Address]]
@@ -90,12 +81,8 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       value should be(
         obj(
           "name" -> "Test2",
-          "value" -> obj(
-            "city" -> "San Jose"
-          ),
-          "other" -> obj(
-            "city" -> "Norman"
-          )
+          "value" -> obj("city" -> "San Jose"),
+          "other" -> obj("city" -> "Norman")
         )
       )
     }
@@ -104,10 +91,8 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
         DefType.Obj(
           "name" -> DefType.Str,
           "age" -> DefType.Int,
-          "address" -> DefType.Obj(
-            "city" -> DefType.Str,
-            "state" -> DefType.Str
-          )
+          "address" -> DefType
+            .Obj("city" -> DefType.Str, "state" -> DefType.Str)
         )
       )
     }
@@ -115,19 +100,11 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       val user = User("John Doe", _id = "user/1234")
       val json = user.json
       json should be(
-        obj(
-          "name" -> "John Doe",
-          "_id" -> "user/1234",
-          "num" -> 1234
-        )
+        obj("name" -> "John Doe", "_id" -> "user/1234", "num" -> 1234)
       )
     }
     "validate loading of JsonWrapper from Json" in {
-      val json = obj(
-        "color" -> "Red",
-        "size" -> 5.4,
-        "quantity" -> 10
-      )
+      val json = obj("color" -> "Red", "size" -> 5.4, "quantity" -> 10)
       val sample = json.as[WrapperSample]
       sample.color should be("Red")
       sample.size should be(5.4)
@@ -140,13 +117,7 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
         json = obj("quantity" -> 15, "color" -> "Blue")
       )
       val json: Json = sample.asJson
-      json should be(
-        obj(
-          "color" -> "Green",
-          "size" -> 9.2,
-          "quantity" -> 15
-        )
-      )
+      json should be(obj("color" -> "Green", "size" -> 9.2, "quantity" -> 15))
     }
     // TODO: Enable once Scala 3 support for sealed traits is working
 //    "supporting sealed traits" in {

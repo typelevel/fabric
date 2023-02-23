@@ -24,7 +24,7 @@ package fabric.merge
 import fabric._
 
 trait MergeConfig {
-  def merge(json1: Json, json2: Json, path: Path): Json
+  def merge(json1: Json, json2: Json, path: JsonPath): Json
 }
 
 object MergeConfig extends MergeConfigBuilder()

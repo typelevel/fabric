@@ -24,7 +24,7 @@ package fabric.filter
 import fabric._
 
 object RemoveNullsFilter extends JsonFilter {
-  override def apply(value: Json, path: Path): Option[Json] = if (
+  override def apply(value: Json, path: JsonPath): Option[Json] = if (
     value.isNull
   ) {
     None

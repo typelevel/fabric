@@ -21,10 +21,10 @@
 
 package fabric.filter
 
-import fabric.{Arr, Json, Obj, Path}
+import fabric.{Arr, Json, Obj, JsonPath}
 
 trait JsonFilter {
-  def apply(value: Json, path: Path): Option[Json]
+  def apply(value: Json, path: JsonPath): Option[Json]
 
   protected def filters: List[JsonFilter] = List(this)
 
@@ -38,13 +38,13 @@ trait JsonFilter {
 object JsonFilter {
   def apply(filter: JsonFilter, json: Json): Option[Json] = filter.filters
     .foldLeft[Option[Json]](Some(json))((result, filter) => {
-      result.flatMap(json => internal(filter, json, Path.empty))
+      result.flatMap(json => internal(filter, json, JsonPath.empty))
     })
 
   private def internal(
-      filter: JsonFilter,
-      json: Json,
-      path: Path
+    filter: JsonFilter,
+    json: Json,
+    path: JsonPath
   ): Option[Json] = json match {
     case Obj(map) =>
       val mutated = map

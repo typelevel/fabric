@@ -26,24 +26,23 @@ import fabric._
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-/**
- * Dead simple Json parser meant to be faster than larger alternatives. Still
- * needs some work to be faster.
- */
+/** Dead simple Json parser meant to be faster than larger alternatives. Still
+  * needs some work to be faster.
+  */
 object SimpleJsonParser extends FormatParser {
   override def format: Format = Format.Json
 
   override def apply(content: String): Json = {
     def o(t: (Json, Int)): (Option[Json], Int) = (Some(t._1), t._2)
     def parse(start: Int): (Option[Json], Int) = content.charAt(start) match {
-      case '{' => o(parseObj(start + 1))
-      case '"' => o(parseString(start + 1))
-      case '[' => o(parseArr(start + 1))
-      case 't' => o((bool(true), start + 4))
-      case 'f' => o((bool(false), start + 5))
-      case 'n' => o((Null, start + 4))
-      case ']' | '}' => (None, start + 1)
-      case c if c.isDigit => o(parseNumber(start))
+      case '{'                            => o(parseObj(start + 1))
+      case '"'                            => o(parseString(start + 1))
+      case '['                            => o(parseArr(start + 1))
+      case 't'                            => o((bool(true), start + 4))
+      case 'f'                            => o((bool(false), start + 5))
+      case 'n'                            => o((Null, start + 4))
+      case ']' | '}'                      => (None, start + 1)
+      case c if c.isDigit                 => o(parseNumber(start))
       case c if c.isWhitespace | c == ',' => parse(start + 1)
       case c =>
         throw new RuntimeException(
@@ -52,10 +51,10 @@ object SimpleJsonParser extends FormatParser {
     }
 
     def parseString(
-        start: Int,
-        escape: Boolean = false,
-        offset: Int = 0,
-        b: mutable.StringBuilder = new mutable.StringBuilder
+      start: Int,
+      escape: Boolean = false,
+      offset: Int = 0,
+      b: mutable.StringBuilder = new mutable.StringBuilder
     ): (Json, Int) = {
       val char = content.charAt(start + offset)
       if (!escape && char == '"') {
@@ -131,7 +130,7 @@ object SimpleJsonParser extends FormatParser {
     def parseNumber(offset: Int): (Json, Int) =
       content.substring(offset).takeWhile(c => c.isDigit || c == '.') match {
         case s if s.contains('.') => (num(BigDecimal(s)), offset + s.length)
-        case s => (num(s.toLong), offset + s.length)
+        case s                    => (num(s.toLong), offset + s.length)
       }
 
     parse(0)._1

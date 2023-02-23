@@ -21,64 +21,52 @@
 
 package fabric
 
-sealed trait PathEntry extends Any
+/** Path is a convenience wrapper to represent paths for lookups or changes in
+  * Json
+  */
+case class JsonPath(entries: List[JsonPathEntry]) extends AnyVal {
 
-object PathEntry {
-  case class Named(val name: String) extends AnyVal with PathEntry
-  case class Indexed(val index: Int) extends AnyVal with PathEntry
-}
+  /** Convenience DSL to build paths
+    */
+  def \(entry: JsonPathEntry): JsonPath = new JsonPath(entries ::: List(entry))
 
-/**
- * Path is a convenience wrapper to represent paths for lookups or changes in
- * Json
- */
-case class Path(entries: List[PathEntry]) extends AnyVal {
-
-  /**
-   * Convenience DSL to build paths
-   */
-  def \(entry: PathEntry): Path = new Path(entries ::: List(entry))
-
-  def \\(that: Path): Path = new Path(entries ::: that.entries)
+  def \\(that: JsonPath): JsonPath = new JsonPath(entries ::: that.entries)
 
   def isEmpty: Boolean = entries.isEmpty
 
   def nonEmpty: Boolean = entries.nonEmpty
 
-  /**
-   * Retrieves the head path element
-   */
-  def apply(): PathEntry = entries.head
+  /** Retrieves the head path element
+    */
+  def apply(): JsonPathEntry = entries.head
 
-  /**
-   * Returns a new Path with the tail of this path
-   */
-  def next(): Path = new Path(entries.tail)
+  /** Returns a new Path with the tail of this path
+    */
+  def next(): JsonPath = new JsonPath(entries.tail)
 
   override def toString: String = if (entries.isEmpty) {
     "<empty>"
   } else {
-    entries.mkString("Path(", " \\ ", ")")
+    entries.mkString("JsonPath(", " \\ ", ")")
   }
 }
 
-object Path {
-  lazy val empty: Path = new Path(Nil)
+object JsonPath {
+  lazy val empty: JsonPath = new JsonPath(Nil)
 
-  def apply(entries: PathEntry*): Path = new Path(entries.toList)
+  def apply(entries: JsonPathEntry*): JsonPath = new JsonPath(entries.toList)
 
-  /**
-   * Simple splitting functionality to separate a string into a path by
-   * separation character.
-   *
-   * The separation character defaults to '.'
-   */
-  def parse(path: String, sep: Char = '.'): Path = new Path(
+  /** Simple splitting functionality to separate a string into a path by
+    * separation character.
+    *
+    * The separation character defaults to '.'
+    */
+  def parse(path: String, sep: Char = '.'): JsonPath = new JsonPath(
     path
       .split(sep)
       .map(_.trim)
       .filter(_ != "")
-      .map(PathEntry.Named.apply)
+      .map(JsonPathEntry.Named.apply)
       .toList
   )
 }

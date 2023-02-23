@@ -31,20 +31,14 @@ import scala.collection.immutable.VectorMap
 
 class RWSpecManual extends AnyWordSpec with Matchers {
   implicit val addressRW: RW[Address] = new ClassRW[Address] {
-    override protected def t2Map(t: Address): Map[String, Json] = VectorMap(
-      "city" -> t.city.json,
-      "state" -> t.state.json
-    )
+    override protected def t2Map(t: Address): Map[String, Json] =
+      VectorMap("city" -> t.city.json, "state" -> t.state.json)
 
-    override protected def map2T(map: Map[String, Json]): Address = Address(
-      city = map("city").as[String],
-      state = map("state").as[String]
-    )
+    override protected def map2T(map: Map[String, Json]): Address =
+      Address(city = map("city").as[String], state = map("state").as[String])
 
-    override def definition: DefType = DefType.Obj(
-      "city" -> DefType.Str,
-      "state" -> DefType.Str
-    )
+    override def definition: DefType =
+      DefType.Obj("city" -> DefType.Str, "state" -> DefType.Str)
   }
   implicit val personRW: RW[Person] = new ClassRW[Person] {
     override protected def t2Map(t: Person): Map[String, Json] = VectorMap(
@@ -74,10 +68,7 @@ class RWSpecManual extends AnyWordSpec with Matchers {
         obj(
           "name" -> "Matt Hicks",
           "age" -> 41,
-          "address" -> obj(
-            "city" -> "San Jose",
-            "state" -> "California"
-          )
+          "address" -> obj("city" -> "San Jose", "state" -> "California")
         )
       )
       val back = value.as[Person]

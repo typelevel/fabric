@@ -40,9 +40,7 @@ class CryoSpec extends AnyWordSpec with Matchers {
       freezeAndThaw(json)
     }
     "freeze and thaw a simple obj" in {
-      val json = obj(
-        "value" -> 5
-      )
+      val json = obj("value" -> 5)
       freezeAndThaw(json)
     }
     "freeze and thaw a complex obj" in {

@@ -21,14 +21,14 @@
 
 package fabric.merge
 
-import fabric.{Obj, Path}
+import fabric.{Obj, JsonPath}
 
 object ObjMerge extends JsonMerge[Obj] {
   override def merge(
-      path: Path,
-      json1: Obj,
-      json2: Obj,
-      config: MergeConfig
+    path: JsonPath,
+    json1: Obj,
+    json2: Obj,
+    config: MergeConfig
   ): Obj = {
     var merged = json2.value
     json1.value.foreach { case (k, v) =>

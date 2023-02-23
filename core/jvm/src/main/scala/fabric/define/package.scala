@@ -31,9 +31,9 @@ package object define {
 
   implicit class GeneratedClassExtras(gc: GeneratedClass) {
     def write(
-        baseDirectory: File,
-        writeAdditional: Boolean = true,
-        validate: Boolean = false
+      baseDirectory: File,
+      writeAdditional: Boolean = true,
+      validate: Boolean = false
     ): Unit = {
       val alreadyWritten = written.get()
       val fullName =
@@ -43,7 +43,7 @@ package object define {
       } else {
         val directory = gc.packageName match {
           case Some(p) => new File(baseDirectory, p.replace('.', '/'))
-          case None => baseDirectory
+          case None    => baseDirectory
         }
         directory.mkdirs()
         val file = new File(directory, s"${gc.className}.scala")

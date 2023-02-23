@@ -21,16 +21,14 @@
 
 package fabric.filter
 
-import fabric.{Json, Path}
+import fabric.{Json, JsonPath}
 
 case class JsonFilters(override val filters: List[JsonFilter])
     extends JsonFilter {
-  override def apply(json: Json, path: Path): Option[Json] =
+  override def apply(json: Json, path: JsonPath): Option[Json] =
     throw new RuntimeException("Should not be executed directly")
 }
 
 object JsonFilters {
-  def apply(filters: JsonFilter*): JsonFilters = JsonFilters(
-    filters.toList
-  )
+  def apply(filters: JsonFilter*): JsonFilters = JsonFilters(filters.toList)
 }
