@@ -35,7 +35,7 @@ package object io extends IOFeatures {
         JsonParser(s)
         Right(c.Expr(q"_root_.fabric.io.JsonParser($s)"))
       } catch {
-        case t: Throwable => Left(s"$s is not valid JSON: ${t.getMessage}")
+        case t: Throwable => throw new RuntimeException(s"$s is not valid JSON", t)
       }
     }
 
