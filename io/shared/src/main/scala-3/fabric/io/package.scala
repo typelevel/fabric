@@ -32,7 +32,7 @@ package object io extends IOFeatures {
   object JsonLiteral extends Literally[Json] {
     def validate(s: String)(using Quotes): Either[String, Expr[Json]] =
       try {
-        JsonParser(s)
+        JacksonParser(s)
         val string = Expr(s)
         Right('{JsonParser($string)})
       } catch {

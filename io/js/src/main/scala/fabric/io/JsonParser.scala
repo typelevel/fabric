@@ -26,8 +26,5 @@ import fabric.Json
 object JsonParser extends MultiFormatParser {
   override def parsers: List[FormatParser] = List(JSJsonParser)
 
-  def apply(content: String): Json = {
-    println(s"Parsing $content!")
-    apply(content, Format.Json)
-  }
+  def apply(content: String): Json = apply(content, Format.Json)
 }

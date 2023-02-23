@@ -32,10 +32,11 @@ package object io extends IOFeatures {
     def validate(c: Context)(s: String): Either[String, c.Expr[Json]] = {
       import c.universe._
       try {
-        JsonParser(s)
+        JacksonParser(s)
         Right(c.Expr(q"_root_.fabric.io.JsonParser($s)"))
       } catch {
-        case t: Throwable => throw new RuntimeException(s"$s is not valid JSON", t)
+        case t: Throwable =>
+          throw new RuntimeException(s"$s is not valid JSON", t)
       }
     }
 

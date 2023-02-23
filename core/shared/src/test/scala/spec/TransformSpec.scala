@@ -23,7 +23,6 @@ package spec
 
 import fabric._
 import fabric.filter.RemoveEmptyFilter
-import fabric.transform._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

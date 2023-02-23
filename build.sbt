@@ -87,6 +87,7 @@ lazy val io = crossProject(JSPlatform, JVMPlatform)
     mimaPreviousArtifacts := Set.empty,
     libraryDependencies ++= Seq(
       "org.typelevel" %%% "literally" % literallyVersion,
+      "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion % Provided,
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
       "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
     )
