@@ -47,9 +47,7 @@ class ComplexDefinitionSpec extends AnyWordSpec with Matchers {
           val name = "_(.)".r
             .replaceAllIn(
               key,
-              m => {
-                m.group(1).toUpperCase
-              }
+              m => m.group(1).toUpperCase
             )
             .capitalize
           s"bench.event.Event$name"
