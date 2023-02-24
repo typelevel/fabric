@@ -97,6 +97,7 @@ object DefType {
         }
       case "boolean" => Bool
       case "enum" => Enum(o.value("values").asVector.toList)
+      case "dynamic" => Dynamic
       case "null" => Null
     }
   }
