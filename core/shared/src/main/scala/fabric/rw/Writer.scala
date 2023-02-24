@@ -23,7 +23,8 @@ package fabric.rw
 
 import fabric._
 
-/** Writable provides a simple Json => T wrapper functionality
+/**
+  * Writable provides a simple Json => T wrapper functionality
   */
 trait Writer[T] {
   def write(value: Json): T
@@ -50,11 +51,10 @@ object Writer {
   implicit def bigDecimalW: Writer[BigDecimal] = bigDecimalRW
 
   implicit def stringW: Writer[String] = stringRW
-  implicit def mapW[V: Writer]: Writer[Map[String, V]] = apply[Map[String, V]] {
-    v =>
-      v.asObj.value.map { case (key, value) =>
-        key -> value.as[V]
-      }
+  implicit def mapW[V: Writer]: Writer[Map[String, V]] = apply[Map[String, V]] { v =>
+    v.asObj.value.map { case (key, value) =>
+      key -> value.as[V]
+    }
   }
   implicit def listW[V: Writer]: Writer[List[V]] =
     apply[List[V]](v => v.asVector.map(_.as[V]).toList)
@@ -62,12 +62,12 @@ object Writer {
     apply[Vector[V]](v => v.asVector.map(_.as[V]))
   implicit def setW[T](implicit w: Writer[T]): Writer[Set[T]] = apply[Set[T]] {
     case Arr(vector) => vector.toSet.map(w.write)
-    case v           => throw new RuntimeException(s"Unsupported set: $v")
+    case v => throw new RuntimeException(s"Unsupported set: $v")
   }
   implicit def optionW[T](implicit w: Writer[T]): Writer[Option[T]] =
     apply[Option[T]] {
       case Null => None
-      case v    => Option(w.write(v))
+      case v => Option(w.write(v))
     }
 
   def apply[T](f: Json => T): Writer[T] = new Writer[T] {

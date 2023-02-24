@@ -22,18 +22,7 @@
 package spec.gen
 
 import fabric.rw._
-import org.scalacheck.Arbitrary.{
-  arbBool,
-  arbByte,
-  arbDouble,
-  arbFloat,
-  arbInt,
-  arbLong,
-  arbOption,
-  arbShort,
-  arbString,
-  arbitrary
-}
+import org.scalacheck.Arbitrary.{arbBool, arbByte, arbDouble, arbFloat, arbInt, arbitrary, arbLong, arbOption, arbShort, arbString}
 import org.scalacheck.Arbitrary
 import spec.gen.Structure.arbitraryStructure
 

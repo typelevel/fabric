@@ -91,8 +91,7 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
         DefType.Obj(
           "name" -> DefType.Str,
           "age" -> DefType.Int,
-          "address" -> DefType
-            .Obj("city" -> DefType.Str, "state" -> DefType.Str)
+          "address" -> DefType.Obj("city" -> DefType.Str, "state" -> DefType.Str)
         )
       )
     }
@@ -136,8 +135,7 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       RW.gen[User] + Reader[User](u => obj("num" -> u.num))
   }
 
-  case class WrapperSample(color: String, size: Double, json: Json)
-      extends JsonWrapper
+  case class WrapperSample(color: String, size: Double, json: Json) extends JsonWrapper
 
   object WrapperSample {
     implicit val rw: RW[WrapperSample] = RW.gen

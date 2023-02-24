@@ -43,7 +43,7 @@ package object define {
       } else {
         val directory = gc.packageName match {
           case Some(p) => new File(baseDirectory, p.replace('.', '/'))
-          case None    => baseDirectory
+          case None => baseDirectory
         }
         directory.mkdirs()
         val file = new File(directory, s"${gc.className}.scala")
@@ -63,14 +63,14 @@ package object define {
         try {
           io.write(gc.code.getBytes("UTF-8"))
           io.flush()
-        } finally {
+        } finally
           io.close()
-        }
         written.set(alreadyWritten + fullName)
-        if (writeAdditional)
+        if (writeAdditional) {
           gc.additional.foreach(
             _.write(baseDirectory, writeAdditional, validate)
           )
+        }
       }
     }
   }

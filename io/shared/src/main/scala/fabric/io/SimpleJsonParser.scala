@@ -26,7 +26,8 @@ import fabric._
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-/** Dead simple Json parser meant to be faster than larger alternatives. Still
+/**
+  * Dead simple Json parser meant to be faster than larger alternatives. Still
   * needs some work to be faster.
   */
 object SimpleJsonParser extends FormatParser {
@@ -35,14 +36,14 @@ object SimpleJsonParser extends FormatParser {
   override def apply(content: String): Json = {
     def o(t: (Json, Int)): (Option[Json], Int) = (Some(t._1), t._2)
     def parse(start: Int): (Option[Json], Int) = content.charAt(start) match {
-      case '{'                            => o(parseObj(start + 1))
-      case '"'                            => o(parseString(start + 1))
-      case '['                            => o(parseArr(start + 1))
-      case 't'                            => o((bool(true), start + 4))
-      case 'f'                            => o((bool(false), start + 5))
-      case 'n'                            => o((Null, start + 4))
-      case ']' | '}'                      => (None, start + 1)
-      case c if c.isDigit                 => o(parseNumber(start))
+      case '{' => o(parseObj(start + 1))
+      case '"' => o(parseString(start + 1))
+      case '[' => o(parseArr(start + 1))
+      case 't' => o((bool(true), start + 4))
+      case 'f' => o((bool(false), start + 5))
+      case 'n' => o((Null, start + 4))
+      case ']' | '}' => (None, start + 1)
+      case c if c.isDigit => o(parseNumber(start))
       case c if c.isWhitespace | c == ',' => parse(start + 1)
       case c =>
         throw new RuntimeException(
@@ -94,14 +95,13 @@ object SimpleJsonParser extends FormatParser {
       var list = List.empty[Json]
       var adjust = offset
       @tailrec
-      def recurse(start: Int): Unit = {
+      def recurse(start: Int): Unit =
         parse(start) match {
           case (None, off) => adjust = off // Finished
           case (Some(json), off) =>
             list = json :: list
             recurse(off)
         }
-      }
       recurse(offset)
       (Arr(list.reverse.toVector), adjust)
     }
@@ -109,7 +109,7 @@ object SimpleJsonParser extends FormatParser {
       var list = List.empty[(String, Json)]
       var adjust = offset
       @tailrec
-      def recurse(start: Int): Unit = {
+      def recurse(start: Int): Unit =
         parseKey(start) match {
           case (None, off1) => adjust = off1 // Finished
           case (Some(key), off1) =>
@@ -123,17 +123,15 @@ object SimpleJsonParser extends FormatParser {
                 )
             }
         }
-      }
       recurse(offset)
       (Obj(list.reverse: _*), adjust)
     }
     def parseNumber(offset: Int): (Json, Int) =
       content.substring(offset).takeWhile(c => c.isDigit || c == '.') match {
         case s if s.contains('.') => (num(BigDecimal(s)), offset + s.length)
-        case s                    => (num(s.toLong), offset + s.length)
+        case s => (num(s.toLong), offset + s.length)
       }
 
-    parse(0)._1
-      .getOrElse(throw new RuntimeException(s"Not valid JSON: $content"))
+    parse(0)._1.getOrElse(throw new RuntimeException(s"Not valid JSON: $content"))
   }
 }

@@ -74,8 +74,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     Compile / unmanagedSourceDirectories ++= {
       val major = if (scalaVersion.value.startsWith("3")) "-3" else "-2"
       List(CrossType.Pure, CrossType.Full).flatMap(
-        _.sharedSrcDir(baseDirectory.value, "main").toList
-          .map(f => file(f.getPath + major))
+        _.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + major))
       )
     }
   )
@@ -125,5 +124,4 @@ lazy val docs = project
     mdocOut := file(".")
   )
 
-lazy val util = project
-  .in(file("util"))
+lazy val util = project.in(file("util"))

@@ -54,8 +54,8 @@ class JsonFormattingSpec extends AnyWordSpec with Matchers {
     }
     "parse a String with as support" in {
       val s = """{
-        | "value": "Hello, World!"
-        |}""".stripMargin.as[Simple](Format.Json)
+                | "value": "Hello, World!"
+                |}""".stripMargin.as[Simple](Format.Json)
       s should be(Simple("Hello, World!"))
     }
     "parse a Array[Byte] with as support" in {

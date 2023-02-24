@@ -36,8 +36,8 @@ case class JsonFormatter(config: JsonFormatterConfig) extends Formatter {
         }
         .mkString(",")
       s"[$content${config.newLine()}${config.indent(depth)}]"
-    case Bool(b)   => b.toString
-    case Null      => "null"
+    case Bool(b) => b.toString
+    case Null => "null"
     case NumInt(n) => n.toString
     case NumDec(n) => n.toString()
     case Obj(map) =>

@@ -21,7 +21,8 @@
 
 package fabric
 
-/** JsonWrapper mix-in provides insight to Reader and Writer generation to
+/**
+  * JsonWrapper mix-in provides insight to Reader and Writer generation to
   * synchronize to and from the `json` value. When writing to a type, the `json`
   * value is provided a reference to the original Json used to build it. When
   * reading into Json, the additional values in the `json` are retained,

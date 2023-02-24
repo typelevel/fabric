@@ -77,7 +77,7 @@ object DefType {
     case Enum(values) =>
       obj("type" -> "enum", "values" -> values)
     case Dynamic => obj("type" -> "dynamic")
-    case Null    => obj("type" -> "null")
+    case Null => obj("type" -> "null")
   }
 
   private def v2dt(v: Json): DefType = {
@@ -87,25 +87,25 @@ object DefType {
         Obj(o.value("values").asMap.map { case (key, value) =>
           key -> v2dt(value)
         })
-      case "array"    => Arr(v2dt(o.value("value")))
+      case "array" => Arr(v2dt(o.value("value")))
       case "optional" => Opt(v2dt(o.value("value")))
-      case "string"   => Str
+      case "string" => Str
       case "numeric" =>
         o.value("precision").asString match {
           case "integer" => Int
           case "decimal" => Dec
         }
       case "boolean" => Bool
-      case "enum"    => Enum(o.value("values").asVector.toList)
-      case "null"    => Null
+      case "enum" => Enum(o.value("values").asVector.toList)
+      case "null" => Null
     }
   }
 
   case class Obj(map: Map[String, DefType]) extends DefType {
     override def merge(that: DefType): DefType = that match {
-      case Obj(thatMap)      => Obj(mergeMap(map, thatMap))
+      case Obj(thatMap) => Obj(mergeMap(map, thatMap))
       case Opt(Obj(thatMap)) => Opt(Obj(mergeMap(map, thatMap)))
-      case _                 => super.merge(that)
+      case _ => super.merge(that)
     }
 
     private def mergeMap(
@@ -124,8 +124,8 @@ object DefType {
   case class Arr(t: DefType) extends DefType {
     override def merge(that: DefType): DefType = that match {
       case Arr(thatType) => Arr(t.merge(thatType))
-      case Null          => this
-      case _             => super.merge(that)
+      case Null => this
+      case _ => super.merge(that)
     }
   }
   case class Opt(t: DefType) extends DefType {
@@ -150,13 +150,13 @@ object DefType {
   case object Int extends DefType {
     override def merge(that: DefType): DefType = that match {
       case DefType.Dec => that
-      case _           => super.merge(that)
+      case _ => super.merge(that)
     }
   }
   case object Dec extends DefType {
     override def merge(that: DefType): DefType = that match {
       case DefType.Int => this
-      case _           => super.merge(that)
+      case _ => super.merge(that)
     }
   }
   case object Bool extends DefType
@@ -167,8 +167,8 @@ object DefType {
 
     override def merge(that: DefType): DefType = that match {
       case o: Opt => o
-      case Null   => Null
-      case _      => that.merge(Null)
+      case Null => Null
+      case _ => that.merge(Null)
     }
   }
 }

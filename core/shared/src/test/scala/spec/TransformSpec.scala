@@ -36,9 +36,7 @@ class TransformSpec extends AnyWordSpec with Matchers {
           )
         )
       )
-      val transformed = json
-        .transform("level1", "level2", "product")
-        .copy("product")
+      val transformed = json.transform("level1", "level2", "product").copy("product")
       transformed should be(
         obj(
           "level1" -> obj(
@@ -58,10 +56,7 @@ class TransformSpec extends AnyWordSpec with Matchers {
           )
         )
       )
-      val transformed = json
-        .transform("level1", "level2", "product")
-        .move()
-        .filterOne(RemoveEmptyFilter)
+      val transformed = json.transform("level1", "level2", "product").move().filterOne(RemoveEmptyFilter)
       transformed should be(obj("name" -> "Product Name", "sku" -> 12345))
     }
   }

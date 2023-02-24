@@ -23,7 +23,8 @@ package fabric.filter
 
 import fabric._
 
-/** Converts snake_case to camelCase in obj keys
+/**
+  * Converts snake_case to camelCase in obj keys
   */
 object SnakeToCamelFilter extends JsonFilter {
   override def apply(value: Json, path: JsonPath): Option[Json] = value match {
@@ -37,7 +38,7 @@ object SnakeToCamelFilter extends JsonFilter {
   private def toCamel(key: String): String = key.toList
     .foldLeft(List.empty[Char]) {
       case ('_' :: xs, c) => c.toUpper :: xs
-      case (xs, c)        => c :: xs
+      case (xs, c) => c :: xs
     }
     .reverse
     .mkString

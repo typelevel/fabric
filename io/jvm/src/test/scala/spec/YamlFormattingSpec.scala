@@ -76,10 +76,9 @@ class YamlFormattingSpec extends AnyWordSpec with Matchers {
   private def resource(name: String): String = {
     val source =
       Source.fromInputStream(getClass.getClassLoader.getResourceAsStream(name))
-    try {
+    try
       source.mkString
-    } finally {
+    finally
       source.close()
-    }
   }
 }

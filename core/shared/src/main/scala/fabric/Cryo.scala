@@ -47,14 +47,12 @@ object Cryo {
           case (key, value) => sum + bytes(Str(key)) + bytes(value)
         }
       )
-    case Str(s)     => bytes.Byte + bytes.Integer + s.length
-    case NumInt(_)  => bytes.Byte + bytes.Long
+    case Str(s) => bytes.Byte + bytes.Integer + s.length
+    case NumInt(_) => bytes.Byte + bytes.Long
     case NumDec(bd) => bytes.Byte + bytes(Str(bd.toString()))
-    case Bool(_)    => bytes.Byte + bytes.Byte
+    case Bool(_) => bytes.Byte + bytes.Byte
     case Arr(v) =>
-      bytes.Byte + bytes.Integer + v.foldLeft(0)((sum, json) =>
-        sum + bytes(json)
-      )
+      bytes.Byte + bytes.Integer + v.foldLeft(0)((sum, json) => sum + bytes(json))
     case Null => bytes.Byte
   }
 

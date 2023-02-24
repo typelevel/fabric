@@ -21,11 +21,7 @@
 
 package fabric.io
 
-import com.fasterxml.jackson.core.{
-  JsonFactory,
-  JsonToken,
-  JsonParser => JParser
-}
+import com.fasterxml.jackson.core.{JsonFactory, JsonParser => JParser, JsonToken}
 import fabric.{Arr, Bool, Json, Null, NumDec, NumInt, Obj, Str}
 
 import scala.annotation.tailrec
@@ -42,11 +38,10 @@ object JacksonParser extends FormatParser {
 
   override def apply(content: String): Json = {
     val parser = factory.createParser(content)
-    try {
+    try
       parse(parser)
-    } finally {
+    finally
       parser.close()
-    }
   }
 
   protected def parse(parser: JParser): Json =
@@ -55,14 +50,14 @@ object JacksonParser extends FormatParser {
   private def parseToken(parser: JParser, token: JsonToken): Json =
     token match {
       case JsonToken.START_OBJECT => parseObj(parser, VectorMap.empty)
-      case JsonToken.START_ARRAY  => parseArr(parser, Vector.empty)
+      case JsonToken.START_ARRAY => parseArr(parser, Vector.empty)
       case JsonToken.VALUE_STRING => Str(parser.getValueAsString)
       case JsonToken.VALUE_NUMBER_FLOAT =>
         NumDec(BigDecimal(parser.getValueAsDouble))
       case JsonToken.VALUE_NUMBER_INT => NumInt(parser.getValueAsLong)
-      case JsonToken.VALUE_NULL       => Null
-      case JsonToken.VALUE_TRUE       => Bool(true)
-      case JsonToken.VALUE_FALSE      => Bool(false)
+      case JsonToken.VALUE_NULL => Null
+      case JsonToken.VALUE_TRUE => Bool(true)
+      case JsonToken.VALUE_FALSE => Bool(false)
       case t => throw new RuntimeException(s"Unsupported token: $t")
     }
 
