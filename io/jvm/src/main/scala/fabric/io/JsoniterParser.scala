@@ -42,11 +42,11 @@ object JsoniterParser extends FormatParser {
     case com.jsoniter.ValueType.NUMBER =>
       iterator.readBigDecimal() match {
         case bd if bd.scale() == 0 => NumInt(bd.longValue())
-        case bd                    => NumDec(BigDecimal(bd))
+        case bd => NumDec(BigDecimal(bd))
       }
     case com.jsoniter.ValueType.BOOLEAN => Bool(iterator.readBoolean())
-    case com.jsoniter.ValueType.OBJECT  => readObj(iterator)
-    case com.jsoniter.ValueType.STRING  => Str(iterator.readString())
+    case com.jsoniter.ValueType.OBJECT => readObj(iterator)
+    case com.jsoniter.ValueType.STRING => Str(iterator.readString())
     case com.jsoniter.ValueType.INVALID =>
       throw new RuntimeException("Invalid!")
   }

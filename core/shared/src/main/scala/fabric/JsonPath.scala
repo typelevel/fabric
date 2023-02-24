@@ -21,12 +21,14 @@
 
 package fabric
 
-/** Path is a convenience wrapper to represent paths for lookups or changes in
+/**
+  * Path is a convenience wrapper to represent paths for lookups or changes in
   * Json
   */
 case class JsonPath(entries: List[JsonPathEntry]) extends AnyVal {
 
-  /** Convenience DSL to build paths
+  /**
+    * Convenience DSL to build paths
     */
   def \(entry: JsonPathEntry): JsonPath = new JsonPath(entries ::: List(entry))
 
@@ -36,11 +38,13 @@ case class JsonPath(entries: List[JsonPathEntry]) extends AnyVal {
 
   def nonEmpty: Boolean = entries.nonEmpty
 
-  /** Retrieves the head path element
+  /**
+    * Retrieves the head path element
     */
   def apply(): JsonPathEntry = entries.head
 
-  /** Returns a new Path with the tail of this path
+  /**
+    * Returns a new Path with the tail of this path
     */
   def next(): JsonPath = new JsonPath(entries.tail)
 
@@ -56,17 +60,13 @@ object JsonPath {
 
   def apply(entries: JsonPathEntry*): JsonPath = new JsonPath(entries.toList)
 
-  /** Simple splitting functionality to separate a string into a path by
+  /**
+    * Simple splitting functionality to separate a string into a path by
     * separation character.
     *
     * The separation character defaults to '.'
     */
   def parse(path: String, sep: Char = '.'): JsonPath = new JsonPath(
-    path
-      .split(sep)
-      .map(_.trim)
-      .filter(_ != "")
-      .map(JsonPathEntry.Named.apply)
-      .toList
+    path.split(sep).map(_.trim).filter(_ != "").map(JsonPathEntry.Named.apply).toList
   )
 }

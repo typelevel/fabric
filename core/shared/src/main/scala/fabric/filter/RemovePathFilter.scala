@@ -24,9 +24,7 @@ package fabric.filter
 import fabric.{Json, JsonPath}
 
 case class RemovePathFilter(path: JsonPath) extends JsonFilter {
-  override def apply(value: Json, path: JsonPath): Option[Json] = if (
-    path == this.path
-  ) {
+  override def apply(value: Json, path: JsonPath): Option[Json] = if (path == this.path) {
     None
   } else {
     Some(value)

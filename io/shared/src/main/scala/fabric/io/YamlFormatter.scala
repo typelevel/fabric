@@ -37,8 +37,8 @@ object YamlFormatter extends Formatter {
             s"${pad()}- ${s.dropWhile(_.isWhitespace)}"
           }
           .mkString("\n", "\n", "")
-      case Bool(b)   => b.toString
-      case Null      => ""
+      case Bool(b) => b.toString
+      case Null => ""
       case NumInt(n) => n.toString
       case NumDec(n) => n.toString()
       case Obj(map) =>
@@ -46,7 +46,7 @@ object YamlFormatter extends Formatter {
           .map { case (key, value) =>
             val v = write(value, depth + 1) match {
               case s if s.headOption.contains('\n') => s
-              case s                                => s" $s"
+              case s => s" $s"
             }
             s"${pad()}$key:$v"
           }

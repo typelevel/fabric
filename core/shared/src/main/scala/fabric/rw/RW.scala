@@ -24,7 +24,8 @@ package fabric.rw
 import fabric._
 import fabric.define.DefType
 
-/** RW provides a single class representation of a Reader and Writer for the
+/**
+  * RW provides a single class representation of a Reader and Writer for the
   * same type
   */
 trait RW[T] extends Reader[T] with Writer[T] {
@@ -92,7 +93,7 @@ object RW extends CompileRW {
     v => Arr(v.map(_.json).toVector),
     {
       case Arr(vector) => vector.map(_.as[V]).toSet
-      case v           => throw new RuntimeException(s"Unsupported set: $v")
+      case v => throw new RuntimeException(s"Unsupported set: $v")
     },
     DefType.Arr(implicitly[RW[V]].definition)
   )
@@ -138,7 +139,8 @@ object RW extends CompileRW {
       override def definition: DefType = DefType.Str
     }
 
-  /** Convenience functionality to provide a static / singleton value that
+  /**
+    * Convenience functionality to provide a static / singleton value that
     * represents that type
     *
     * @param value
@@ -146,7 +148,8 @@ object RW extends CompileRW {
     */
   def static[T](value: T): RW[T] = from(_ => obj(), _ => value, DefType.Obj())
 
-  /** Convenience functionality for working with enumerations
+  /**
+    * Convenience functionality for working with enumerations
     *
     * @param fieldName
     *   the field name to refer to in the Json
@@ -165,7 +168,8 @@ object RW extends CompileRW {
     )
   }
 
-  /** Convenience functionality for working with polymorphic types
+  /**
+    * Convenience functionality for working with polymorphic types
     *
     * @param fieldName
     *   the field name stored in the value (defaults to "type")
@@ -182,10 +186,7 @@ object RW extends CompileRW {
     p => {
       val `type` = getType(p)
       if (matcher.isDefinedAt(`type`)) {
-        matcher(`type`)
-          .asInstanceOf[RW[P]]
-          .read(p)
-          .merge(obj(fieldName -> `type`))
+        matcher(`type`).asInstanceOf[RW[P]].read(p).merge(obj(fieldName -> `type`))
       } else {
         throw new RuntimeException(
           s"Type not found [${`type`}] converting from object $p"
@@ -205,7 +206,8 @@ object RW extends CompileRW {
     DefType.Dynamic
   )
 
-  /** Used by poly by default to getType using the class name with the first
+  /**
+    * Used by poly by default to getType using the class name with the first
     * character lowercase
     */
   private def defaultGetType[P](p: P): String = {

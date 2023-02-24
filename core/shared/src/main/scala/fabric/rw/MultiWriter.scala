@@ -23,19 +23,16 @@ package fabric.rw
 
 import fabric.Json
 
-class MultiWriter[T](val writers: List[Writer[T]], merge: (T, T) => T)
-    extends Writer[T] {
-  override def write(value: Json): T = writers.tail
-    .foldLeft(writers.head.write(value))((t, writer) =>
-      merge(t, writer.write(value))
-    )
+class MultiWriter[T](val writers: List[Writer[T]], merge: (T, T) => T) extends Writer[T] {
+  override def write(value: Json): T =
+    writers.tail.foldLeft(writers.head.write(value))((t, writer) => merge(t, writer.write(value)))
 }
 
 object MultiWriter {
   def apply[T](writers: Writer[T]*)(implicit merge: (T, T) => T): Writer[T] = {
     val list = writers.toList.flatMap {
       case mw: MultiWriter[T] => mw.writers
-      case w                  => List(w)
+      case w => List(w)
     }
     new MultiWriter[T](list, merge)
   }

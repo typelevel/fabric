@@ -97,16 +97,16 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
         FabricGenerator.withMappings(definition, "com.example.Person")
       generated.packageName should be(Some("com.example"))
       generated.className should be("Person")
-      generated.code should be("""package com.example
-          |
-          |import fabric.rw._
-          |
-          |case class Person(name: String,
-          |                  age: Long)
-          |
-          |object Person {
-          |  implicit val rw: RW[Person] = RW.gen
-          |}""".stripMargin)
+      generated.code should be("""|package com.example
+                                  |
+                                  |import fabric.rw._
+                                  |
+                                  |case class Person(name: String,
+                                  |                  age: Long)
+                                  |
+                                  |object Person {
+                                  |  implicit val rw: RW[Person] = RW.gen
+                                  |}""".stripMargin)
       generated.additional should be(Nil)
     }
     "generate two case classes based on a definition" in {
@@ -123,16 +123,16 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       generated.packageName should be(Some("com.example"))
       generated.className should be("Person")
       generated.code should be("""package com.example
-          |
-          |import fabric.rw._
-          |
-          |case class Person(name: String,
-          |                  age: Long,
-          |                  location: Location)
-          |
-          |object Person {
-          |  implicit val rw: RW[Person] = RW.gen
-          |}""".stripMargin)
+                                 |
+                                 |import fabric.rw._
+                                 |
+                                 |case class Person(name: String,
+                                 |                  age: Long,
+                                 |                  location: Location)
+                                 |
+                                 |object Person {
+                                 |  implicit val rw: RW[Person] = RW.gen
+                                 |}""".stripMargin)
       generated.additional.length should be(1)
       val location = generated.additional.head
       location.packageName should be(Some("com.example"))
@@ -170,9 +170,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
         extras = (className: String) =>
           ClassExtras(
             fields =
-              List(ClassField("id", "Int", Some("-1"))) ::: (if (
-                                                               className == "com.example.Location"
-                                                             )
+              List(ClassField("id", "Int", Some("-1"))) ::: (if (className == "com.example.Location") {
                                                                List(
                                                                  ClassField(
                                                                    "state",
@@ -182,43 +180,43 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
                                                                    )
                                                                  )
                                                                )
-                                                             else Nil),
+                                                             } else Nil),
             bodyContent = Some("  // Extra content")
           )
       )
       generated.packageName should be(Some("com.example"))
       generated.className should be("Person")
       generated.code should be("""package com.example
-          |
-          |import fabric.rw._
-          |
-          |case class Person(name: String,
-          |                  age: Long,
-          |                  locations: Vector[Location],
-          |                  id: Int = -1)
-          |
-          |object Person {
-          |  implicit val rw: RW[Person] = RW.gen
-          |
-          |  // Extra content
-          |}""".stripMargin)
+                                 |
+                                 |import fabric.rw._
+                                 |
+                                 |case class Person(name: String,
+                                 |                  age: Long,
+                                 |                  locations: Vector[Location],
+                                 |                  id: Int = -1)
+                                 |
+                                 |object Person {
+                                 |  implicit val rw: RW[Person] = RW.gen
+                                 |
+                                 |  // Extra content
+                                 |}""".stripMargin)
       generated.additional.length should be(1)
       val location = generated.additional.head
       location.packageName should be(Some("com.example"))
       location.className should be("Location")
       location.code should be("""package com.example
-          |
-          |import fabric.rw._
-          |
-          |case class Location(city: String,
-          |                    state: String = "Unknown",
-          |                    id: Int = -1)
-          |
-          |object Location {
-          |  implicit val rw: RW[Location] = RW.gen
-          |
-          |  // Extra content
-          |}""".stripMargin)
+                                |
+                                |import fabric.rw._
+                                |
+                                |case class Location(city: String,
+                                |                    state: String = "Unknown",
+                                |                    id: Int = -1)
+                                |
+                                |object Location {
+                                |  implicit val rw: RW[Location] = RW.gen
+                                |
+                                |  // Extra content
+                                |}""".stripMargin)
     }
   }
 }

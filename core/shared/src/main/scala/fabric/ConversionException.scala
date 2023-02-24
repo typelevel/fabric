@@ -21,5 +21,4 @@
 
 package fabric
 
-case class ConversionException(message: String)
-    extends RuntimeException(message)
+case class ConversionException(message: String) extends RuntimeException(message)

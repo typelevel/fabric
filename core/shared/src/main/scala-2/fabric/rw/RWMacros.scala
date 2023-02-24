@@ -117,8 +117,7 @@ object RWMacros {
           m.name.toString match {
             case DefaultRegex(position) => (position.toInt - 1) -> m
           }
-        case m: MethodSymbol
-            if m.name.toString.matches(Default211RegexString) =>
+        case m: MethodSymbol if m.name.toString.matches(Default211RegexString) =>
           m.name.toString match {
             case Default211Regex(position) => (position.toInt - 1) -> m
           }
@@ -127,27 +126,23 @@ object RWMacros {
       case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
     } match {
       case Some(fields) =>
-        val fromMap: List[context.universe.Tree] = fields.zipWithIndex.map {
-          case (field, index) =>
-            val name = field.asTerm.name
-            val key = name.decodedName.toString
-            val returnType =
-              tpe
-                .decl(name)
-                .typeSignature
-                .asSeenFrom(tpe, tpe.typeSymbol.asClass)
-            val default = defaults.get(index) match {
-              case Some(m) => q"$companion.$m"
-              case None if returnType.resultType <:< typeOf[Option[_]] =>
-                q"""None"""
-              case None =>
-                q"""sys.error("Unable to find field " + ${tpe.toString} + "." + $key + " (and no defaults set) in " + Obj(map))"""
-            }
-            if (key == "json" && isJsonWrapper) {
-              q"json = Obj(map)"
-            } else {
-              q"""$name = map.get($key).map(_.as[$returnType]).getOrElse($default)"""
-            }
+        val fromMap: List[context.universe.Tree] = fields.zipWithIndex.map { case (field, index) =>
+          val name = field.asTerm.name
+          val key = name.decodedName.toString
+          val returnType =
+            tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
+          val default = defaults.get(index) match {
+            case Some(m) => q"$companion.$m"
+            case None if returnType.resultType <:< typeOf[Option[_]] =>
+              q"""None"""
+            case None =>
+              q"""sys.error("Unable to find field " + ${tpe.toString} + "." + $key + " (and no defaults set) in " + Obj(map))"""
+          }
+          if (key == "json" && isJsonWrapper) {
+            q"json = Obj(map)"
+          } else {
+            q"""$name = map.get($key).map(_.as[$returnType]).getOrElse($default)"""
+          }
         }
         context.Expr[Writer[T]](q"""
             import _root_.fabric._

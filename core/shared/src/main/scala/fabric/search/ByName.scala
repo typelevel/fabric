@@ -32,7 +32,7 @@ case class ByName(name: String) extends AnyVal with SearchEntry {
     case Obj(map) =>
       map.get(name) match {
         case Some(value) => SearchEntry.search(value, entries, jsonPath \ name)
-        case None        => Nil
+        case None => Nil
       }
     case _ => Nil
   }

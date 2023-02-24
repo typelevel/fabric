@@ -21,7 +21,7 @@
 
 package fabric.filter
 
-import fabric.{Arr, Json, Obj, JsonPath}
+import fabric.{Arr, Json, JsonPath, Obj}
 
 trait JsonFilter {
   def apply(value: Json, path: JsonPath): Option[Json]
@@ -36,10 +36,10 @@ trait JsonFilter {
 }
 
 object JsonFilter {
-  def apply(filter: JsonFilter, json: Json): Option[Json] = filter.filters
-    .foldLeft[Option[Json]](Some(json))((result, filter) => {
+  def apply(filter: JsonFilter, json: Json): Option[Json] =
+    filter.filters.foldLeft[Option[Json]](Some(json)) { (result, filter) =>
       result.flatMap(json => internal(filter, json, JsonPath.empty))
-    })
+    }
 
   private def internal(
     filter: JsonFilter,

@@ -231,7 +231,7 @@ sealed trait Polymorphic
 
 object Polymorphic {
   implicit val rw: RW[Polymorphic] = RW.poly[Polymorphic]() {
-    case "blank"     => RW.static(Blank)
+    case "blank" => RW.static(Blank)
     case "polyValue" => PolyValue.rw
   }
 

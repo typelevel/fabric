@@ -47,9 +47,9 @@ object FabricGenerator {
     ): GeneratedClass = {
       val classExtras = extras(rootName)
       val map: Map[String, DefType] = original.filterNot {
-        case (_, DefType.Null)              => true
+        case (_, DefType.Null) => true
         case (_, DefType.Arr(DefType.Null)) => true
-        case _                              => false
+        case _ => false
       }
       def typeFor(name: String, dt: DefType): String = dt match {
         case DefType.Obj(map) =>
@@ -61,12 +61,12 @@ object FabricGenerator {
             className
           }
         case DefType.Arr(DefType.Opt(t)) => s"Vector[${typeFor(name, t)}]"
-        case DefType.Arr(t)              => s"Vector[${typeFor(name, t)}]"
-        case DefType.Opt(t)              => s"Option[${typeFor(name, t)}]"
-        case DefType.Str                 => "String"
-        case DefType.Int                 => "Long"
-        case DefType.Dec                 => "BigDecimal"
-        case DefType.Bool                => "Boolean"
+        case DefType.Arr(t) => s"Vector[${typeFor(name, t)}]"
+        case DefType.Opt(t) => s"Option[${typeFor(name, t)}]"
+        case DefType.Str => "String"
+        case DefType.Int => "Long"
+        case DefType.Dec => "BigDecimal"
+        case DefType.Bool => "Boolean"
         case DefType.Enum(_) => throw new RuntimeException("Unsupported")
         case DefType.Dynamic => "Json"
         case DefType.Null =>
@@ -93,10 +93,10 @@ object FabricGenerator {
       b.append(classLine)
       val classPadding = "".padTo(classLine.length, ' ')
       def fixName(name: String): String = name match {
-        case "type"                                       => "`type`"
-        case "private"                                    => "`private`"
+        case "type" => "`type`"
+        case "private" => "`private`"
         case _ if name.contains('+') | name.contains('-') => s"`$name`"
-        case _                                            => name
+        case _ => name
       }
       val definedFields = map.map {
         case (name, _) if classExtras.fields.exists(_.name == name) =>
@@ -109,11 +109,11 @@ object FabricGenerator {
       b.append(fields.mkString(s",\n$classPadding"))
       val classExtending = classExtras.classMixins match {
         case Nil => ""
-        case l   => l.mkString(" extends ", " with ", "")
+        case l => l.mkString(" extends ", " with ", "")
       }
       val objectExtending = classExtras.objectMixins match {
         case Nil => ""
-        case l   => l.mkString(" extends ", " with ", "")
+        case l => l.mkString(" extends ", " with ", "")
       }
       b.append(s")$classExtending\n\n")
       b.append(s"object $className$objectExtending {\n")

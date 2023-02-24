@@ -23,8 +23,7 @@ package fabric.filter
 
 import fabric.{Json, JsonPath}
 
-case class JsonFilters(override val filters: List[JsonFilter])
-    extends JsonFilter {
+case class JsonFilters(override val filters: List[JsonFilter]) extends JsonFilter {
   override def apply(json: Json, path: JsonPath): Option[Json] =
     throw new RuntimeException("Should not be executed directly")
 }

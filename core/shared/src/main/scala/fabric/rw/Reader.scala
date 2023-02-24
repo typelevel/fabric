@@ -23,7 +23,8 @@ package fabric.rw
 
 import fabric._
 
-/** Reader provides a simple T => Json wrapper functionality
+/**
+  * Reader provides a simple T => Json wrapper functionality
   */
 trait Reader[T] {
   def read(t: T): Json
@@ -57,14 +58,13 @@ object Reader {
     apply[List[V]](v => Arr(v.map(_.json).toVector))
   implicit def vectorR[V: Reader]: Reader[Vector[V]] =
     apply[Vector[V]](v => Arr(v.map(_.json)))
-  implicit def setR[T](implicit r: Reader[T]): Reader[Set[T]] = apply[Set[T]] {
-    set =>
-      Arr(set.map(r.read).toVector)
+  implicit def setR[T](implicit r: Reader[T]): Reader[Set[T]] = apply[Set[T]] { set =>
+    Arr(set.map(r.read).toVector)
   }
   implicit def optionR[T](implicit r: Reader[T]): Reader[Option[T]] =
     apply[Option[T]] {
       case Some(t) => r.read(t)
-      case None    => Null
+      case None => Null
     }
 
   def apply[T](f: T => Json): Reader[T] = new Reader[T] {

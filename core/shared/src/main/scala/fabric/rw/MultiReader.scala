@@ -23,17 +23,15 @@ package fabric.rw
 import fabric.Json
 
 class MultiReader[T](val readers: List[Reader[T]]) extends Reader[T] {
-  override def read(t: T): Json = readers.tail
-    .foldLeft(readers.head.read(t))((json, reader) =>
-      json.merge(reader.read(t))
-    )
+  override def read(t: T): Json =
+    readers.tail.foldLeft(readers.head.read(t))((json, reader) => json.merge(reader.read(t)))
 }
 
 object MultiReader {
   def apply[T](readers: Reader[T]*): Reader[T] = {
     val list = readers.toList.flatMap {
       case mr: MultiReader[T] => mr.readers
-      case r                  => List(r)
+      case r => List(r)
     }
     new MultiReader[T](list)
   }

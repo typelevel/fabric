@@ -21,9 +21,10 @@
 
 package fabric.filter
 
-import fabric.{Json, Obj, JsonPath}
+import fabric.{Json, JsonPath, Obj}
 
-/** Converts camelCase to snake_case in obj keys
+/**
+  * Converts camelCase to snake_case in obj keys
   */
 object CamelToSnakeFilter extends JsonFilter {
   override def apply(value: Json, path: JsonPath): Option[Json] = value match {
@@ -36,6 +37,6 @@ object CamelToSnakeFilter extends JsonFilter {
 
   private def toSnake(key: String): String = key.flatMap {
     case c if c.isUpper => s"_${c.toLower}"
-    case c              => c.toString
+    case c => c.toString
   }
 }
