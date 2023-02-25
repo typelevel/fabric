@@ -45,8 +45,7 @@ object SimpleJsonParser extends FormatParser {
       case ']' | '}' => (None, start + 1)
       case c if c.isDigit => o(parseNumber(start))
       case c if c.isWhitespace | c == ',' => parse(start + 1)
-      case c =>
-        throw new RuntimeException(
+      case c => throw new RuntimeException(
           s"Unsupported Json start: $c (offset: $start) - $content"
         )
     }
@@ -61,20 +60,21 @@ object SimpleJsonParser extends FormatParser {
       if (!escape && char == '"') {
         (Str(b.toString()), start + offset + 1)
       } else {
-        val esc = if (escape) {
-          // TODO: Re-evaluate this
-          if (char == 'n') {
-            b.append('\n')
+        val esc =
+          if (escape) {
+            // TODO: Re-evaluate this
+            if (char == 'n') {
+              b.append('\n')
+            } else {
+              b.append(char)
+            }
+            false
+          } else if (char == '\\') {
+            true
           } else {
             b.append(char)
+            false
           }
-          false
-        } else if (char == '\\') {
-          true
-        } else {
-          b.append(char)
-          false
-        }
         parseString(start, esc, offset + 1, b)
       }
     }
@@ -88,20 +88,18 @@ object SimpleJsonParser extends FormatParser {
         )
         (Some(key), colonIndex + 1)
       case (None, off) => (None, off)
-      case (Some(json), _) =>
-        throw new RuntimeException(s"Expected key, but got: $json")
+      case (Some(json), _) => throw new RuntimeException(s"Expected key, but got: $json")
     }
     def parseArr(offset: Int): (Json, Int) = {
       var list = List.empty[Json]
       var adjust = offset
       @tailrec
-      def recurse(start: Int): Unit =
-        parse(start) match {
-          case (None, off) => adjust = off // Finished
-          case (Some(json), off) =>
-            list = json :: list
-            recurse(off)
-        }
+      def recurse(start: Int): Unit = parse(start) match {
+        case (None, off) => adjust = off // Finished
+        case (Some(json), off) =>
+          list = json :: list
+          recurse(off)
+      }
       recurse(offset)
       (Arr(list.reverse.toVector), adjust)
     }
@@ -109,28 +107,24 @@ object SimpleJsonParser extends FormatParser {
       var list = List.empty[(String, Json)]
       var adjust = offset
       @tailrec
-      def recurse(start: Int): Unit =
-        parseKey(start) match {
-          case (None, off1) => adjust = off1 // Finished
-          case (Some(key), off1) =>
-            parse(off1) match {
-              case (Some(json), off2) =>
-                list = key -> json :: list
-                recurse(off2)
-              case (None, _) =>
-                throw new RuntimeException(
-                  s"Unable to find value for key: $key"
-                )
-            }
-        }
+      def recurse(start: Int): Unit = parseKey(start) match {
+        case (None, off1) => adjust = off1 // Finished
+        case (Some(key), off1) => parse(off1) match {
+            case (Some(json), off2) =>
+              list = key -> json :: list
+              recurse(off2)
+            case (None, _) => throw new RuntimeException(
+                s"Unable to find value for key: $key"
+              )
+          }
+      }
       recurse(offset)
       (Obj(list.reverse: _*), adjust)
     }
-    def parseNumber(offset: Int): (Json, Int) =
-      content.substring(offset).takeWhile(c => c.isDigit || c == '.') match {
-        case s if s.contains('.') => (num(BigDecimal(s)), offset + s.length)
-        case s => (num(s.toLong), offset + s.length)
-      }
+    def parseNumber(offset: Int): (Json, Int) = content.substring(offset).takeWhile(c => c.isDigit || c == '.') match {
+      case s if s.contains('.') => (num(BigDecimal(s)), offset + s.length)
+      case s => (num(s.toLong), offset + s.length)
+    }
 
     parse(0)._1.getOrElse(throw new RuntimeException(s"Not valid JSON: $content"))
   }

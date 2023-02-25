@@ -30,8 +30,7 @@ object XMLParser extends FormatParser {
 
   override def apply(content: String): Json = {
     val reader = new ObjectMapper(new XmlFactory)
-    val obj =
-      reader.readValue(s"<xml>$content</xml>", classOf[java.lang.Object])
+    val obj = reader.readValue(s"<xml>$content</xml>", classOf[java.lang.Object])
     val writer = new ObjectMapper()
     val jsonString = writer.writeValueAsString(obj)
     JsonParser(jsonString, Format.Json)

@@ -24,18 +24,17 @@ package fabric.transform
 import fabric.{Json, JsonPath}
 
 class Transformer(json: Json, paths: List[JsonPath]) {
-  def modify(modifier: Json => Json): Json =
-    paths.foldLeft(json)((json, path) => json.modify(path)(modifier))
+  def modify(modifier: Json => Json): Json = paths.foldLeft(json)((json, path) => json.modify(path)(modifier))
 
-  def move(to: JsonPath = JsonPath.empty): Json =
-    paths.foldLeft(json) { (json, path) =>
+  def move(to: JsonPath = JsonPath.empty): Json = paths.foldLeft(json) {
+    (json, path) =>
       val value = json(path)
       json.remove(path).modify(to)(_.merge(value))
-    }
+  }
 
-  def copy(to: JsonPath = JsonPath.empty): Json =
-    paths.foldLeft(json) { (json, path) =>
+  def copy(to: JsonPath = JsonPath.empty): Json = paths.foldLeft(json) {
+    (json, path) =>
       val value = json(path)
       json.modify(to)(_.merge(value))
-    }
+  }
 }

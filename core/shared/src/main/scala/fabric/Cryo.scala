@@ -41,18 +41,17 @@ object Cryo {
   }
 
   def bytes(json: Json): Int = json match {
-    case Obj(map) =>
-      bytes.Byte + bytes.Integer + map.foldLeft(0)((sum, t) =>
-        t match {
-          case (key, value) => sum + bytes(Str(key)) + bytes(value)
-        }
+    case Obj(map) => bytes.Byte + bytes.Integer + map.foldLeft(0)(
+        (sum, t) =>
+          t match {
+            case (key, value) => sum + bytes(Str(key)) + bytes(value)
+          }
       )
     case Str(s) => bytes.Byte + bytes.Integer + s.length
     case NumInt(_) => bytes.Byte + bytes.Long
     case NumDec(bd) => bytes.Byte + bytes(Str(bd.toString()))
     case Bool(_) => bytes.Byte + bytes.Byte
-    case Arr(v) =>
-      bytes.Byte + bytes.Integer + v.foldLeft(0)((sum, json) => sum + bytes(json))
+    case Arr(v) => bytes.Byte + bytes.Integer + v.foldLeft(0)((sum, json) => sum + bytes(json))
     case Null => bytes.Byte
   }
 
@@ -69,9 +68,10 @@ object Cryo {
     case Obj(map) =>
       bb.put(identifiers.Obj)
       bb.putInt(map.size)
-      map.foreach { case (key, value) =>
-        freeze(Str(key), bb)
-        freeze(value, bb)
+      map.foreach {
+        case (key, value) =>
+          freeze(Str(key), bb)
+          freeze(value, bb)
       }
     case Str(s) =>
       bb.put(identifiers.Str)
@@ -101,10 +101,11 @@ object Cryo {
   def thaw(bb: ByteBuffer): Json = bb.get() match {
     case identifiers.Obj =>
       val size = bb.getInt
-      val map = VectorMap((0 until size).map { _ =>
-        val key = thaw(bb).asString
-        val value = thaw(bb)
-        key -> value
+      val map = VectorMap((0 until size).map {
+        _ =>
+          val key = thaw(bb).asString
+          val value = thaw(bb)
+          key -> value
       }: _*)
       Obj(map)
     case identifiers.Str =>
@@ -119,9 +120,7 @@ object Cryo {
     case identifiers.Bool => Bool(bb.get() == 1.toByte)
     case identifiers.Arr =>
       val size = bb.getInt
-      val v = (0 until size).toVector.map { _ =>
-        thaw(bb)
-      }
+      val v = (0 until size).toVector.map(_ => thaw(bb))
       Arr(v)
     case identifiers.Null => Null
   }

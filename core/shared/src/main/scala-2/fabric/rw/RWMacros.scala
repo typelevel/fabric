@@ -37,12 +37,12 @@ object RWMacros {
       case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
     } match {
       case Some(fields) =>
-        val fieldDefs = fields.map { field =>
-          val name = field.asTerm.name
-          val key = name.decodedName.toString
-          val returnType =
-            tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
-          q"$key -> implicitly[RW[$returnType]].definition"
+        val fieldDefs = fields.map {
+          field =>
+            val name = field.asTerm.name
+            val key = name.decodedName.toString
+            val returnType = tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
+            q"$key -> implicitly[RW[$returnType]].definition"
         }
         context.Expr[DefType](q"""
             import _root_.fabric._
@@ -50,8 +50,7 @@ object RWMacros {
 
             DefType.Obj(..$fieldDefs)
            """)
-      case None =>
-        context.abort(context.enclosingPosition, "Not a valid case class")
+      case None => context.abort(context.enclosingPosition, "Not a valid case class")
     }
   }
 
@@ -65,10 +64,11 @@ object RWMacros {
       case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
     } match {
       case Some(fields) =>
-        val toMap: List[context.universe.Tree] = fields.map { field =>
-          val name = field.asTerm.name
-          val key = name.decodedName.toString
-          q"$key -> t.$name.json"
+        val toMap: List[context.universe.Tree] = fields.map {
+          field =>
+            val name = field.asTerm.name
+            val key = name.decodedName.toString
+            q"$key -> t.$name.json"
         }
         context.Expr[Reader[T]](q"""
             import _root_.fabric._
@@ -111,38 +111,36 @@ object RWMacros {
     val DefaultRegexString = """apply[$]default[$](\d+)"""
     val Default211Regex = Default211RegexString.r
     val DefaultRegex = DefaultRegexString.r
-    val defaults: Map[Int, context.universe.MethodSymbol] =
-      companion.typeSignature.decls.collect {
-        case m: MethodSymbol if m.name.toString.matches(DefaultRegexString) =>
-          m.name.toString match {
-            case DefaultRegex(position) => (position.toInt - 1) -> m
-          }
-        case m: MethodSymbol if m.name.toString.matches(Default211RegexString) =>
-          m.name.toString match {
-            case Default211Regex(position) => (position.toInt - 1) -> m
-          }
-      }.toMap
+    val defaults: Map[Int, context.universe.MethodSymbol] = companion.typeSignature.decls.collect {
+      case m: MethodSymbol if m.name.toString.matches(DefaultRegexString) =>
+        m.name.toString match {
+          case DefaultRegex(position) => (position.toInt - 1) -> m
+        }
+      case m: MethodSymbol if m.name.toString.matches(Default211RegexString) =>
+        m.name.toString match {
+          case Default211Regex(position) => (position.toInt - 1) -> m
+        }
+    }.toMap
     tpe.decls.collectFirst {
       case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
     } match {
       case Some(fields) =>
-        val fromMap: List[context.universe.Tree] = fields.zipWithIndex.map { case (field, index) =>
-          val name = field.asTerm.name
-          val key = name.decodedName.toString
-          val returnType =
-            tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
-          val default = defaults.get(index) match {
-            case Some(m) => q"$companion.$m"
-            case None if returnType.resultType <:< typeOf[Option[_]] =>
-              q"""None"""
-            case None =>
-              q"""sys.error("Unable to find field " + ${tpe.toString} + "." + $key + " (and no defaults set) in " + Obj(map))"""
-          }
-          if (key == "json" && isJsonWrapper) {
-            q"json = Obj(map)"
-          } else {
-            q"""$name = map.get($key).map(_.as[$returnType]).getOrElse($default)"""
-          }
+        val fromMap: List[context.universe.Tree] = fields.zipWithIndex.map {
+          case (field, index) =>
+            val name = field.asTerm.name
+            val key = name.decodedName.toString
+            val returnType = tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
+            val default = defaults.get(index) match {
+              case Some(m) => q"$companion.$m"
+              case None if returnType.resultType <:< typeOf[Option[_]] => q"""None"""
+              case None =>
+                q"""sys.error("Unable to find field " + ${tpe.toString} + "." + $key + " (and no defaults set) in " + Obj(map))"""
+            }
+            if (key == "json" && isJsonWrapper) {
+              q"json = Obj(map)"
+            } else {
+              q"""$name = map.get($key).map(_.as[$returnType]).getOrElse($default)"""
+            }
         }
         context.Expr[Writer[T]](q"""
             import _root_.fabric._

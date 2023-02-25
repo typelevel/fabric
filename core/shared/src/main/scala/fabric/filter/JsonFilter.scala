@@ -36,10 +36,9 @@ trait JsonFilter {
 }
 
 object JsonFilter {
-  def apply(filter: JsonFilter, json: Json): Option[Json] =
-    filter.filters.foldLeft[Option[Json]](Some(json)) { (result, filter) =>
-      result.flatMap(json => internal(filter, json, JsonPath.empty))
-    }
+  def apply(filter: JsonFilter, json: Json): Option[Json] = filter.filters.foldLeft[Option[Json]](Some(json)) {
+    (result, filter) => result.flatMap(json => internal(filter, json, JsonPath.empty))
+  }
 
   private def internal(
     filter: JsonFilter,
@@ -48,16 +47,12 @@ object JsonFilter {
   ): Option[Json] = json match {
     case Obj(map) =>
       val mutated = map
-        .map { case (key, value) =>
-          internal(filter, value, path \ key).map(updated => key -> updated)
-        }
+        .map { case (key, value) => internal(filter, value, path \ key).map(updated => key -> updated) }
         .flatten
         .toList
       filter(Obj(mutated: _*), path)
     case Arr(vector) =>
-      val mutated = vector.zipWithIndex.flatMap { case (value, index) =>
-        internal(filter, value, path \ s"[$index]")
-      }
+      val mutated = vector.zipWithIndex.flatMap { case (value, index) => internal(filter, value, path \ s"[$index]") }
       filter(Arr(mutated), path)
     case _ => filter(json, path)
   }

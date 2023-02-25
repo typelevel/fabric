@@ -25,8 +25,7 @@ import scala.util.matching.Regex
 
 package object search {
   implicit def string2Search(name: String): SearchEntry = ByName(name)
-  implicit def int2Search(index: Int): SearchEntry =
-    ByOffset(index, OffsetDirection.FromTop)
+  implicit def int2Search(index: Int): SearchEntry = ByOffset(index, OffsetDirection.FromTop)
   implicit def regex2Search(regex: Regex): SearchEntry = ByRegex(regex)
 
   def * : Wildcard.type = Wildcard
@@ -34,6 +33,5 @@ package object search {
   val first: SearchEntry = ByOffset(0, OffsetDirection.FromTop)
   val last: SearchEntry = ByOffset(0, OffsetDirection.FromBottom)
   def nth(index: Int): SearchEntry = ByOffset(index, OffsetDirection.FromTop)
-  def nthFromBottom(index: Int): SearchEntry =
-    ByOffset(index, OffsetDirection.FromBottom)
+  def nthFromBottom(index: Int): SearchEntry = ByOffset(index, OffsetDirection.FromBottom)
 }
