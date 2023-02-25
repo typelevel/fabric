@@ -53,13 +53,11 @@ sealed trait Json extends Any {
   }
 
   final def get(lookup: JsonPathEntry): Option[Json] = lookup match {
-    case JsonPathEntry.Named(name) =>
-      this match {
+    case JsonPathEntry.Named(name) => this match {
         case Obj(map) => map.get(name)
         case _ => None
       }
-    case JsonPathEntry.Indexed(index) =>
-      this match {
+    case JsonPathEntry.Indexed(index) => this match {
         case Arr(vec) => Try(vec(index)).toOption
         case _ => None
       }
@@ -70,34 +68,32 @@ sealed trait Json extends Any {
     *
     * Example: val o: Option[Json] = someValue("first" \ "second" \ "third")
     */
-  final def get(path: JsonPath): Option[Json] = if (path.isEmpty) {
-    Some(this)
-  } else {
-    val lookup = path()
-    val next = path.next()
-    get(lookup).flatMap(_.get(next))
-  }
+  final def get(path: JsonPath): Option[Json] =
+    if (path.isEmpty) {
+      Some(this)
+    } else {
+      val lookup = path()
+      val next = path.next()
+      get(lookup).flatMap(_.get(next))
+    }
 
   /**
     * Looks up a Json based on Path
     *
     * Example: `val v = someValue("first" \ "second" \ "third")`
     */
-  final def apply(path: JsonPath): Json =
-    get(path).getOrElse(throw new RuntimeException(s"Path not found: $path"))
+  final def apply(path: JsonPath): Json = get(path).getOrElse(throw new RuntimeException(s"Path not found: $path"))
 
   /**
     * Looks up a Json by name in the children or creates a new Obj if it doesn't
     * exist.
     */
-  final def getOrCreate(lookup: JsonPathEntry): Json =
-    get(lookup).getOrElse(lookup match {
-      case _: JsonPathEntry.Named => obj()
-      case JsonPathEntry.Indexed(index) =>
-        throw new RuntimeException(
-          s"Expecting indexed value: $index, but nothing found"
-        )
-    })
+  final def getOrCreate(lookup: JsonPathEntry): Json = get(lookup).getOrElse(lookup match {
+    case _: JsonPathEntry.Named => obj()
+    case JsonPathEntry.Indexed(index) => throw new RuntimeException(
+        s"Expecting indexed value: $index, but nothing found"
+      )
+  })
 
   /**
     * Modifies the value at the specified path and returns back a new root Json
@@ -113,37 +109,32 @@ sealed trait Json extends Any {
     * @return
     *   new root Json representing the changes
     */
-  def modify(path: JsonPath)(f: Json => Json): Json = if (path.isEmpty) {
-    f(this)
-  } else {
-    val child = this.getOrCreate(path())
-    child.modify(path.next())(f) match {
-      case Null =>
-        path() match {
-          case JsonPathEntry.Named(name) => Obj(asMap - name)
-          case JsonPathEntry.Indexed(index) =>
-            Arr(asVector.patch(index, Nil, 1))
-        }
-      case v if v == child => this
-      case v if isObj =>
-        path() match {
-          case JsonPathEntry.Named(name) => Obj(asMap + (name -> v))
-          case pe =>
-            throw new RuntimeException(s"Unsupported PathEntry: $pe on obj: $v")
-        }
-      case v if isArr =>
-        throw new RuntimeException(s"Unsupported scenario: $v on ${path()}")
-      case v =>
-        path() match {
-          case JsonPathEntry.Named(name) => obj(name -> v)
-          case JsonPathEntry.Indexed(0) => arr(v)
-          case JsonPathEntry.Indexed(index) =>
-            throw new RuntimeException(
-              s"Unsupported index for new array: $index - $v"
-            )
-        }
+  def modify(path: JsonPath)(f: Json => Json): Json =
+    if (path.isEmpty) {
+      f(this)
+    } else {
+      val child = this.getOrCreate(path())
+      child.modify(path.next())(f) match {
+        case Null => path() match {
+            case JsonPathEntry.Named(name) => Obj(asMap - name)
+            case JsonPathEntry.Indexed(index) => Arr(asVector.patch(index, Nil, 1))
+          }
+        case v if v == child => this
+        case v if isObj =>
+          path() match {
+            case JsonPathEntry.Named(name) => Obj(asMap + (name -> v))
+            case pe => throw new RuntimeException(s"Unsupported PathEntry: $pe on obj: $v")
+          }
+        case v if isArr => throw new RuntimeException(s"Unsupported scenario: $v on ${path()}")
+        case v => path() match {
+            case JsonPathEntry.Named(name) => obj(name -> v)
+            case JsonPathEntry.Indexed(0) => arr(v)
+            case JsonPathEntry.Indexed(index) => throw new RuntimeException(
+                s"Unsupported index for new array: $index - $v"
+              )
+          }
+      }
     }
-  }
 
   /**
     * Applies the filter recursively to this value beginning on the leafs
@@ -201,9 +192,7 @@ sealed trait Json extends Any {
     value: Json,
     path: JsonPath = JsonPath.empty,
     config: MergeConfig = MergeConfig
-  ): Json = modify(path) { current =>
-    config.merge(current, value, path)
-  }
+  ): Json = modify(path)(current => config.merge(current, value, path))
 
   /**
     * The type of value
@@ -257,13 +246,14 @@ sealed trait Json extends Any {
     * @tparam V
     *   the return type
     */
-  def asType[V <: Json](`type`: JsonType[V]): V = if (this.`type`.is(`type`)) {
-    this.asInstanceOf[V]
-  } else if (`type` == JsonType.Str) {
-    str(toString).asInstanceOf[V]
-  } else {
-    throw new RuntimeException(s"$this is a ${this.`type`}, not a ${`type`}")
-  }
+  def asType[V <: Json](`type`: JsonType[V]): V =
+    if (this.`type`.is(`type`)) {
+      this.asInstanceOf[V]
+    } else if (`type` == JsonType.Str) {
+      str(toString).asInstanceOf[V]
+    } else {
+      throw new RuntimeException(s"$this is a ${this.`type`}, not a ${`type`}")
+    }
 
   /**
     * Safely casts this Json as the specified JsonType. Returns None if it's a
@@ -276,11 +266,12 @@ sealed trait Json extends Any {
     * @return
     *   Option[V]
     */
-  final def getAsType[V <: Json](`type`: JsonType[V]): Option[V] = if (this.`type` == `type`) {
-    Some(this.asInstanceOf[V])
-  } else {
-    None
-  }
+  final def getAsType[V <: Json](`type`: JsonType[V]): Option[V] =
+    if (this.`type` == `type`) {
+      Some(this.asInstanceOf[V])
+    } else {
+      None
+    }
 
   /**
     * Casts to Obj or throws an exception if not an Obj
@@ -406,11 +397,9 @@ sealed trait Json extends Any {
     */
   def getBoolean: Option[Boolean] = getBool.map(_.value)
 
-  def search(entries: SearchEntry*): List[JsonPath] =
-    SearchEntry.search(this, entries.toList, JsonPath.empty)
+  def search(entries: SearchEntry*): List[JsonPath] = SearchEntry.search(this, entries.toList, JsonPath.empty)
 
-  def transform(entries: SearchEntry*): Transformer =
-    new Transformer(this, search(entries: _*))
+  def transform(entries: SearchEntry*): Transformer = new Transformer(this, search(entries: _*))
 }
 
 object Json {
@@ -419,11 +408,12 @@ object Json {
     * Merges multiple Values together. Convenience functionality to handle more
     * than two Values.
     */
-  def merge(values: Json*): Json = if (values.nonEmpty) {
-    values.tail.foldLeft(values.head)((merged, value) => merged.merge(value))
-  } else {
-    Null
-  }
+  def merge(values: Json*): Json =
+    if (values.nonEmpty) {
+      values.tail.foldLeft(values.head)((merged, value) => merged.merge(value))
+    } else {
+      Null
+    }
 }
 
 /**
@@ -438,11 +428,7 @@ final class Obj private (val value: Map[String, Json]) extends AnyVal with Json 
 
   override def `type`: JsonType[Obj] = JsonType.Obj
 
-  override def toString: String = value
-    .map { case (key, value) =>
-      s""""$key": $value"""
-    }
-    .mkString("{", ", ", "}")
+  override def toString: String = value.map { case (key, value) => s""""$key": $value""" }.mkString("{", ", ", "}")
 }
 
 object Obj {
@@ -450,13 +436,12 @@ object Obj {
 
   val empty: Obj = Obj()
 
-  private def clean(map: Map[String, Json]): Map[String, Json] = if (ExcludeNullValues) {
-    map.filter { case (_, value) =>
-      value != Null
+  private def clean(map: Map[String, Json]): Map[String, Json] =
+    if (ExcludeNullValues) {
+      map.filter { case (_, value) => value != Null }
+    } else {
+      map
     }
-  } else {
-    map
-  }
 
   def apply(value: Map[String, Json]): Obj = new Obj(clean(value))
 
@@ -482,17 +467,17 @@ object Obj {
     parsePath: Option[Char] = Some('.')
   ): Obj = {
     var o = obj()
-    map.foreach { case (key, value) =>
-      parsePath match {
-        case Some(sep) =>
-          val path = JsonPath.parse(key, sep)
-          if (path.nonEmpty) {
-            o = o.merge(str(value), path).asObj
-          } else {
-            o = o.merge(str(value), JsonPath("value")).asObj
-          }
-        case None => o = o.merge(str(value), JsonPath(key)).asObj
-      }
+    map.foreach {
+      case (key, value) => parsePath match {
+          case Some(sep) =>
+            val path = JsonPath.parse(key, sep)
+            if (path.nonEmpty) {
+              o = o.merge(str(value), path).asObj
+            } else {
+              o = o.merge(str(value), JsonPath("value")).asObj
+            }
+          case None => o = o.merge(str(value), JsonPath(key)).asObj
+        }
     }
     o
   }
@@ -509,24 +494,21 @@ case class Str(value: String) extends AnyVal with Json {
   override def isEmpty: Boolean = value.isEmpty
 
   override def asType[V <: Json](`type`: JsonType[V]): V = `type` match {
-    case JsonType.Bool =>
-      Try(Bool(value.toBoolean)).toOption
+    case JsonType.Bool => Try(Bool(value.toBoolean)).toOption
         .map(_.asInstanceOf[V])
         .getOrElse(
           throw ConversionException(
             s"$value is a Str and can't be converted to Bool"
           )
         )
-    case JsonType.NumInt =>
-      Try(NumInt(value.toLong)).toOption
+    case JsonType.NumInt => Try(NumInt(value.toLong)).toOption
         .map(_.asInstanceOf[V])
         .getOrElse(
           throw ConversionException(
             s"$value is a Str and can't be converted to NumInt"
           )
         )
-    case JsonType.NumDec | JsonType.Num =>
-      Try(NumDec(BigDecimal(value))).toOption
+    case JsonType.NumDec | JsonType.Num => Try(NumDec(BigDecimal(value))).toOption
         .map(_.asInstanceOf[V])
         .getOrElse(
           throw ConversionException(
@@ -569,11 +551,12 @@ case class NumInt(value: Long) extends Num {
 
   override def `type`: JsonType[NumInt] = JsonType.NumInt
 
-  override def asType[V <: Json](`type`: JsonType[V]): V = if (`type` == JsonType.NumDec) {
-    NumDec(BigDecimal(value)).asInstanceOf[V]
-  } else {
-    super.asType[V](`type`)
-  }
+  override def asType[V <: Json](`type`: JsonType[V]): V =
+    if (`type` == JsonType.NumDec) {
+      NumDec(BigDecimal(value)).asInstanceOf[V]
+    } else {
+      super.asType[V](`type`)
+    }
 
   override def asByte: Byte = value.toByte
   override def asShort: Short = value.toShort
@@ -603,11 +586,12 @@ case class NumDec(value: BigDecimal) extends Num {
 
   override def `type`: JsonType[NumDec] = JsonType.NumDec
 
-  override def asType[V <: Json](`type`: JsonType[V]): V = if (`type` == JsonType.NumInt) {
-    NumInt(value.toLong).asInstanceOf[V]
-  } else {
-    super.asType[V](`type`)
-  }
+  override def asType[V <: Json](`type`: JsonType[V]): V =
+    if (`type` == JsonType.NumInt) {
+      NumInt(value.toLong).asInstanceOf[V]
+    } else {
+      super.asType[V](`type`)
+    }
 
   override def asByte: Byte = value.toByte
   override def asShort: Short = value.toShort

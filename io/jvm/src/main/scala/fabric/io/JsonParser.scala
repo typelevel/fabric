@@ -32,13 +32,10 @@ import scala.io.Source
   * fabric Values
   */
 object JsonParser extends MultiFormatParser {
-  override def parsers: List[FormatParser] =
-    List(HoconParser, JacksonParser, PropertiesParser, XMLParser, YamlParser)
+  override def parsers: List[FormatParser] = List(HoconParser, JacksonParser, PropertiesParser, XMLParser, YamlParser)
 
-  def apply(file: File, format: Format): Json =
-    apply(Source.fromFile(file, "UTF-8"), format)
-  def apply(path: Path, format: Format): Json =
-    apply(Source.fromFile(path.toFile, "UTF-8"), format)
+  def apply(file: File, format: Format): Json = apply(Source.fromFile(file, "UTF-8"), format)
+  def apply(path: Path, format: Format): Json = apply(Source.fromFile(path.toFile, "UTF-8"), format)
 
   def apply(file: File): Json = apply(file, Format.Json)
   def apply(path: Path): Json = apply(path, Format.Json)

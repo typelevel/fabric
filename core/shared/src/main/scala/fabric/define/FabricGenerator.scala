@@ -69,25 +69,21 @@ object FabricGenerator {
         case DefType.Bool => "Boolean"
         case DefType.Enum(_) => throw new RuntimeException("Unsupported")
         case DefType.Dynamic => "Json"
-        case DefType.Null =>
-          throw new RuntimeException(
+        case DefType.Null => throw new RuntimeException(
             "Null type found in definition! Not supported for code generation!"
           )
       }
 
       val b = new mutable.StringBuilder
-      val (packageName, className) = if (rootName.contains('.')) {
-        val index = rootName.lastIndexOf('.')
-        Some(rootName.substring(0, index)) -> rootName.substring(index + 1)
-      } else {
-        None -> rootName
-      }
-      packageName.foreach { n =>
-        b.append(s"package $n\n\n")
-      }
-      classExtras.imports.foreach { i =>
-        b.append(s"import $i\n")
-      }
+      val (packageName, className) =
+        if (rootName.contains('.')) {
+          val index = rootName.lastIndexOf('.')
+          Some(rootName.substring(0, index)) -> rootName.substring(index + 1)
+        } else {
+          None -> rootName
+        }
+      packageName.foreach(n => b.append(s"package $n\n\n"))
+      classExtras.imports.foreach(i => b.append(s"import $i\n"))
       b.append("import fabric.rw._\n\n")
       val classLine = s"case class $className("
       b.append(classLine)
@@ -103,8 +99,7 @@ object FabricGenerator {
           classExtras.fields.find(_.name == name).get.output
         case (name, value) => s"${fixName(name)}: ${typeFor(name, value)}"
       }.toList
-      val extraFields =
-        classExtras.fields.filterNot(cf => map.contains(cf.name)).map(_.output)
+      val extraFields = classExtras.fields.filterNot(cf => map.contains(cf.name)).map(_.output)
       val fields = definedFields ::: extraFields
       b.append(fields.mkString(s",\n$classPadding"))
       val classExtending = classExtras.classMixins match {
@@ -125,8 +120,7 @@ object FabricGenerator {
 
     dt match {
       case DefType.Obj(map) => generate(rootName, map)
-      case _ =>
-        throw new RuntimeException(
+      case _ => throw new RuntimeException(
           s"Only DefType.Obj is supported for generation, but received: $dt"
         )
     }

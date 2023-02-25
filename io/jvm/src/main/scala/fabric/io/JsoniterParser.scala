@@ -39,28 +39,27 @@ object JsoniterParser extends FormatParser {
       iterator.readNull()
       Null
     case com.jsoniter.ValueType.ARRAY => readArr(iterator)
-    case com.jsoniter.ValueType.NUMBER =>
-      iterator.readBigDecimal() match {
+    case com.jsoniter.ValueType.NUMBER => iterator.readBigDecimal() match {
         case bd if bd.scale() == 0 => NumInt(bd.longValue())
         case bd => NumDec(BigDecimal(bd))
       }
     case com.jsoniter.ValueType.BOOLEAN => Bool(iterator.readBoolean())
     case com.jsoniter.ValueType.OBJECT => readObj(iterator)
     case com.jsoniter.ValueType.STRING => Str(iterator.readString())
-    case com.jsoniter.ValueType.INVALID =>
-      throw new RuntimeException("Invalid!")
+    case com.jsoniter.ValueType.INVALID => throw new RuntimeException("Invalid!")
   }
 
   private def readArr(iterator: JsonIterator): Json = {
     var list = List.empty[Json]
 
     @tailrec
-    def recurse(): Unit = if (!iterator.readArray()) {
-      // Finished
-    } else {
-      list = read(iterator) :: list
-      recurse()
-    }
+    def recurse(): Unit =
+      if (!iterator.readArray()) {
+        // Finished
+      } else {
+        list = read(iterator) :: list
+        recurse()
+      }
 
     recurse()
     Arr(list.reverse.toVector)

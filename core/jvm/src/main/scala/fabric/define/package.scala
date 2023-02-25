@@ -36,8 +36,7 @@ package object define {
       validate: Boolean = false
     ): Unit = {
       val alreadyWritten = written.get()
-      val fullName =
-        gc.packageName.map(p => s"$p.${gc.className}").getOrElse(gc.className)
+      val fullName = gc.packageName.map(p => s"$p.${gc.className}").getOrElse(gc.className)
       if (alreadyWritten.contains(fullName)) {
         // Already written
       } else {
@@ -63,8 +62,7 @@ package object define {
         try {
           io.write(gc.code.getBytes("UTF-8"))
           io.flush()
-        } finally
-          io.close()
+        } finally io.close()
         written.set(alreadyWritten + fullName)
         if (writeAdditional) {
           gc.additional.foreach(

@@ -24,22 +24,21 @@ package fabric.define
 import fabric.{Arr, Bool, Json, Null, NumDec, NumInt, Obj, Str}
 
 object FabricDefinition {
-  def apply(json: List[Json]): DefType = if (json.isEmpty) {
-    DefType.Null
-  } else {
-    var gt = apply(json.head)
-    json.tail.foreach { t =>
-      val g = apply(t)
-      gt = gt.merge(g)
+  def apply(json: List[Json]): DefType =
+    if (json.isEmpty) {
+      DefType.Null
+    } else {
+      var gt = apply(json.head)
+      json.tail.foreach {
+        t =>
+          val g = apply(t)
+          gt = gt.merge(g)
+      }
+      gt
     }
-    gt
-  }
 
   def apply(json: Json): DefType = json match {
-    case Obj(value) =>
-      DefType.Obj(value.map { case (k, v) =>
-        k -> apply(v)
-      })
+    case Obj(value) => DefType.Obj(value.map { case (k, v) => k -> apply(v) })
     case Arr(value) => DefType.Arr(apply(value.toList))
     case Str(_) => DefType.Str
     case NumInt(_) => DefType.Int

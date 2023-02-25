@@ -24,9 +24,10 @@ package fabric.filter
 import fabric._
 
 object RemoveNullsFilter extends JsonFilter {
-  override def apply(value: Json, path: JsonPath): Option[Json] = if (value.isNull) {
-    None
-  } else {
-    Some(value)
-  }
+  override def apply(value: Json, path: JsonPath): Option[Json] =
+    if (value.isNull) {
+      None
+    } else {
+      Some(value)
+    }
 }

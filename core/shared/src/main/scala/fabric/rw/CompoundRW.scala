@@ -35,6 +35,5 @@ case class CompoundRW[T](
 
   override def +(that: Reader[T]): RW[T] = copy(reader = reader + that)
 
-  override def +(that: Writer[T])(implicit merge: (T, T) => T): RW[T] =
-    copy(writer = writer + that)
+  override def +(that: Writer[T])(implicit merge: (T, T) => T): RW[T] = copy(writer = writer + that)
 }

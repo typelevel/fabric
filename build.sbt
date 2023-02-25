@@ -49,8 +49,7 @@ val jsoniterJavaVersion: String = "0.9.23"
 val circeVersion: String = "0.14.2"
 val uPickleVersion: String = "2.0.0"
 
-lazy val root =
-  tlCrossRootProject.aggregate(core.js, core.jvm, core.native, io.js, io.jvm)
+lazy val root = tlCrossRootProject.aggregate(core.js, core.jvm, core.native, io.js, io.jvm)
 
 lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .crossType(CrossType.Full)
