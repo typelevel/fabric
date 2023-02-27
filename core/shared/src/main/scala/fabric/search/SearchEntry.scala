@@ -45,9 +45,10 @@ object SearchEntry {
     json: Json,
     entries: List[SearchEntry],
     jsonPath: JsonPath
-  ): List[JsonPath] = if (entries.isEmpty) {
-    List(jsonPath)
-  } else {
-    entries.head.search(json, entries.tail, jsonPath)
-  }
+  ): List[JsonPath] =
+    if (entries.isEmpty) {
+      List(jsonPath)
+    } else {
+      entries.head.search(json, entries.tail, jsonPath)
+    }
 }

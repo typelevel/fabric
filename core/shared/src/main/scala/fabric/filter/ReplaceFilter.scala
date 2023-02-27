@@ -24,9 +24,10 @@ package fabric.filter
 import fabric.{Json, JsonPath}
 
 case class ReplaceFilter(find: Json, replacement: Json) extends JsonFilter {
-  override def apply(value: Json, path: JsonPath): Option[Json] = if (value == find) {
-    Some(replacement)
-  } else {
-    Some(value)
-  }
+  override def apply(value: Json, path: JsonPath): Option[Json] =
+    if (value == find) {
+      Some(replacement)
+    } else {
+      Some(value)
+    }
 }
