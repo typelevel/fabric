@@ -38,28 +38,23 @@ object JacksonParser extends FormatParser {
 
   override def apply(content: String): Json = {
     val parser = factory.createParser(content)
-    try
-      parse(parser)
-    finally
-      parser.close()
+    try parse(parser)
+    finally parser.close()
   }
 
-  protected def parse(parser: JParser): Json =
-    parseToken(parser, parser.nextToken())
+  protected def parse(parser: JParser): Json = parseToken(parser, parser.nextToken())
 
-  private def parseToken(parser: JParser, token: JsonToken): Json =
-    token match {
-      case JsonToken.START_OBJECT => parseObj(parser, VectorMap.empty)
-      case JsonToken.START_ARRAY => parseArr(parser, Vector.empty)
-      case JsonToken.VALUE_STRING => Str(parser.getValueAsString)
-      case JsonToken.VALUE_NUMBER_FLOAT =>
-        NumDec(BigDecimal(parser.getValueAsDouble))
-      case JsonToken.VALUE_NUMBER_INT => NumInt(parser.getValueAsLong)
-      case JsonToken.VALUE_NULL => Null
-      case JsonToken.VALUE_TRUE => Bool(true)
-      case JsonToken.VALUE_FALSE => Bool(false)
-      case t => throw new RuntimeException(s"Unsupported token: $t")
-    }
+  private def parseToken(parser: JParser, token: JsonToken): Json = token match {
+    case JsonToken.START_OBJECT => parseObj(parser, VectorMap.empty)
+    case JsonToken.START_ARRAY => parseArr(parser, Vector.empty)
+    case JsonToken.VALUE_STRING => Str(parser.getValueAsString)
+    case JsonToken.VALUE_NUMBER_FLOAT => NumDec(BigDecimal(parser.getValueAsDouble))
+    case JsonToken.VALUE_NUMBER_INT => NumInt(parser.getValueAsLong)
+    case JsonToken.VALUE_NULL => Null
+    case JsonToken.VALUE_TRUE => Bool(true)
+    case JsonToken.VALUE_FALSE => Bool(false)
+    case t => throw new RuntimeException(s"Unsupported token: $t")
+  }
 
   @tailrec
   private def parseObj(parser: JParser, map: Map[String, Json]): Obj = {

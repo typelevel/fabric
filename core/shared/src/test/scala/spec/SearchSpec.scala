@@ -112,15 +112,13 @@ class SearchSpec extends AnyWordSpec with Matchers {
       results should be(List[JsonPath]("one" \ "two", "one" \ "three"))
     }
     "find via nth" in {
-      val json =
-        obj("list" -> arr(obj("one" -> 1), obj("two" -> 2), obj("three" -> 3)))
+      val json = obj("list" -> arr(obj("one" -> 1), obj("two" -> 2), obj("three" -> 3)))
 
       val results = json.search("list", nth(1))
       results should be(List("list" \ 1))
     }
     "find via last" in {
-      val json =
-        obj("list" -> arr(obj("one" -> 1), obj("two" -> 2), obj("three" -> 3)))
+      val json = obj("list" -> arr(obj("one" -> 1), obj("two" -> 2), obj("three" -> 3)))
 
       val results = json.search("list", last)
       results should be(List("list" \ 2))

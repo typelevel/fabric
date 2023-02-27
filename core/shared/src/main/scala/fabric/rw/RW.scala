@@ -31,49 +31,32 @@ import fabric.define.DefType
 trait RW[T] extends Reader[T] with Writer[T] {
   def definition: DefType
 
-  override def +(that: Reader[T]): RW[T] =
-    CompoundRW[T](super.+(that), this, definition)
+  override def +(that: Reader[T]): RW[T] = CompoundRW[T](super.+(that), this, definition)
 
-  override def +(that: Writer[T])(implicit merge: (T, T) => T): RW[T] =
-    CompoundRW[T](this, super.+(that), definition)
+  override def +(that: Writer[T])(implicit merge: (T, T) => T): RW[T] = CompoundRW[T](this, super.+(that), definition)
 }
 
 object RW extends CompileRW {
   implicit lazy val unitRW: RW[Unit] = from(_ => Null, _ => (), DefType.Null)
-  implicit lazy val valueRW: RW[Json] =
-    from(identity, identity, DefType.Dynamic)
+  implicit lazy val valueRW: RW[Json] = from(identity, identity, DefType.Dynamic)
   implicit lazy val objRW: RW[Obj] = from(o => o, v => v.asObj, DefType.Dynamic)
 
-  implicit lazy val boolRW: RW[Boolean] =
-    from[Boolean](bool, _.asBool.value, DefType.Bool)
+  implicit lazy val boolRW: RW[Boolean] = from[Boolean](bool, _.asBool.value, DefType.Bool)
 
-  implicit lazy val byteRW: RW[Byte] =
-    from[Byte](s => NumInt(s.toLong), _.asNum.asByte, DefType.Int)
-  implicit lazy val shortRW: RW[Short] =
-    from[Short](s => num(s.toInt), _.asNum.asShort, DefType.Int)
-  implicit lazy val intRW: RW[Int] =
-    from[Int](i => num(i), _.asNum.asInt, DefType.Int)
-  implicit lazy val longRW: RW[Long] =
-    from[Long](l => num(l), _.asNum.asLong, DefType.Int)
-  implicit lazy val floatRW: RW[Float] =
-    from[Float](f => num(f.toDouble), _.asNum.asFloat, DefType.Dec)
-  implicit lazy val doubleRW: RW[Double] =
-    from[Double](num, _.asNum.asDouble, DefType.Dec)
-  implicit lazy val bigIntRW: RW[BigInt] =
-    from[BigInt](i => num(BigDecimal(i)), _.asNum.asBigInt, DefType.Dec)
-  implicit lazy val bigDecimalRW: RW[BigDecimal] =
-    from[BigDecimal](num, _.asNum.asBigDecimal, DefType.Dec)
+  implicit lazy val byteRW: RW[Byte] = from[Byte](s => NumInt(s.toLong), _.asNum.asByte, DefType.Int)
+  implicit lazy val shortRW: RW[Short] = from[Short](s => num(s.toInt), _.asNum.asShort, DefType.Int)
+  implicit lazy val intRW: RW[Int] = from[Int](i => num(i), _.asNum.asInt, DefType.Int)
+  implicit lazy val longRW: RW[Long] = from[Long](l => num(l), _.asNum.asLong, DefType.Int)
+  implicit lazy val floatRW: RW[Float] = from[Float](f => num(f.toDouble), _.asNum.asFloat, DefType.Dec)
+  implicit lazy val doubleRW: RW[Double] = from[Double](num, _.asNum.asDouble, DefType.Dec)
+  implicit lazy val bigIntRW: RW[BigInt] = from[BigInt](i => num(BigDecimal(i)), _.asNum.asBigInt, DefType.Dec)
+  implicit lazy val bigDecimalRW: RW[BigDecimal] = from[BigDecimal](num, _.asNum.asBigDecimal, DefType.Dec)
 
-  implicit lazy val stringRW: RW[String] =
-    from[String](str, _.asStr.value, DefType.Str)
+  implicit lazy val stringRW: RW[String] = from[String](str, _.asStr.value, DefType.Str)
 
   implicit def mapRW[V: RW]: RW[Map[String, V]] = from[Map[String, V]](
-    _.map { case (key, value) =>
-      key -> value.json
-    },
-    _.asObj.value.map { case (key, value) =>
-      key -> value.as[V]
-    },
+    _.map { case (key, value) => key -> value.json },
+    _.asObj.value.map { case (key, value) => key -> value.as[V] },
     DefType.Dynamic
   )
 
@@ -117,8 +100,7 @@ object RW extends CompileRW {
     asString: T => String = (t: T) => t.getClass.getSimpleName.replace("$", ""),
     caseSensitive: Boolean = false
   ): RW[T] = new RW[T] {
-    private def fixString(s: String): String =
-      if (caseSensitive) s else s.toLowerCase
+    private def fixString(s: String): String = if (caseSensitive) s else s.toLowerCase
 
     private lazy val map = list.map(t => fixString(asString(t)) -> t).toMap
 
@@ -126,18 +108,16 @@ object RW extends CompileRW {
 
     override def read(t: T): Json = str(asString(t))
 
-    override val definition: DefType =
-      DefType.Enum(list.map(t => Str(asString(t))))
+    override val definition: DefType = DefType.Enum(list.map(t => Str(asString(t))))
   }
 
-  def string[T](asString: T => String, fromString: String => T): RW[T] =
-    new RW[T] {
-      override def write(value: Json): T = fromString(value.asString)
+  def string[T](asString: T => String, fromString: String => T): RW[T] = new RW[T] {
+    override def write(value: Json): T = fromString(value.asString)
 
-      override def read(t: T): Json = str(asString(t))
+    override def read(t: T): Json = str(asString(t))
 
-      override def definition: DefType = DefType.Str
-    }
+    override def definition: DefType = DefType.Str
+  }
 
   def wrapped[T](key: String, asJson: T => Json, fromJson: Json => T, definition: DefType = DefType.Dynamic): RW[T] =
     RW.from(

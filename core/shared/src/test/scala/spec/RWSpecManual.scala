@@ -37,8 +37,7 @@ class RWSpecManual extends AnyWordSpec with Matchers {
     override protected def map2T(map: Map[String, Json]): Address =
       Address(city = map("city").as[String], state = map("state").as[String])
 
-    override def definition: DefType =
-      DefType.Obj("city" -> DefType.Str, "state" -> DefType.Str)
+    override def definition: DefType = DefType.Obj("city" -> DefType.Str, "state" -> DefType.Str)
   }
   implicit val personRW: RW[Person] = new ClassRW[Person] {
     override protected def t2Map(t: Person): Map[String, Json] = VectorMap(

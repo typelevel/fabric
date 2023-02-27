@@ -51,11 +51,12 @@ case class JsonPath(entries: List[JsonPathEntry]) extends AnyVal {
     */
   def next(): JsonPath = new JsonPath(entries.tail)
 
-  override def toString: String = if (entries.isEmpty) {
-    "<empty>"
-  } else {
-    entries.mkString("JsonPath(", " \\ ", ")")
-  }
+  override def toString: String =
+    if (entries.isEmpty) {
+      "<empty>"
+    } else {
+      entries.mkString("JsonPath(", " \\ ", ")")
+    }
 }
 
 object JsonPath {

@@ -81,9 +81,7 @@ class FabricSpec extends AnyWordSpec with Matchers {
       fourth should be(num(4))
     }
     "update the hierarchy" in {
-      val updated = v.modify("address" \ "state") { _ =>
-        str("Tennessee")
-      }
+      val updated = v.modify("address" \ "state")(_ => str("Tennessee"))
       updated should be(
         obj(
           "name" -> "Matt \"Matteo\" Hicks",
@@ -182,8 +180,7 @@ class FabricSpec extends AnyWordSpec with Matchers {
       camel2Snake should be(snake)
     }
     "apply SnakeToCamelFilter" in {
-      val json =
-        obj("first_level" -> obj("second_level" -> obj("third_level" -> true)))
+      val json = obj("first_level" -> obj("second_level" -> obj("third_level" -> true)))
       json.filter(SnakeToCamelFilter) should be(
         Some(
           obj("firstLevel" -> obj("secondLevel" -> obj("thirdLevel" -> true)))
@@ -191,17 +188,13 @@ class FabricSpec extends AnyWordSpec with Matchers {
       )
     }
     "apply RemovePathFilter" in {
-      val json =
-        obj("first_level" -> obj("second_level" -> obj("third_level" -> true)))
-      val filter =
-        SnakeToCamelFilter && RemovePathFilter("firstLevel" \ "secondLevel")
+      val json = obj("first_level" -> obj("second_level" -> obj("third_level" -> true)))
+      val filter = SnakeToCamelFilter && RemovePathFilter("firstLevel" \ "secondLevel")
       json.filter(filter) should be(Some(obj("firstLevel" -> obj())))
     }
     "merge with a custom override" in {
-      val json1 =
-        obj("test1" -> obj("test2" -> arr(1, 2, 3), "test3" -> arr(1, 2, 3)))
-      val json2 =
-        obj("test1" -> obj("test2" -> arr(4, 5, 6), "test3" -> arr(4, 5, 6)))
+      val json1 = obj("test1" -> obj("test2" -> arr(1, 2, 3), "test3" -> arr(1, 2, 3)))
+      val json2 = obj("test1" -> obj("test2" -> arr(4, 5, 6), "test3" -> arr(4, 5, 6)))
       val merged = json1.merge(
         json2,
         config = MergeConfig.withOverride(

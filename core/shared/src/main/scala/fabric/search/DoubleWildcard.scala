@@ -41,22 +41,20 @@ case object DoubleWildcard extends SearchEntry {
     jsonPath: JsonPath,
     matched: Boolean
   ): List[JsonPath] = {
-    val results = if (matched) {
-      entries.head.search(json, entries.tail, jsonPath)
-    } else {
-      Nil
-    }
+    val results =
+      if (matched) {
+        entries.head.search(json, entries.tail, jsonPath)
+      } else {
+        Nil
+      }
     if (results.nonEmpty) {
       results
     } else {
       json match {
         case Obj(map) =>
-          map.toList.flatMap { case (key, value) =>
-            searchInternal(value, entries, jsonPath \ key, matched = true)
-          }
-        case Arr(vec) =>
-          vec.toList.zipWithIndex.flatMap { case (value, index) =>
-            searchInternal(value, entries, jsonPath \ index, matched = true)
+          map.toList.flatMap { case (key, value) => searchInternal(value, entries, jsonPath \ key, matched = true) }
+        case Arr(vec) => vec.toList.zipWithIndex.flatMap {
+            case (value, index) => searchInternal(value, entries, jsonPath \ index, matched = true)
           }
         case _ => Nil
       }

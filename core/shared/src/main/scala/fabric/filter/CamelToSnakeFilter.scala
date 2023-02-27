@@ -28,10 +28,7 @@ import fabric.{Json, JsonPath, Obj}
   */
 object CamelToSnakeFilter extends JsonFilter {
   override def apply(value: Json, path: JsonPath): Option[Json] = value match {
-    case Obj(map) =>
-      Some(Obj(map.map { case (key, value) =>
-        toSnake(key) -> value
-      }))
+    case Obj(map) => Some(Obj(map.map { case (key, value) => toSnake(key) -> value }))
     case _ => Some(value)
   }
 

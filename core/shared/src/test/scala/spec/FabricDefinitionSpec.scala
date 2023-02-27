@@ -53,8 +53,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       )
     }
     "represent a simple optional obj" in {
-      val d =
-        FabricDefinition(List(Null, obj("name" -> "Jane Doe", "age" -> 50)))
+      val d = FabricDefinition(List(Null, obj("name" -> "Jane Doe", "age" -> 50)))
       d should be(
         DefType.Opt(DefType.Obj("name" -> DefType.Str, "age" -> DefType.Int))
       )
@@ -81,8 +80,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       )
     }
     "validate a definition" in {
-      val definition =
-        DefType.Obj("name" -> DefType.Str, "age" -> DefType.Opt(DefType.Int))
+      val definition = DefType.Obj("name" -> DefType.Str, "age" -> DefType.Opt(DefType.Int))
       val value = obj("name" -> "Jane Doe", "age" -> 50)
       definition.validate(value) should be(true)
     }
@@ -93,8 +91,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
     }
     "generate a case class based on a definition" in {
       val definition = DefType.Obj("name" -> DefType.Str, "age" -> DefType.Int)
-      val generated =
-        FabricGenerator.withMappings(definition, "com.example.Person")
+      val generated = FabricGenerator.withMappings(definition, "com.example.Person")
       generated.packageName should be(Some("com.example"))
       generated.className should be("Person")
       generated.code should be("""|package com.example
@@ -160,27 +157,27 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
         dt = definition,
         rootName = "com.example.Person",
         resolver = (key: String) => {
-          val name = if (key.endsWith("s")) {
-            key.substring(0, key.length - 1)
-          } else {
-            key
-          }
+          val name =
+            if (key.endsWith("s")) {
+              key.substring(0, key.length - 1)
+            } else {
+              key
+            }
           s"com.example.${name.capitalize}"
         },
         extras = (className: String) =>
           ClassExtras(
-            fields =
-              List(ClassField("id", "Int", Some("-1"))) ::: (if (className == "com.example.Location") {
-                                                               List(
-                                                                 ClassField(
-                                                                   "state",
-                                                                   "String",
-                                                                   Some(
-                                                                     "\"Unknown\""
-                                                                   )
-                                                                 )
-                                                               )
-                                                             } else Nil),
+            fields = List(ClassField("id", "Int", Some("-1"))) ::: (if (className == "com.example.Location") {
+                                                                      List(
+                                                                        ClassField(
+                                                                          "state",
+                                                                          "String",
+                                                                          Some(
+                                                                            "\"Unknown\""
+                                                                          )
+                                                                        )
+                                                                      )
+                                                                    } else Nil),
             bodyContent = Some("  // Extra content")
           )
       )
