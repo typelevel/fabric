@@ -21,9 +21,11 @@
 
 package fabric.transform
 
-import fabric.{Json, JsonPath}
+import fabric.rw._
+import fabric._
+import fabric.define.DefType
 
-class Transformer(json: Json, paths: List[JsonPath]) {
+class Transformer(val json: Json, val paths: List[JsonPath]) {
   def modify(modifier: Json => Json): Json =
     paths.foldLeft(json)((json, path) => json.modify(path)(modifier))
 
@@ -38,4 +40,12 @@ class Transformer(json: Json, paths: List[JsonPath]) {
       val value = json(path)
       json.modify(to)(_.merge(value))
     }
+}
+
+object Transformer {
+  implicit val rw: RW[Transformer] = RW.from(
+    r = t => obj("json" -> t.json, "paths" -> t.paths.json),
+    w = j => new Transformer(j("json"), j("paths").as[List[JsonPath]]),
+    d = DefType.Obj("json" -> DefType.Dynamic, "paths" -> DefType.Arr(JsonPath.rw.definition))
+  )
 }

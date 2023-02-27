@@ -21,6 +21,7 @@
 
 package fabric.search
 
+import fabric.rw.RW
 import fabric.{Json, JsonPath}
 
 trait SearchEntry extends Any {
@@ -32,6 +33,14 @@ trait SearchEntry extends Any {
 }
 
 object SearchEntry {
+  implicit val rw: RW[SearchEntry] = RW.poly[SearchEntry]() {
+    case "byName" => ByName.rw
+    case "byOffset" => ByOffset.rw
+    case "byRegex" => ByRegex.rw
+    case "wildcard" => RW.static(Wildcard)
+    case "doubleWildcard" => RW.static(DoubleWildcard)
+  }
+
   def search(
     json: Json,
     entries: List[SearchEntry],

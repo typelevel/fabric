@@ -21,6 +21,8 @@
 
 package fabric.search
 
+import fabric.define.DefType
+import fabric.rw.RW
 import fabric.{Json, JsonPath, Obj}
 
 case class ByName(name: String) extends AnyVal with SearchEntry {
@@ -36,4 +38,13 @@ case class ByName(name: String) extends AnyVal with SearchEntry {
       }
     case _ => Nil
   }
+}
+
+object ByName {
+  implicit val rw: RW[ByName] = RW.wrapped(
+    key = "name",
+    asJson = _.name,
+    fromJson = j => ByName(j.asString),
+    definition = DefType.Str
+  )
 }

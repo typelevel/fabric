@@ -21,9 +21,13 @@
 
 package fabric.search
 
+import fabric.rw.RW
+
 sealed trait OffsetDirection
 
 object OffsetDirection {
+  implicit val rw: RW[OffsetDirection] = RW.enumeration(List(FromTop, FromBottom))
+
   case object FromTop extends OffsetDirection
   case object FromBottom extends OffsetDirection
 }

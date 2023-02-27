@@ -22,6 +22,8 @@
 package fabric.search
 
 import fabric._
+import fabric.define.DefType
+import fabric.rw._
 
 import scala.util.Try
 
@@ -42,4 +44,12 @@ case class ByOffset(offset: Int, direction: OffsetDirection) extends SearchEntry
       }
     case _ => Nil
   }
+}
+
+object ByOffset {
+  implicit val rw: RW[ByOffset] = RW.from(
+    r = t => obj("offset" -> t.offset, "direction" -> t.direction.json),
+    w = j => ByOffset(j("offset").asInt, j("direction").as[OffsetDirection]),
+    d = DefType.Dynamic
+  )
 }
