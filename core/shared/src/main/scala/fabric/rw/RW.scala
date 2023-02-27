@@ -139,6 +139,13 @@ object RW extends CompileRW {
       override def definition: DefType = DefType.Str
     }
 
+  def wrapped[T](key: String, asJson: T => Json, fromJson: Json => T, definition: DefType = DefType.Dynamic): RW[T] =
+    RW.from(
+      r = t => obj(key -> asJson(t)),
+      w = j => fromJson(j(key)),
+      d = DefType.Obj(key -> definition)
+    )
+
   /**
     * Convenience functionality to provide a static / singleton value that
     * represents that type

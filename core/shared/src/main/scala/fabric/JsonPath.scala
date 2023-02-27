@@ -21,6 +21,9 @@
 
 package fabric
 
+import fabric.define.DefType
+import fabric.rw.RW
+
 /**
   * Path is a convenience wrapper to represent paths for lookups or changes in
   * Json
@@ -56,6 +59,19 @@ case class JsonPath(entries: List[JsonPathEntry]) extends AnyVal {
 }
 
 object JsonPath {
+  implicit val rw: RW[JsonPath] = RW.from[JsonPath](
+    r = path =>
+      obj(
+        "entries" -> path.entries.map { entry =>
+          JsonPathEntry.rw.read(entry)
+        }
+      ),
+    w = json => JsonPath(json("entries").asVector.toList.map(JsonPathEntry.rw.write)),
+    d = DefType.Obj(
+      "entries" -> DefType.Arr(JsonPathEntry.rw.definition)
+    )
+  )
+
   lazy val empty: JsonPath = new JsonPath(Nil)
 
   def apply(entries: JsonPathEntry*): JsonPath = new JsonPath(entries.toList)

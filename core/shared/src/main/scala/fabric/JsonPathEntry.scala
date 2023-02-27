@@ -21,9 +21,33 @@
 
 package fabric
 
+import fabric.define.DefType
+import fabric.rw.RW
+
 sealed trait JsonPathEntry extends Any
 
 object JsonPathEntry {
+  implicit val rw: RW[JsonPathEntry] = RW.poly[JsonPathEntry]() {
+    case "named" => Named.rw
+    case "indexed" => Indexed.rw
+  }
+
   case class Named(name: String) extends AnyVal with JsonPathEntry
+  object Named {
+    implicit val rw: RW[Named] = RW.wrapped[Named](
+      key = "name",
+      asJson = _.name,
+      fromJson = j => Named(j.asString),
+      definition = DefType.Str
+    )
+  }
   case class Indexed(index: Int) extends AnyVal with JsonPathEntry
+  object Indexed {
+    implicit val rw: RW[Indexed] = RW.wrapped[Indexed](
+      key = "index",
+      asJson = _.index,
+      fromJson = j => Indexed(j.asInt),
+      definition = DefType.Int
+    )
+  }
 }
