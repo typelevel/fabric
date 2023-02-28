@@ -22,6 +22,7 @@
 package spec
 
 import fabric._
+import fabric.search._
 import fabric.filter.RemoveEmptyFilter
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -58,6 +59,41 @@ class TransformSpec extends AnyWordSpec with Matchers {
       )
       val transformed = json.transform("level1", "level2", "product").move().filterOne(RemoveEmptyFilter)
       transformed should be(obj("name" -> "Product Name", "sku" -> 12345))
+    }
+    "rename a simple object" in {
+      val json = obj(
+        "product" -> List(
+          obj("entryName" -> "Apple"),
+          obj("entryName" -> "Banana"),
+          obj("entryName" -> "Cherry")
+        )
+      )
+      val transformed = json.transform("product", *, "entryName").rename("name")
+      transformed should be(
+        obj(
+          "product" -> List(
+            obj("name" -> "Apple"),
+            obj("name" -> "Banana"),
+            obj("name" -> "Cherry")
+          )
+        )
+      )
+    }
+    "delete a simple object" in {
+      val json = obj(
+        "first" -> obj(
+          "second" -> 2,
+          "third" -> 3
+        )
+      )
+      val transformed = json.transform("first", "second").delete().filterOne(RemoveEmptyFilter)
+      transformed should be(
+        obj(
+          "first" -> obj(
+            "third" -> 3
+          )
+        )
+      )
     }
   }
 }

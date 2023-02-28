@@ -82,7 +82,8 @@ sealed trait Json extends Any {
     *
     * Example: `val v = someValue("first" \ "second" \ "third")`
     */
-  final def apply(path: JsonPath): Json = get(path).getOrElse(throw new RuntimeException(s"Path not found: $path"))
+  final def apply(path: JsonPath): Json =
+    get(path).getOrElse(throw new RuntimeException(s"Path not found: $path in $this"))
 
   /**
     * Looks up a Json by name in the children or creates a new Obj if it doesn't
@@ -125,7 +126,14 @@ sealed trait Json extends Any {
             case JsonPathEntry.Named(name) => Obj(asMap + (name -> v))
             case pe => throw new RuntimeException(s"Unsupported PathEntry: $pe on obj: $v")
           }
-        case v if isArr => throw new RuntimeException(s"Unsupported scenario: $v on ${path()}")
+        case v if isArr =>
+          path() match {
+            case JsonPathEntry.Indexed(idx) => Arr(asVector.zipWithIndex.map {
+                case (_, index) if index == idx => v
+                case (json, _) => json
+              })
+            case pe => throw new RuntimeException(s"Unsupported PathEntry: $pe on arr: $v")
+          }
         case v => path() match {
             case JsonPathEntry.Named(name) => obj(name -> v)
             case JsonPathEntry.Indexed(0) => arr(v)

@@ -39,6 +39,18 @@ class Transformer(val json: Json, val paths: List[JsonPath]) {
       val value = json(path)
       json.modify(to)(_.merge(value))
   }
+
+  def rename(newName: String): Json = paths.foldLeft(json) {
+    (json, path) =>
+      val prePath = JsonPath(path.entries.init)
+      json.modify(prePath) {
+        value =>
+          val p = JsonPath(path.entries.last)
+          value.remove(p).merge(obj(newName -> value(p)))
+      }
+  }
+
+  def delete(): Json = modify(_ => obj())
 }
 
 object Transformer {
