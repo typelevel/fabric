@@ -22,8 +22,8 @@
 package spec
 
 import fabric._
-import fabric.search._
 import fabric.filter.RemoveEmptyFilter
+import fabric.search._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -37,7 +37,7 @@ class TransformSpec extends AnyWordSpec with Matchers {
           )
         )
       )
-      val transformed = json.transform("level1", "level2", "product").copy("product")
+      val transformed = json.transform(Search("level1", "level2", "product")).copy("product")
       transformed should be(
         obj(
           "level1" -> obj(
@@ -57,7 +57,7 @@ class TransformSpec extends AnyWordSpec with Matchers {
           )
         )
       )
-      val transformed = json.transform("level1", "level2", "product").move().filterOne(RemoveEmptyFilter)
+      val transformed = json.transform(Search("level1", "level2", "product")).move().filterOne(RemoveEmptyFilter)
       transformed should be(obj("name" -> "Product Name", "sku" -> 12345))
     }
     "rename a simple object" in {
@@ -68,7 +68,7 @@ class TransformSpec extends AnyWordSpec with Matchers {
           obj("entryName" -> "Cherry")
         )
       )
-      val transformed = json.transform("product", *, "entryName").rename("name")
+      val transformed = json.transform(Search("product", *, "entryName")).rename("name")
       transformed should be(
         obj(
           "product" -> List(
@@ -79,6 +79,90 @@ class TransformSpec extends AnyWordSpec with Matchers {
         )
       )
     }
+    "merge a few records" in {
+      val json = obj(
+        "one" -> obj(
+          "product" -> obj(
+            "name" -> "Slinky"
+          )
+        ),
+        "two" -> obj(
+          "product" -> obj(
+            "type" -> "Toy"
+          )
+        ),
+        "three" -> obj(
+          "product" -> obj(
+            "price" -> 50.0
+          )
+        ),
+        "product" -> obj()
+      )
+      val transformed = json.transform(Search(*, "product")).mergeTo("product")
+      transformed should be(
+        obj(
+          "one" -> obj(
+            "product" -> obj(
+              "name" -> "Slinky"
+            )
+          ),
+          "two" -> obj(
+            "product" -> obj(
+              "type" -> "Toy"
+            )
+          ),
+          "three" -> obj(
+            "product" -> obj(
+              "price" -> 50.0
+            )
+          ),
+          "product" -> obj(
+            "name" -> "Slinky",
+            "type" -> "Toy",
+            "price" -> 50.0
+          )
+        )
+      )
+    }
+    "concatenate multiple strings" in {
+      val json = obj(
+        "first" -> "This",
+        "second" -> "is",
+        "third" -> "multiple",
+        "fourth" -> "strings"
+      )
+      val transformed = json.transform(Search(*)).concatenate("merged", " ")
+      transformed should be(
+        obj(
+          "first" -> "This",
+          "second" -> "is",
+          "third" -> "multiple",
+          "fourth" -> "strings",
+          "merged" -> "This is multiple strings"
+        )
+      )
+    }
+    "extract from simple regex" in {
+      val json = obj("time" -> "12:34:56")
+      val transformed = json
+        .transform(Search("time"))
+        .extract(
+          regex = "(.+):(.+):(.+)".r,
+          to = Vector(
+            "hour",
+            "minute",
+            "second"
+          )
+        )
+      transformed should be(
+        obj(
+          "time" -> "12:34:56",
+          "hour" -> "12",
+          "minute" -> "34",
+          "second" -> "56"
+        )
+      )
+    }
     "delete a simple object" in {
       val json = obj(
         "first" -> obj(
@@ -86,7 +170,7 @@ class TransformSpec extends AnyWordSpec with Matchers {
           "third" -> 3
         )
       )
-      val transformed = json.transform("first", "second").delete().filterOne(RemoveEmptyFilter)
+      val transformed = json.transform(Search("first", "second")).delete().filterOne(RemoveEmptyFilter)
       transformed should be(
         obj(
           "first" -> obj(

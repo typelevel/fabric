@@ -23,7 +23,7 @@ package fabric
 
 import fabric.filter.JsonFilter
 import fabric.merge.MergeConfig
-import fabric.search.SearchEntry
+import fabric.search.{Search, SearchEntry}
 import fabric.transform.Transformer
 
 import scala.collection.immutable.VectorMap
@@ -405,9 +405,9 @@ sealed trait Json extends Any {
     */
   def getBoolean: Option[Boolean] = getBool.map(_.value)
 
-  def search(entries: SearchEntry*): List[JsonPath] = SearchEntry.search(this, entries.toList, JsonPath.empty)
+  def search(entries: SearchEntry*): List[JsonPath] = Search(entries: _*).search(this)
 
-  def transform(entries: SearchEntry*): Transformer = new Transformer(this, search(entries: _*))
+  def transform(search: Search): Transformer = new Transformer(this, search.search(this))
 }
 
 object Json {

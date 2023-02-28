@@ -21,9 +21,11 @@
 
 package fabric.transform
 
-import fabric.rw._
 import fabric._
 import fabric.define.DefType
+import fabric.rw._
+
+import scala.util.matching.Regex
 
 class Transformer(val json: Json, val paths: List[JsonPath]) {
   def modify(modifier: Json => Json): Json = paths.foldLeft(json)((json, path) => json.modify(path)(modifier))
@@ -48,6 +50,36 @@ class Transformer(val json: Json, val paths: List[JsonPath]) {
           val p = JsonPath(path.entries.last)
           value.remove(p).merge(obj(newName -> value(p)))
       }
+  }
+
+  def mergeTo(path: JsonPath): Json = paths.foldLeft(json) {
+    (j, p) =>
+      val value = j(p)
+      j.modify(path) {
+        destination =>
+          destination.merge(value)
+      }
+  }
+
+  def concatenate(path: JsonPath, separator: String = ""): Json = paths.foldLeft(json) {
+    (j, p) =>
+      val value = j(p)
+      j.modify(path) {
+        destination =>
+          if (destination.isStr) {
+            s"${destination.asString}$separator${value.asString}"
+          } else {
+            value.asString
+          }
+      }
+  }
+
+  def extract(regex: Regex, to: Vector[JsonPath]): Json = paths.foldLeft(json) {
+    (j, p) =>
+      val value = j(p).asString
+      val matcher = regex.pattern.matcher(value)
+      matcher.matches()
+      (1 to matcher.groupCount()).foldLeft(j)((json, group) => json.modify(to(group - 1))(_ => matcher.group(group)))
   }
 
   def delete(): Json = modify(_ => obj())

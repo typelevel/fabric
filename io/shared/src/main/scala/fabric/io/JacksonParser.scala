@@ -21,7 +21,7 @@
 
 package fabric.io
 
-import com.fasterxml.jackson.core.{JsonFactory, JsonParser => JParser, JsonToken}
+import com.fasterxml.jackson.core.{JsonFactory, JsonToken, JsonParser => JParser}
 import fabric.{Arr, Bool, Json, Null, NumDec, NumInt, Obj, Str}
 
 import scala.annotation.tailrec

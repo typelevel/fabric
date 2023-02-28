@@ -23,6 +23,8 @@ package fabric.rw
 
 import fabric._
 
+import scala.util.matching.Regex
+
 /**
   * Reader provides a simple T => Json wrapper functionality
   */
@@ -50,6 +52,7 @@ object Reader {
   implicit def bigDecimalR: Reader[BigDecimal] = bigDecimalRW
 
   implicit def stringR: Reader[String] = stringRW
+  implicit def regexR: Reader[Regex] = regexRW
   implicit def mapR[V: Reader]: Reader[Map[String, V]] = apply[Map[String, V]](_.map {
     case (key, value) => key -> value.json
   })
