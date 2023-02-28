@@ -21,8 +21,8 @@
 
 package spec
 
-import fabric.io.SimpleJsonParser
 import fabric._
+import fabric.io.SimpleJsonParser
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

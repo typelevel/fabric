@@ -23,6 +23,8 @@ package fabric.rw
 
 import fabric._
 
+import scala.util.matching.Regex
+
 /**
   * Writable provides a simple Json => T wrapper functionality
   */
@@ -50,6 +52,7 @@ object Writer {
   implicit def bigDecimalW: Writer[BigDecimal] = bigDecimalRW
 
   implicit def stringW: Writer[String] = stringRW
+  implicit def regexW: Writer[Regex] = regexRW
   implicit def mapW[V: Writer]: Writer[Map[String, V]] = apply[Map[String, V]] {
     v =>
       v.asObj.value.map { case (key, value) => key -> value.as[V] }

@@ -24,6 +24,8 @@ package fabric.rw
 import fabric._
 import fabric.define.DefType
 
+import scala.util.matching.Regex
+
 /**
   * RW provides a single class representation of a Reader and Writer for the
   * same type
@@ -53,6 +55,8 @@ object RW extends CompileRW {
   implicit lazy val bigDecimalRW: RW[BigDecimal] = from[BigDecimal](num, _.asNum.asBigDecimal, DefType.Dec)
 
   implicit lazy val stringRW: RW[String] = from[String](str, _.asStr.value, DefType.Str)
+
+  implicit lazy val regexRW: RW[Regex] = string[Regex](_.toString(), _.r)
 
   implicit def mapRW[V: RW]: RW[Map[String, V]] = from[Map[String, V]](
     _.map { case (key, value) => key -> value.json },

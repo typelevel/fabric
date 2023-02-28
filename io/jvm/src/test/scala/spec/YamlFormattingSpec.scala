@@ -21,8 +21,8 @@
 
 package spec
 
-import fabric.io.{Format, JsonParser, YamlFormatter}
 import fabric._
+import fabric.io.{Format, JsonParser, YamlFormatter}
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec

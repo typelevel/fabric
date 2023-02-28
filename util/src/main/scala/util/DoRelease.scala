@@ -3,7 +3,7 @@ package util
 import java.nio.charset.Charset
 import java.nio.file.{Files, Paths}
 import scala.jdk.CollectionConverters._
-import sys.process._
+import scala.sys.process._
 
 object DoRelease {
   def main(args: Array[String]): Unit = {

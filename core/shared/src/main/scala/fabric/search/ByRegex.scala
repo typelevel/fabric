@@ -21,9 +21,8 @@
 
 package fabric.search
 
-import fabric.define.DefType
-import fabric.rw.RW
-import fabric.{obj, Json, JsonPath, Obj}
+import fabric.rw.{Asable, Convertible, RW}
+import fabric.{Json, JsonPath, Obj}
 
 import scala.util.matching.Regex
 
@@ -45,9 +44,9 @@ case class ByRegex(regex: Regex) extends AnyVal with SearchEntry {
 }
 
 object ByRegex {
-  implicit val rw: RW[ByRegex] = RW.from(
-    r = t => obj("regex" -> t.regex.toString()),
-    w = json => ByRegex(json("regex").asString.r),
-    d = DefType.Obj("regex" -> DefType.Str)
+  implicit val rw: RW[ByRegex] = RW.wrapped(
+    key = "regex",
+    asJson = _.regex.json,
+    fromJson = j => ByRegex(j.as[Regex])
   )
 }

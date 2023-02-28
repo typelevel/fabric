@@ -21,7 +21,6 @@
 
 package spec
 
-import fabric.io.{Format, JsonFormatter}
 import fabric._
 import fabric.io._
 import fabric.rw._
