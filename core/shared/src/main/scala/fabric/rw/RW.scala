@@ -66,28 +66,31 @@ object RW extends CompileRW {
 
   implicit def tuple2RW[K: RW, V: RW]: RW[(K, V)] = from[(K, V)](
     r = t => arr(t._1.json, t._2.json),
-    w = j => j.asVector match {
-      case Vector(k, v) => (k.as[K], v.as[V])
-      case v => throw new RuntimeException(s"Invalid shape for tuple2: $v")
-    },
+    w = j =>
+      j.asVector match {
+        case Vector(k, v) => (k.as[K], v.as[V])
+        case v => throw new RuntimeException(s"Invalid shape for tuple2: $v")
+      },
     d = DefType.Arr(DefType.Dynamic)
   )
 
   implicit def tuple3RW[T1: RW, T2: RW, T3: RW]: RW[(T1, T2, T3)] = from[(T1, T2, T3)](
     r = t => arr(t._1.json, t._2.json, t._3.json),
-    w = j => j.asVector match {
-      case Vector(t1, t2, t3) => (t1.as[T1], t2.as[T2], t3.as[T3])
-      case v => throw new RuntimeException(s"Invalid shape for tuple3: $v")
-    },
+    w = j =>
+      j.asVector match {
+        case Vector(t1, t2, t3) => (t1.as[T1], t2.as[T2], t3.as[T3])
+        case v => throw new RuntimeException(s"Invalid shape for tuple3: $v")
+      },
     d = DefType.Arr(DefType.Dynamic)
   )
 
   implicit def tuple4RW[T1: RW, T2: RW, T3: RW, T4: RW]: RW[(T1, T2, T3, T4)] = from[(T1, T2, T3, T4)](
     r = t => arr(t._1.json, t._2.json, t._3.json, t._4.json),
-    w = j => j.asVector match {
-      case Vector(t1, t2, t3, t4) => (t1.as[T1], t2.as[T2], t3.as[T3], t4.as[T4])
-      case v => throw new RuntimeException(s"Invalid shape for tuple4: $v")
-    },
+    w = j =>
+      j.asVector match {
+        case Vector(t1, t2, t3, t4) => (t1.as[T1], t2.as[T2], t3.as[T3], t4.as[T4])
+        case v => throw new RuntimeException(s"Invalid shape for tuple4: $v")
+      },
     d = DefType.Arr(DefType.Dynamic)
   )
 
