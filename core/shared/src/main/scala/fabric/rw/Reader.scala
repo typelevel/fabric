@@ -56,6 +56,15 @@ object Reader {
   implicit def mapR[V: Reader]: Reader[Map[String, V]] = apply[Map[String, V]](_.map {
     case (key, value) => key -> value.json
   })
+  implicit def tuple2R[K: Reader, V: Reader]: Reader[(K, V)] = apply[(K, V)] { t =>
+    arr(t._1.json, t._2.json)
+  }
+  implicit def tuple3R[T1: Reader, T2: Reader, T3: Reader]: Reader[(T1, T2, T3)] = apply[(T1, T2, T3)] { t =>
+    arr(t._1.json, t._2.json, t._3.json)
+  }
+  implicit def tuple4R[T1: Reader, T2: Reader, T3: Reader, T4: Reader]: Reader[(T1, T2, T3, T4)] = apply[(T1, T2, T3, T4)] { t =>
+    arr(t._1.json, t._2.json, t._3.json, t._4.json)
+  }
   implicit def listR[V: Reader]: Reader[List[V]] = apply[List[V]](v => Arr(v.map(_.json).toVector))
   implicit def vectorR[V: Reader]: Reader[Vector[V]] = apply[Vector[V]](v => Arr(v.map(_.json)))
   implicit def setR[T](implicit r: Reader[T]): Reader[Set[T]] = apply[Set[T]](set => Arr(set.map(r.read).toVector))
