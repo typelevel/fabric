@@ -32,13 +32,9 @@ case class ByRegex(regex: Regex) extends AnyVal with SearchEntry {
     entries: List[SearchEntry],
     jsonPath: JsonPath
   ): List[JsonPath] = json match {
-    case Obj(map) => map.toList
-        .filter {
-          case (key, _) => regex.pattern.matcher(key).matches()
-        }
-        .flatMap {
-          case (key, value) => SearchEntry.search(value, entries, jsonPath \ key)
-        }
+    case Obj(map) => map.toList.filter { case (key, _) => regex.pattern.matcher(key).matches() }.flatMap {
+        case (key, value) => SearchEntry.search(value, entries, jsonPath \ key)
+      }
     case _ => Nil
   }
 }

@@ -31,11 +31,10 @@ class RWSpecGenParse extends AnyWordSpec with Checkers {
   "generated automatic conversion" should {
     "serialize and deserialize Json" in {
       implicit val vg: Arbitrary[Json] = ValueGenerator.arbitraryValue
-      check {
-        (value: Json) =>
-          val json = JsonFormatter.Default(value)
-          // TODO: Switch to JsonParser when JacksonParser can handle this properly
-          value == JsoniterParser(json)
+      check { (value: Json) =>
+        val json = JsonFormatter.Default(value)
+        // TODO: Switch to JsonParser when JacksonParser can handle this properly
+        value == JsoniterParser(json)
       }
     }
   }

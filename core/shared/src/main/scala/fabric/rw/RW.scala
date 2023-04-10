@@ -24,6 +24,7 @@ package fabric.rw
 import fabric._
 import fabric.define.DefType
 
+import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.util.matching.Regex
 
 /**
@@ -57,6 +58,12 @@ object RW extends CompileRW {
   implicit lazy val stringRW: RW[String] = from[String](str, _.asStr.value, DefType.Str)
 
   implicit lazy val regexRW: RW[Regex] = string[Regex](_.toString(), _.r)
+
+  implicit lazy val finiteDurationRW: RW[FiniteDuration] = from[FiniteDuration](
+    r = fd => fd.toMillis.json,
+    w = j => j.asLong.millis,
+    d = DefType.Int
+  )
 
   implicit def mapRW[V: RW]: RW[Map[String, V]] = from[Map[String, V]](
     _.map { case (key, value) => key -> value.json },

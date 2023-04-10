@@ -475,17 +475,17 @@ object Obj {
     parsePath: Option[Char] = Some('.')
   ): Obj = {
     var o = obj()
-    map.foreach {
-      case (key, value) => parsePath match {
-          case Some(sep) =>
-            val path = JsonPath.parse(key, sep)
-            if (path.nonEmpty) {
-              o = o.merge(str(value), path).asObj
-            } else {
-              o = o.merge(str(value), JsonPath("value")).asObj
-            }
-          case None => o = o.merge(str(value), JsonPath(key)).asObj
-        }
+    map.foreach { case (key, value) =>
+      parsePath match {
+        case Some(sep) =>
+          val path = JsonPath.parse(key, sep)
+          if (path.nonEmpty) {
+            o = o.merge(str(value), path).asObj
+          } else {
+            o = o.merge(str(value), JsonPath("value")).asObj
+          }
+        case None => o = o.merge(str(value), JsonPath(key)).asObj
+      }
     }
     o
   }

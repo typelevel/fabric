@@ -38,13 +38,12 @@ object YamlFormatter extends Formatter {
       case NumInt(n) => n.toString
       case NumDec(n) => n.toString()
       case Obj(map) => map.toList
-          .map {
-            case (key, value) =>
-              val v = write(value, depth + 1) match {
-                case s if s.headOption.contains('\n') => s
-                case s => s" $s"
-              }
-              s"${pad()}$key:$v"
+          .map { case (key, value) =>
+            val v = write(value, depth + 1) match {
+              case s if s.headOption.contains('\n') => s
+              case s => s" $s"
+            }
+            s"${pad()}$key:$v"
           }
           .mkString("\n", "\n", "")
       case Str(s) if s.contains("\n") => s.split('\n').map(s => s"${pad()}$s").mkString("|-\n", "\n", "")

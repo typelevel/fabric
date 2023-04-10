@@ -29,10 +29,9 @@ object FabricDefinition {
       DefType.Null
     } else {
       var gt = apply(json.head)
-      json.tail.foreach {
-        t =>
-          val g = apply(t)
-          gt = gt.merge(g)
+      json.tail.foreach { t =>
+        val g = apply(t)
+        gt = gt.merge(g)
       }
       gt
     }

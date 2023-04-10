@@ -41,11 +41,10 @@ object Cryo {
   }
 
   def bytes(json: Json): Int = json match {
-    case Obj(map) => bytes.Byte + bytes.Integer + map.foldLeft(0)(
-        (sum, t) =>
-          t match {
-            case (key, value) => sum + bytes(Str(key)) + bytes(value)
-          }
+    case Obj(map) => bytes.Byte + bytes.Integer + map.foldLeft(0)((sum, t) =>
+        t match {
+          case (key, value) => sum + bytes(Str(key)) + bytes(value)
+        }
       )
     case Str(s) => bytes.Byte + bytes.Integer + s.length
     case NumInt(_) => bytes.Byte + bytes.Long
@@ -68,10 +67,9 @@ object Cryo {
     case Obj(map) =>
       bb.put(identifiers.Obj)
       bb.putInt(map.size)
-      map.foreach {
-        case (key, value) =>
-          freeze(Str(key), bb)
-          freeze(value, bb)
+      map.foreach { case (key, value) =>
+        freeze(Str(key), bb)
+        freeze(value, bb)
       }
     case Str(s) =>
       bb.put(identifiers.Str)
@@ -101,11 +99,10 @@ object Cryo {
   def thaw(bb: ByteBuffer): Json = bb.get() match {
     case identifiers.Obj =>
       val size = bb.getInt
-      val map = VectorMap((0 until size).map {
-        _ =>
-          val key = thaw(bb).asString
-          val value = thaw(bb)
-          key -> value
+      val map = VectorMap((0 until size).map { _ =>
+        val key = thaw(bb).asString
+        val value = thaw(bb)
+        key -> value
       }: _*)
       Obj(map)
     case identifiers.Str =>
