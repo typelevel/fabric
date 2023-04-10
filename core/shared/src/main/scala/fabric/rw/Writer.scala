@@ -23,6 +23,7 @@ package fabric.rw
 
 import fabric._
 
+import scala.concurrent.duration.FiniteDuration
 import scala.util.matching.Regex
 
 /**
@@ -53,31 +54,28 @@ object Writer {
 
   implicit def stringW: Writer[String] = stringRW
   implicit def regexW: Writer[Regex] = regexRW
-  implicit def mapW[V: Writer]: Writer[Map[String, V]] = apply[Map[String, V]] {
-    v =>
-      v.asObj.value.map { case (key, value) => key -> value.as[V] }
+  implicit def finiteDurationW: Writer[FiniteDuration] = finiteDurationRW
+  implicit def mapW[V: Writer]: Writer[Map[String, V]] = apply[Map[String, V]] { v =>
+    v.asObj.value.map { case (key, value) => key -> value.as[V] }
   }
-  implicit def tuple2W[K: Writer, V: Writer]: Writer[(K, V)] = apply[(K, V)] {
-    j =>
-      j.asVector match {
-        case Vector(k, v) => (k.as[K], v.as[V])
-        case v => throw new RuntimeException(s"Invalid shape for tuple2: $v")
-      }
+  implicit def tuple2W[K: Writer, V: Writer]: Writer[(K, V)] = apply[(K, V)] { j =>
+    j.asVector match {
+      case Vector(k, v) => (k.as[K], v.as[V])
+      case v => throw new RuntimeException(s"Invalid shape for tuple2: $v")
+    }
   }
-  implicit def tuple3W[T1: Writer, T2: Writer, T3: Writer]: Writer[(T1, T2, T3)] = apply[(T1, T2, T3)] {
-    j =>
-      j.asVector match {
-        case Vector(t1, t2, t3) => (t1.as[T1], t2.as[T2], t3.as[T3])
-        case v => throw new RuntimeException(s"Invalid shape for tuple3: $v")
-      }
+  implicit def tuple3W[T1: Writer, T2: Writer, T3: Writer]: Writer[(T1, T2, T3)] = apply[(T1, T2, T3)] { j =>
+    j.asVector match {
+      case Vector(t1, t2, t3) => (t1.as[T1], t2.as[T2], t3.as[T3])
+      case v => throw new RuntimeException(s"Invalid shape for tuple3: $v")
+    }
   }
   implicit def tuple4W[T1: Writer, T2: Writer, T3: Writer, T4: Writer]: Writer[(T1, T2, T3, T4)] =
-    apply[(T1, T2, T3, T4)] {
-      j =>
-        j.asVector match {
-          case Vector(t1, t2, t3, t4) => (t1.as[T1], t2.as[T2], t3.as[T3], t4.as[T4])
-          case v => throw new RuntimeException(s"Invalid shape for tuple4: $v")
-        }
+    apply[(T1, T2, T3, T4)] { j =>
+      j.asVector match {
+        case Vector(t1, t2, t3, t4) => (t1.as[T1], t2.as[T2], t3.as[T3], t4.as[T4])
+        case v => throw new RuntimeException(s"Invalid shape for tuple4: $v")
+      }
     }
   implicit def listW[V: Writer]: Writer[List[V]] = apply[List[V]](v => v.asVector.map(_.as[V]).toList)
   implicit def vectorW[V: Writer]: Writer[Vector[V]] = apply[Vector[V]](v => v.asVector.map(_.as[V]))

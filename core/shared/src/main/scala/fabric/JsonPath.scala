@@ -63,9 +63,8 @@ object JsonPath {
   implicit val rw: RW[JsonPath] = RW.from[JsonPath](
     r = path =>
       obj(
-        "entries" -> path.entries.map {
-          entry =>
-            JsonPathEntry.rw.read(entry)
+        "entries" -> path.entries.map { entry =>
+          JsonPathEntry.rw.read(entry)
         }
       ),
     w = json => JsonPath(json("entries").asVector.toList.map(JsonPathEntry.rw.write)),

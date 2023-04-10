@@ -28,10 +28,9 @@ import org.scalatestplus.scalacheck.Checkers
 class RWSpecGenAuto extends AnyWordSpec with Checkers {
   "generated automatic conversion" should {
     "convert Record to Json and back" in {
-      check {
-        (record: Record) =>
-          val value = record.json
-          record.equals(value.as[Record])
+      check { (record: Record) =>
+        val value = record.json
+        record.equals(value.as[Record])
       }
     }
   }
