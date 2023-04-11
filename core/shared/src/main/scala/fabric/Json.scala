@@ -246,6 +246,21 @@ sealed trait Json extends Any {
   def isNull: Boolean = `type` == JsonType.Null
 
   /**
+    * Generates a consistent key from this JSON. This can be useful for comparison or unique reference. Convenience
+    * wrapper for genKey.
+    */
+  def toKey: String = {
+    val b = new StringBuilder
+    genKey(b)
+    b.toString()
+  }
+
+  /**
+    * Generates a consistent key from this JSON. This can be useful for comparison or unique reference.
+    */
+  def genKey(b: StringBuilder): Unit
+
+  /**
     * Safely casts this Json as the specified JsonType. Throws an exception if
     * not a match.
     *
@@ -432,6 +447,17 @@ final class Obj private (val value: Map[String, Json]) extends AnyVal with Json 
 
   def keys: Set[String] = value.keySet
 
+  override def genKey(b: StringBuilder): Unit = {
+    b.append('{')
+    value.toList.sortBy(_._1).foreach { case (key, value) =>
+      b.append(key)
+      b.append(':')
+      value.genKey(b)
+      b.append(',')
+    }
+    b.append('}')
+  }
+
   override def isEmpty: Boolean = value.isEmpty
 
   override def `type`: JsonType[Obj] = JsonType.Obj
@@ -497,6 +523,8 @@ object Obj {
 case class Str(value: String) extends AnyVal with Json {
   override type Type = Str
 
+  override def genKey(b: StringBuilder): Unit = b.append(value)
+
   override def `type`: JsonType[Str] = JsonType.Str
 
   override def isEmpty: Boolean = value.isEmpty
@@ -557,6 +585,8 @@ sealed trait Num extends Any with Json {
 case class NumInt(value: Long) extends Num {
   override type Type = NumInt
 
+  override def genKey(b: StringBuilder): Unit = b.append(value)
+
   override def `type`: JsonType[NumInt] = JsonType.NumInt
 
   override def asType[V <: Json](`type`: JsonType[V]): V =
@@ -591,6 +621,8 @@ case class NumInt(value: Long) extends Num {
   */
 case class NumDec(value: BigDecimal) extends Num {
   override type Type = NumDec
+
+  override def genKey(b: StringBuilder): Unit = b.append(value)
 
   override def `type`: JsonType[NumDec] = JsonType.NumDec
 
@@ -627,6 +659,8 @@ case class NumDec(value: BigDecimal) extends Num {
 case class Bool(value: Boolean) extends AnyVal with Json {
   override type Type = Bool
 
+  override def genKey(b: StringBuilder): Unit = b.append(value)
+
   override def `type`: JsonType[Bool] = JsonType.Bool
 
   override def isEmpty: Boolean = false
@@ -639,6 +673,15 @@ case class Bool(value: Boolean) extends AnyVal with Json {
   */
 case class Arr(value: Vector[Json]) extends AnyVal with Json {
   override type Type = Arr
+
+  override def genKey(b: StringBuilder): Unit = {
+    b.append('[')
+    value.foreach { v =>
+      v.genKey(b)
+      b.append(',')
+    }
+    b.append(']')
+  }
 
   override def `type`: JsonType[Arr] = JsonType.Arr
 
@@ -654,6 +697,8 @@ sealed trait Null extends Json
   */
 object Null extends Null {
   override type Type = Null
+
+  override def genKey(b: StringBuilder): Unit = b.append("null")
 
   override def `type`: JsonType[Null] = JsonType.Null
 
