@@ -47,7 +47,7 @@ package object fabric {
   /**
     * Create a Str from the supplied String
     */
-  implicit def str(s: String): Str = Str(s)
+  implicit def str(s: String): Json = if (s == null) Null else Str(s)
 
   /**
     * Create a Num from the supplied String
