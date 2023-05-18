@@ -60,6 +60,17 @@ class TransformSpec extends AnyWordSpec with Matchers {
       val transformed = json.transform(Search("level1", "level2", "product")).move().filterOne(RemoveEmptyFilter)
       transformed should be(obj("name" -> "Product Name", "sku" -> 12345))
     }
+    "rename a top-level entry" in {
+      val json = obj(
+        "name" -> "John Doe"
+      )
+      val transformed = json.transform(Search("name")).rename("fullName")
+      transformed should be(
+        obj(
+          "fullName" -> "John Doe"
+        )
+      )
+    }
     "rename a simple object" in {
       val json = obj(
         "product" -> List(
