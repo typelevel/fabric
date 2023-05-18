@@ -118,6 +118,16 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       val json: Json = sample.asJson
       json should be(obj("color" -> "Green", "size" -> 9.2, "quantity" -> 15))
     }
+    "verify persisting null String values works" in {
+      val user = User(null, "abc/123")
+      user.json should be(
+        obj(
+          "name" -> Null,
+          "_id" -> "abc/123",
+          "num" -> 123
+        )
+      )
+    }
     // TODO: Enable once Scala 3 support for sealed traits is working
 //    "supporting sealed traits" in {
 //      val car: VehicleType = VehicleType.Car
