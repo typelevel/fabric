@@ -53,7 +53,7 @@ sealed trait DefType {
 }
 
 object DefType {
-  implicit def rw: RW[DefType] = RW.from[DefType](r = dt2V, w = v2dt, d = DefType.Null)
+  implicit def rw: RW[DefType] = RW.from[DefType](r = dt2V, w = v2dt, d = DefType.Dynamic)
 
   private def dt2V(dt: DefType): Json = dt match {
     case Obj(map) => obj(
