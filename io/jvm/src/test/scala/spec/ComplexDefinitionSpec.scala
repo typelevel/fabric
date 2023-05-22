@@ -27,7 +27,6 @@ import fabric.io.{Format, JsonParser}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import java.io.File
 import scala.io.Source
 
 class ComplexDefinitionSpec extends AnyWordSpec with Matchers {
