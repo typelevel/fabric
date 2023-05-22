@@ -211,6 +211,21 @@ class FabricSpec extends AnyWordSpec with Matchers {
         )
       )
     }
+    "support polymorphic Map" in {
+      val map: Map[Int, Long] = Map(
+        1 -> 1L,
+        2 -> 2L,
+        3 -> 3L
+      )
+      val json = map.json
+      json should be(
+        arr(
+          obj("key" -> 1, "value" -> 1),
+          obj("key" -> 2, "value" -> 2),
+          obj("key" -> 3, "value" -> 3)
+        )
+      )
+    }
   }
 }
 

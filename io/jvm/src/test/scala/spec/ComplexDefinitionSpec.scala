@@ -53,7 +53,7 @@ class ComplexDefinitionSpec extends AnyWordSpec with Matchers {
           s"bench.event.Event$name"
         }
       )
-      generated.write(new File("bench/src/main/scala/"))
+//      generated.write(new File("bench/src/main/scala/"))
     }
   }
 }

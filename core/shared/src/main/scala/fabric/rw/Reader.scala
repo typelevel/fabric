@@ -55,9 +55,17 @@ object Reader {
   implicit def stringR: Reader[String] = stringRW
   implicit def regexR: Reader[Regex] = regexRW
   implicit def finiteDurationRW: Reader[FiniteDuration] = RW.finiteDurationRW
-  implicit def mapR[V: Reader]: Reader[Map[String, V]] = apply[Map[String, V]](_.map { case (key, value) =>
+  implicit def mapStringR[V: Reader]: Reader[Map[String, V]] = apply[Map[String, V]](_.map { case (key, value) =>
     key -> value.json
   })
+  implicit def mapR[K: Reader, V: Reader]: Reader[Map[K, V]] = apply[Map[K, V]]((map: Map[K, V]) =>
+    Arr(map.toVector.map { case (key, value) =>
+      obj(
+        "key" -> key.json,
+        "value" -> value.json
+      )
+    })
+  )
   implicit def tuple2R[K: Reader, V: Reader]: Reader[(K, V)] = apply[(K, V)] { t =>
     arr(t._1.json, t._2.json)
   }
