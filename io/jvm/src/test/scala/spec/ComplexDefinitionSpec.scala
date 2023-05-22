@@ -52,6 +52,7 @@ class ComplexDefinitionSpec extends AnyWordSpec with Matchers {
           s"bench.event.Event$name"
         }
       )
+      generated.code should not be ""
 //      generated.write(new File("bench/src/main/scala/"))
     }
   }
