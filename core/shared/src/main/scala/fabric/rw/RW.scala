@@ -65,11 +65,27 @@ object RW extends CompileRW {
     d = DefType.Int
   )
 
-  implicit def mapRW[V: RW]: RW[Map[String, V]] = from[Map[String, V]](
-    _.map { case (key, value) => key -> value.json },
-    _.asObj.value.map { case (key, value) => key -> value.as[V] },
-    DefType.Dynamic
-  )
+  implicit def mapRW[K, V](implicit keyRW: RW[K], valueRW: RW[V]): RW[Map[K, V]] =
+    if (keyRW.definition == DefType.Str) {
+      from[Map[K, V]](
+        _.map { case (key, value) => key.json.asString -> value.json },
+        _.asObj.value.map { case (key, value) => str(key).as[K] -> value.as[V] },
+        DefType.Dynamic
+      )
+    } else {
+      val reader = Reader.mapR[K, V]
+      val writer = Writer.mapW[K, V]
+      from[Map[K, V]](
+        r = reader.read,
+        w = writer.write,
+        d = DefType.Arr(
+          DefType.Obj(
+            "key" -> implicitly[RW[K]].definition,
+            "value" -> implicitly[RW[V]].definition
+          )
+        )
+      )
+    }
 
   implicit def tuple2RW[K: RW, V: RW]: RW[(K, V)] = from[(K, V)](
     r = t => arr(t._1.json, t._2.json),

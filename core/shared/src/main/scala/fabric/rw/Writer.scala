@@ -55,8 +55,14 @@ object Writer {
   implicit def stringW: Writer[String] = stringRW
   implicit def regexW: Writer[Regex] = regexRW
   implicit def finiteDurationW: Writer[FiniteDuration] = finiteDurationRW
-  implicit def mapW[V: Writer]: Writer[Map[String, V]] = apply[Map[String, V]] { v =>
+  implicit def mapStringW[V: Writer]: Writer[Map[String, V]] = apply[Map[String, V]] { v =>
     v.asObj.value.map { case (key, value) => key -> value.as[V] }
+  }
+  implicit def mapW[K: Writer, V: Writer]: Writer[Map[K, V]] = apply[Map[K, V]] { json =>
+    json.asVector.map { j =>
+      val map = j.asMap
+      map("key").as[K] -> map("value").as[V]
+    }.toMap
   }
   implicit def tuple2W[K: Writer, V: Writer]: Writer[(K, V)] = apply[(K, V)] { j =>
     j.asVector match {
