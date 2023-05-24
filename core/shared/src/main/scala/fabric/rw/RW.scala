@@ -223,28 +223,32 @@ object RW extends CompileRW {
     * @param types
     *   a list of tuples with the type names associated with their RW
     */
-  def poly[P](fieldName: String = "type", getType: P => String = defaultGetType _)
-             (types: (String, RW[_ <: P])*): RW[P] = {
+  def poly[P](fieldName: String = "type", getType: P => String = defaultGetType _)(
+    types: (String, RW[_ <: P])*
+  ): RW[P] = {
     val typeMap = types.toMap
     from(
       r = (p: P) => {
         val `type` = getType(p)
         typeMap.get(`type`) match {
           case Some(rw) => rw.asInstanceOf[RW[P]].read(p).merge(obj("type" -> `type`))
-          case None => throw new RuntimeException(s"Type not found [${`type`}] converting from value $p. Available types are: [${typeMap.keySet.mkString(", ")}]")
+          case None => throw new RuntimeException(
+              s"Type not found [${`type`}] converting from value $p. Available types are: [${typeMap.keySet.mkString(", ")}]"
+            )
         }
       },
       w = (json: Json) => {
         val `type` = json(fieldName).asString
         typeMap.get(`type`) match {
           case Some(rw) => rw.write(json)
-          case None => throw new RuntimeException(s"Type not found [${`type`}] converting from value $json. Available types are: [${typeMap.keySet.mkString(", ")}]")
+          case None => throw new RuntimeException(
+              s"Type not found [${`type`}] converting from value $json. Available types are: [${typeMap.keySet.mkString(", ")}]"
+            )
         }
       },
-      d = DefType.Poly(types.map {
-        case (key, rw) =>
-          val obj = rw.definition.asInstanceOf[DefType.Obj]
-          obj.copy(obj.map + (key -> DefType.Str))
+      d = DefType.Poly(types.map { case (key, rw) =>
+        val obj = rw.definition.asInstanceOf[DefType.Obj]
+        obj.copy(obj.map + (key -> DefType.Str))
       }.toList)
     )
   }
