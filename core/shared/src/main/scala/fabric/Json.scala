@@ -41,7 +41,7 @@ sealed trait Json extends Any {
     * Throws an exception if invoked on anything except `Obj`
     */
   final def apply(lookup: String): Json = get(lookup).getOrElse(
-    throw new RuntimeException(s"Lookup not found: $lookup")
+    throw new RuntimeException(s"Lookup not found: $lookup in $this")
   )
 
   /**
