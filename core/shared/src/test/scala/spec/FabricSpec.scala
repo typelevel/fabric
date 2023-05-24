@@ -155,6 +155,26 @@ class FabricSpec extends AnyWordSpec with Matchers {
       val p2 = json2.as[Polymorphic]
       p2 should be(Polymorphic.PolyValue("Hello, World!"))
       p2.json should be(json2)
+
+      Polymorphic.rw.definition.json should be(
+        obj(
+          "type" -> "poly",
+          "values" -> obj(
+            "blank" -> obj(
+              "type" -> "object",
+              "values" -> obj()
+            ),
+            "polyValue" -> obj(
+              "type" -> "object",
+              "values" -> obj(
+                "s" -> obj(
+                  "type" -> "string"
+                )
+              )
+            )
+          )
+        )
+      )
     }
     "include or exclude null fields" in {
       val json1 = obj("one" -> Null, "two" -> 2, "three" -> "three")

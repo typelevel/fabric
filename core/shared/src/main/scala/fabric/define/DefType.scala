@@ -67,7 +67,10 @@ object DefType {
     case Dec => obj("type" -> "numeric", "precision" -> "decimal")
     case Bool => obj("type" -> "boolean")
     case Enum(values) => obj("type" -> "enum", "values" -> values)
-    case Poly(values) => obj("type" -> "poly", "values" -> values.map(dt2V))
+    case Poly(values) => obj(
+        "type" -> "poly",
+        "values" -> values.map { case (key, dt) => key -> dt2V(dt) }
+      )
     case Dynamic => obj("type" -> "dynamic")
     case Null => obj("type" -> "null")
   }
@@ -85,7 +88,7 @@ object DefType {
         }
       case "boolean" => Bool
       case "enum" => Enum(o.value("values").asVector.toList)
-      case "poly" => Poly(o.value("values").asVector.toList.map(v2dt))
+      case "poly" => Poly(o.value("values").asMap.map { case (key, json) => key -> v2dt(json) })
       case "dynamic" => Dynamic
       case "null" => Null
     }
@@ -148,7 +151,7 @@ object DefType {
   case object Bool extends DefType
   case object Dynamic extends DefType
   case class Enum(values: List[Json]) extends DefType
-  case class Poly(values: List[DefType]) extends DefType
+  case class Poly(values: Map[String, DefType]) extends DefType
   case object Null extends DefType {
     override def isNull: Boolean = true
 
