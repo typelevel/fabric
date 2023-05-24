@@ -248,8 +248,8 @@ object RW extends CompileRW {
       },
       d = DefType.Poly(types.map { case (key, rw) =>
         val obj = rw.definition.asInstanceOf[DefType.Obj]
-        obj.copy(obj.map + (key -> DefType.Str))
-      }.toList)
+        key -> obj
+      }.toMap)
     )
   }
 
