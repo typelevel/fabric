@@ -31,10 +31,10 @@ trait Search {
 }
 
 object Search {
-  implicit val rw: RW[Search] = RW.poly[Search]() {
-    case "searchQuery" => SearchQuery.rw
-    case "compositeSearch" => CompositeSearch.rw
-  }
+  implicit val rw: RW[Search] = RW.poly[Search]()(
+    "searchQuery" -> SearchQuery.rw,
+    "compositeSearch" -> CompositeSearch.rw
+  )
 
   def apply(entries: SearchEntry*): Search = SearchQuery(entries.toList)
 }

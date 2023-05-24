@@ -238,10 +238,10 @@ object Special {
 sealed trait Polymorphic
 
 object Polymorphic {
-  implicit val rw: RW[Polymorphic] = RW.poly[Polymorphic]() {
-    case "blank" => RW.static(Blank)
-    case "polyValue" => PolyValue.rw
-  }
+  implicit val rw: RW[Polymorphic] = RW.poly[Polymorphic]()(
+    "blank" -> RW.static(Blank),
+    "polyValue" -> PolyValue.rw
+  )
 
   case object Blank extends Polymorphic
 

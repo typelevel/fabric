@@ -27,10 +27,10 @@ import fabric.rw.RW
 sealed trait JsonPathEntry extends Any
 
 object JsonPathEntry {
-  implicit val rw: RW[JsonPathEntry] = RW.poly[JsonPathEntry]() {
-    case "named" => Named.rw
-    case "indexed" => Indexed.rw
-  }
+  implicit val rw: RW[JsonPathEntry] = RW.poly[JsonPathEntry]()(
+    "named" -> Named.rw,
+    "indexed" -> Indexed.rw
+  )
 
   case class Named(name: String) extends AnyVal with JsonPathEntry
   object Named {

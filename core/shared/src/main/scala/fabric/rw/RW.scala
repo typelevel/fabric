@@ -220,35 +220,34 @@ object RW extends CompileRW {
     * @param getType
     *   a function to determine the field value from an instance (defaults to
     *   the class name with the first character lowercase - defaultGetType)
-    * @param matcher
-    *   a matcher for field values to get the representative RW for that type
+    * @param types
+    *   a list of tuples with the type names associated with their RW
     */
-  def poly[P](
-    fieldName: String = "type",
-    getType: P => String = defaultGetType _
-  )(matcher: PartialFunction[String, RW[_ <: P]]): RW[P] = from(
-    p => {
-      val `type` = getType(p)
-      if (matcher.isDefinedAt(`type`)) {
-        matcher(`type`).asInstanceOf[RW[P]].read(p).merge(obj(fieldName -> `type`))
-      } else {
-        throw new RuntimeException(
-          s"Type not found [${`type`}] converting from object $p"
-        )
-      }
-    },
-    v => {
-      val `type` = v(fieldName).asStr.value
-      if (matcher.isDefinedAt(`type`)) {
-        matcher(`type`).write(v)
-      } else {
-        throw new RuntimeException(
-          s"Type not found [${`type`}] converting from value $v"
-        )
-      }
-    },
-    DefType.Dynamic
-  )
+  def poly[P](fieldName: String = "type", getType: P => String = defaultGetType _)
+             (types: (String, RW[_ <: P])*): RW[P] = {
+    val typeMap = types.toMap
+    from(
+      r = (p: P) => {
+        val `type` = getType(p)
+        typeMap.get(`type`) match {
+          case Some(rw) => rw.asInstanceOf[RW[P]].read(p).merge(obj("type" -> `type`))
+          case None => throw new RuntimeException(s"Type not found [${`type`}] converting from value $p. Available types are: [${typeMap.keySet.mkString(", ")}]")
+        }
+      },
+      w = (json: Json) => {
+        val `type` = json(fieldName).asString
+        typeMap.get(`type`) match {
+          case Some(rw) => rw.write(json)
+          case None => throw new RuntimeException(s"Type not found [${`type`}] converting from value $json. Available types are: [${typeMap.keySet.mkString(", ")}]")
+        }
+      },
+      d = DefType.Poly(types.map {
+        case (key, rw) =>
+          val obj = rw.definition.asInstanceOf[DefType.Obj]
+          obj.copy(obj.map + (key -> DefType.Str))
+      }.toList)
+    )
+  }
 
   /**
     * Used by poly by default to getType using the class name with the first
