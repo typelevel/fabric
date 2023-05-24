@@ -33,13 +33,13 @@ trait SearchEntry extends Any {
 }
 
 object SearchEntry {
-  implicit val rw: RW[SearchEntry] = RW.poly[SearchEntry]() {
-    case "byName" => ByName.rw
-    case "byOffset" => ByOffset.rw
-    case "byRegex" => ByRegex.rw
-    case "wildcard" => RW.static(Wildcard)
-    case "doubleWildcard" => RW.static(DoubleWildcard)
-  }
+  implicit val rw: RW[SearchEntry] = RW.poly[SearchEntry]()(
+    "byName" -> ByName.rw,
+    "byOffset" -> ByOffset.rw,
+    "byRegex" -> ByRegex.rw,
+    "wildcard" -> RW.static(Wildcard),
+    "doubleWildcard" -> RW.static(DoubleWildcard)
+  )
 
   def search(
     json: Json,
