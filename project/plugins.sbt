@@ -10,4 +10,4 @@ addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.4")
 
 addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.3.7")
 
-addSbtPlugin("org.typelevel" % "sbt-typelevel" % "0.4.20")
+addSbtPlugin("org.typelevel" % "sbt-typelevel" % "0.4.21")
