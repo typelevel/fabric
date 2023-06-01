@@ -21,24 +21,21 @@ class CaseClassConvertMedium extends AbstractCaseClassConvert {
                        |}""".stripMargin
 
   @Benchmark
-  def fabric(): Unit = (0 until count).foreach {
-    _ =>
-      val user = fabricJson.as[User]
-      assert(user.fullName.contains("A Person"))
+  def fabric(): Unit = (0 until count).foreach { _ =>
+    val user = fabricJson.as[User]
+    assert(user.fullName.contains("A Person"))
   }
 
   @Benchmark
-  def circe(): Unit = (0 until count).foreach {
-    _ =>
-      val user = circeJson.as[User].getOrElse(throw new RuntimeException("Unable to convert to User"))
-      assert(user.fullName.contains("A Person"))
+  def circe(): Unit = (0 until count).foreach { _ =>
+    val user = circeJson.as[User].getOrElse(throw new RuntimeException("Unable to convert to User"))
+    assert(user.fullName.contains("A Person"))
   }
 
   @Benchmark
-  def uPickle(): Unit = (0 until count).foreach {
-    _ =>
-      val user = uPickleSupport.read[User](uPickleJson)
-      assert(user.fullName.contains("A Person"))
+  def uPickle(): Unit = (0 until count).foreach { _ =>
+    val user = uPickleSupport.read[User](uPickleJson)
+    assert(user.fullName.contains("A Person"))
   }
 
   case class Address(city: String, state: String)
