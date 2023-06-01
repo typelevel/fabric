@@ -45,9 +45,8 @@ object DoRelease {
       .readAllLines(file, Charset.forName("UTF-8"))
       .asScala
       .find(_.startsWith("ThisBuild / tlBaseVersion :="))
-      .map {
-        s =>
-          s.substring(s.indexOf('"') + 1, s.lastIndexOf('"')).split('.')
+      .map { s =>
+        s.substring(s.indexOf('"') + 1, s.lastIndexOf('"')).split('.')
       }
       .map(a => Version(a(0).toInt, a(1).toInt, 0))
       .getOrElse(
