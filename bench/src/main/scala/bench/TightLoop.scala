@@ -9,10 +9,9 @@ object TightLoop {
     jsonString: String,
     parser: FormatParser,
     count: Int
-  ): Unit = (0 until count).foreach {
-    _ =>
-      val value = parser(jsonString)
-      assert(value.isObj)
+  ): Unit = (0 until count).foreach { _ =>
+    val value = parser(jsonString)
+    assert(value.isObj)
   }
 
   def main(args: Array[String]): Unit = {

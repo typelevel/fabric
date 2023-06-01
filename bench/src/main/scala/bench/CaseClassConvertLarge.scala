@@ -13,24 +13,21 @@ class CaseClassConvertLarge extends AbstractCaseClassConvert {
   val json: String = Samples.largeJsonString
 
   @Benchmark
-  def fabric(): Unit = (0 until count).foreach {
-    _ =>
-      val events = fabricJson.as[List[Event]]
-      assert(events.size == 30)
+  def fabric(): Unit = (0 until count).foreach { _ =>
+    val events = fabricJson.as[List[Event]]
+    assert(events.size == 30)
   }
 
   @Benchmark
-  def circe(): Unit = (0 until count).foreach {
-    _ =>
-      val events = circeJson.as[List[Event]].getOrElse(throw new RuntimeException("Unable to convert to User"))
-      assert(events.size == 30)
+  def circe(): Unit = (0 until count).foreach { _ =>
+    val events = circeJson.as[List[Event]].getOrElse(throw new RuntimeException("Unable to convert to User"))
+    assert(events.size == 30)
   }
 
   @Benchmark
-  def uPickle(): Unit = (0 until count).foreach {
-    _ =>
-      val events = uPickleSupport.read[List[Event]](uPickleJson)
-      assert(events.size == 30)
+  def uPickle(): Unit = (0 until count).foreach { _ =>
+    val events = uPickleSupport.read[List[Event]](uPickleJson)
+    assert(events.size == 30)
   }
 
   case class Event(
