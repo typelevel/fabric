@@ -36,6 +36,10 @@ sealed trait DefType {
 
   def opt: DefType = DefType.Opt(this)
 
+  final def template(config: TemplateConfig): Json = template(JsonPath.empty, config)
+
+  protected def template(path: JsonPath, config: TemplateConfig): Json
+
   def merge(that: DefType): DefType =
     if (this == that) {
       this
@@ -108,6 +112,10 @@ object DefType {
       val keys = m1.keySet ++ m2.keySet
       VectorMap(keys.toList.map(key => key -> m1.getOrElse(key, Null).merge(m2.getOrElse(key, Null))): _*)
     }
+
+    override def template(path: JsonPath, config: TemplateConfig): Json = obj(map.toList.map { case (key, dt) =>
+      key -> dt.template(path \ key, config)
+    }: _*)
   }
   object Obj {
     def apply(entries: (String, DefType)*): Obj = Obj(VectorMap(entries: _*))
@@ -118,6 +126,12 @@ object DefType {
       case Null => this
       case _ => super.merge(that)
     }
+
+    override def template(path: JsonPath, config: TemplateConfig): Json = arr(
+      t.template(path \ 0, config),
+      t.template(path \ 1, config),
+      t.template(path \ 2, config)
+    )
   }
   case class Opt(t: DefType) extends DefType {
     override def isOpt: Boolean = true
@@ -134,24 +148,40 @@ object DefType {
         }
       case _ => super.merge(that)
     }
+
+    override protected def template(path: JsonPath, config: TemplateConfig): Json = t.template(path, config)
   }
-  case object Str extends DefType
+  case object Str extends DefType {
+    override protected def template(path: JsonPath, config: TemplateConfig): Json = config.string(path)
+  }
   case object Int extends DefType {
     override def merge(that: DefType): DefType = that match {
       case DefType.Dec => that
       case _ => super.merge(that)
     }
+
+    override protected def template(path: JsonPath, config: TemplateConfig): Json = config.int(path)
   }
   case object Dec extends DefType {
     override def merge(that: DefType): DefType = that match {
       case DefType.Int => this
       case _ => super.merge(that)
     }
+
+    override protected def template(path: JsonPath, config: TemplateConfig): Json = config.dec(path)
   }
-  case object Bool extends DefType
-  case object Dynamic extends DefType
-  case class Enum(values: List[Json]) extends DefType
-  case class Poly(values: Map[String, DefType]) extends DefType
+  case object Bool extends DefType {
+    override protected def template(path: JsonPath, config: TemplateConfig): Json = config.bool(path)
+  }
+  case object Dynamic extends DefType {
+    override protected def template(path: JsonPath, config: TemplateConfig): Json = config.dynamic(path)
+  }
+  case class Enum(values: List[Json]) extends DefType {
+    override protected def template(path: JsonPath, config: TemplateConfig): Json = config.`enum`(path, values)
+  }
+  case class Poly(values: Map[String, DefType]) extends DefType {
+    override protected def template(path: JsonPath, config: TemplateConfig): Json = values.head._2.template(path, config)
+  }
   case object Null extends DefType {
     override def isNull: Boolean = true
 
@@ -160,5 +190,7 @@ object DefType {
       case Null => Null
       case _ => that.merge(Null)
     }
+
+    override protected def template(path: JsonPath, config: TemplateConfig): Json = fabric.Null
   }
 }
