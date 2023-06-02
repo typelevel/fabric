@@ -22,6 +22,7 @@
 package spec
 
 import fabric.define._
+import fabric.rw.Convertible
 import fabric.{define, _}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -214,6 +215,36 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
                                 |
                                 |  // Extra content
                                 |}""".stripMargin)
+    }
+    "generate a schema for a Person" in {
+      Person.rw.definition.json should be(
+        obj(
+          "type" -> "object",
+          "values" -> obj(
+            "name" -> obj("type" -> "string"),
+            "age" -> obj("type" -> "numeric", "precision" -> "integer"),
+            "address" -> obj(
+              "type" -> "object",
+              "values" -> obj(
+                "city" -> obj("type" -> "string"),
+                "state" -> obj("type" -> "string")
+              )
+            )
+          )
+        )
+      )
+    }
+    "generate a template for a Person" in {
+      Person.rw.definition.template(TemplateConfig.Empty) should be(
+        obj(
+          "name" -> "",
+          "age" -> 0,
+          "address" -> obj(
+            "city" -> "",
+            "state" -> ""
+          )
+        )
+      )
     }
   }
 }
