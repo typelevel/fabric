@@ -141,9 +141,7 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
   }
 
   object User {
-    implicit val rw: RW[User] = RW.gen[User].withPostRead { case (u, json) =>
-      json.merge(obj("num" -> u.num))
-    }
+    implicit val rw: RW[User] = RW.gen[User].withPostRead { case (u, json) => json.merge(obj("num" -> u.num)) }
   }
 
   case class WrapperSample(color: String, size: Double, json: Json) extends JsonWrapper
