@@ -20,20 +20,24 @@
  */
 
 package fabric.rw
-
 import fabric.Json
+import fabric.define.DefType
 
-class MultiWriter[T](val writers: List[Writer[T]], merge: (T, T) => T) extends Writer[T] {
-  override def write(value: Json): T =
-    writers.tail.foldLeft(writers.head.write(value))((t, writer) => merge(t, writer.write(value)))
-}
+case class EnhancedRW[T](rw: RW[T], preWrite: List[Json => Json] = Nil, postRead: List[(T, Json) => Json] = Nil)
+    extends RW[T] {
+  override def definition: DefType = rw.definition
 
-object MultiWriter {
-  def apply[T](writers: Writer[T]*)(implicit merge: (T, T) => T): Writer[T] = {
-    val list = writers.toList.flatMap {
-      case mw: MultiWriter[T] => mw.writers
-      case w => List(w)
-    }
-    new MultiWriter[T](list, merge)
+  override def write(value: Json): T = {
+    val json = preWrite.foldLeft(value)((j, f) => f(j))
+    rw.write(json)
   }
+
+  override def read(t: T): Json = {
+    val json = rw.read(t)
+    postRead.foldLeft(json)((j, f) => f(t, j))
+  }
+
+  override def withPreWrite(f: Json => Json): RW[T] = copy(preWrite = preWrite ::: List(f))
+
+  override def withPostRead(f: (T, Json) => Json): RW[T] = copy(postRead = postRead ::: List(f))
 }
