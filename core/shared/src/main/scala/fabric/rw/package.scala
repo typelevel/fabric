@@ -21,13 +21,13 @@
 
 package fabric
 
-package object rw {
+package object rw extends RWImplicits {
   implicit class Convertible[T](value: T) {
-    def json(implicit reader: Reader[T]): Json = asJson
-    def asJson(implicit reader: Reader[T]): Json = reader.read(value)
+    def json(implicit rw: RW[T]): Json = asJson
+    def asJson(implicit rw: RW[T]): Json = rw.read(value)
   }
 
   implicit class Asable(value: Json) {
-    def as[T](implicit writer: Writer[T]): T = writer.write(value)
+    def as[T](implicit rw: RW[T]): T = rw.write(value)
   }
 }
