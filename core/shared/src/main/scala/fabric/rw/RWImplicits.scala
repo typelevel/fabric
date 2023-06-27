@@ -127,12 +127,6 @@ trait RWImplicits {
     DefType.Arr(implicitly[RW[V]].definition)
   )
 
-  implicit def arrayRW[V: RW]: RW[Array[V]] = from[Array[V]](
-    v => Arr(v.map(_.json).toVector),
-    v => v.asVector.map(_.as[V]).toArray,
-    DefType.Arr(implicitly[RW[V]].definition)
-  )
-
   implicit def setRW[V: RW]: RW[Set[V]] = from[Set[V]](
     v => Arr(v.map(_.json).toVector),
     {
