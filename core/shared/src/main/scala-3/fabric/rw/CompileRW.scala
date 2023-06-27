@@ -56,8 +56,10 @@ trait CompileRW {
         inline erasedValue[L] match {
           case _: (hdLabel *: tlLabels) =>
             val hdLabelValue = constValue[hdLabel].asInstanceOf[String]
+            val defaults = getDefaultParams[A]
             val rw = summonInline[RW[hd]]
-            VectorMap(hdLabelValue -> rw.definition) ++ toDefinitionElems[A, tl, tlLabels](index + 1)
+            val d = if (defaults.contains(hdLabelValue)) rw.definition.opt else rw.definition
+            VectorMap(hdLabelValue -> d) ++ toDefinitionElems[A, tl, tlLabels](index + 1)
           case EmptyTuple => sys.error("Not possible")
         }
       }

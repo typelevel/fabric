@@ -246,5 +246,22 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
         )
       )
     }
+    "represent a proper optional for a definition with a default value" in {
+      User.rw.definition.json should be(
+        obj(
+          "type" -> "object",
+          "values" -> obj(
+            "name" -> obj(
+              "type" -> "optional",
+              "value" -> obj("type" -> "string")
+            ),
+            "age" -> obj(
+              "type" -> "numeric",
+              "precision" -> "integer"
+            )
+          )
+        )
+      )
+    }
   }
 }

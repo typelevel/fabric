@@ -37,6 +37,7 @@ trait RWImplicits {
 
   implicit lazy val byteRW: RW[Byte] = from[Byte](s => NumInt(s.toLong), _.asNum.asByte, DefType.Int)
   implicit lazy val shortRW: RW[Short] = from[Short](s => num(s.toInt), _.asNum.asShort, DefType.Int)
+  implicit lazy val charRW: RW[Char] = from[Char](c => str(c.toString), _.asString.charAt(0), DefType.Str)
   implicit lazy val intRW: RW[Int] = from[Int](i => num(i), _.asNum.asInt, DefType.Int)
   implicit lazy val longRW: RW[Long] = from[Long](l => num(l), _.asNum.asLong, DefType.Int)
   implicit lazy val floatRW: RW[Float] = from[Float](f => num(f.toDouble), _.asNum.asFloat, DefType.Dec)
@@ -123,6 +124,12 @@ trait RWImplicits {
   implicit def vectorRW[V: RW]: RW[Vector[V]] = from[Vector[V]](
     v => Arr(v.map(_.json)),
     v => v.asVector.map(_.as[V]),
+    DefType.Arr(implicitly[RW[V]].definition)
+  )
+
+  implicit def arrayRW[V: RW]: RW[Array[V]] = from[Array[V]](
+    v => Arr(v.map(_.json).toVector),
+    v => v.asVector.map(_.as[V]).toArray,
     DefType.Arr(implicitly[RW[V]].definition)
   )
 

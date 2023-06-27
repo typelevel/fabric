@@ -33,15 +33,21 @@ object RWMacros {
     import context.universe._
 
     val tpe = t.tpe
+    val companion: Symbol = tpe.typeSymbol.companion
+    val defaults = defaultsFor(context)(companion)
     tpe.decls.collectFirst {
       case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
     } match {
       case Some(fields) =>
-        val fieldDefs = fields.map { field =>
+        val fieldDefs = fields.zipWithIndex.map { case (field, index) =>
           val name = field.asTerm.name
           val key = name.decodedName.toString
           val returnType = tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
-          q"$key -> implicitly[RW[$returnType]].definition"
+          if (defaults.contains(index)) {
+            q"$key -> implicitly[RW[$returnType]].definition.opt"
+          } else {
+            q"$key -> implicitly[RW[$returnType]].definition"
+          }
         }
         context.Expr[DefType](q"""
             import _root_.fabric._
@@ -97,19 +103,15 @@ object RWMacros {
     }
   }
 
-  def caseClassW[T](
+  private def defaultsFor(
     context: blackbox.Context
-  )(implicit t: context.WeakTypeTag[T]): context.Expr[Writer[T]] = {
+  )(companion: context.Symbol): Map[Int, context.universe.MethodSymbol] = {
     import context.universe._
-
-    val tpe = t.tpe
-    val isJsonWrapper: Boolean = tpe <:< typeOf[JsonWrapper]
-    val companion = tpe.typeSymbol.companion
     val Default211RegexString = """[$]lessinit[$]greater[$]default[$](\d+)"""
     val DefaultRegexString = """apply[$]default[$](\d+)"""
     val Default211Regex = Default211RegexString.r
     val DefaultRegex = DefaultRegexString.r
-    val defaults: Map[Int, context.universe.MethodSymbol] = companion.typeSignature.decls.collect {
+    companion.typeSignature.decls.collect {
       case m: MethodSymbol if m.name.toString.matches(DefaultRegexString) =>
         m.name.toString match {
           case DefaultRegex(position) => (position.toInt - 1) -> m
@@ -119,6 +121,18 @@ object RWMacros {
           case Default211Regex(position) => (position.toInt - 1) -> m
         }
     }.toMap
+  }
+
+  def caseClassW[T](
+    context: blackbox.Context
+  )(implicit t: context.WeakTypeTag[T]): context.Expr[Writer[T]] = {
+    import context.universe._
+
+    val tpe = t.tpe
+    val isJsonWrapper: Boolean = tpe <:< typeOf[JsonWrapper]
+    val companion: Symbol = tpe.typeSymbol.companion
+    val defaults = defaultsFor(context)(companion)
+
     tpe.decls.collectFirst {
       case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
     } match {
