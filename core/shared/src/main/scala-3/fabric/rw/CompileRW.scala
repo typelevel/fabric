@@ -32,6 +32,8 @@ import scala.quoted._
 import scala.collection.immutable.VectorMap
 
 trait CompileRW {
+  inline final def derived[T <: Product](using inline T: Mirror.ProductOf[T]): RW[T] = gen[T]
+
   inline def gen[T <: Product](using Mirror.ProductOf[T]): RW[T] = new ClassRW[T] {
     override protected def t2Map(t: T): Map[String, Json] = toMap(t)
     override protected def map2T(map: Map[String, Json]): T = fromMap[T](map)

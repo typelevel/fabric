@@ -114,6 +114,9 @@ case class Person(name: String, age: Int)
 object Person {
   implicit val rw: RW[Person] = RW.gen[Person]
 }
+
+// Scala 3 only
+case class Person(name: String, age: Int) derives RW
 ```
 
 ### Parse
