@@ -263,5 +263,17 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
         )
       )
     }
+    "represent a Map[String, String] properly" in {
+      rw.mapRW[String, String].definition.json should be(
+        obj(
+          "type" -> "object",
+          "values" -> obj(
+            "[key]" -> obj(
+              "type" -> "string"
+            )
+          )
+        )
+      )
+    }
   }
 }
