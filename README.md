@@ -46,10 +46,10 @@ The focus of this project is minimalism and flexibility. To that end, the featur
 ### Setup
 
 For SBT simply include:
-`libraryDependencies += "org.typelevel" %%% "fabric-core" % "1.12.1"`
+`libraryDependencies += "org.typelevel" %%% "fabric-core" % "1.12.2"`
 
 For parsing support include:
-`libraryDependencies += "org.typelevel" %%% "fabric-io" % "1.12.1"`
+`libraryDependencies += "org.typelevel" %%% "fabric-io" % "1.12.2"`
 
 ### Create
 
@@ -114,9 +114,6 @@ case class Person(name: String, age: Int)
 object Person {
   implicit val rw: RW[Person] = RW.gen[Person]
 }
-
-// Scala 3 only
-case class Person(name: String, age: Int) derives RW
 ```
 
 ### Parse
