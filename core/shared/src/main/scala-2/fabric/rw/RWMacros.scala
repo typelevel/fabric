@@ -145,7 +145,7 @@ object RWMacros {
             case Some(m) => q"$companion.$m"
             case None if returnType.resultType <:< typeOf[Option[_]] => q"""None"""
             case None =>
-              q"""sys.error("Unable to find field " + ${tpe.toString} + "." + $key + " (and no defaults set) in " + Obj(map))"""
+              q"""throw RWException("Unable to find field " + ${tpe.toString} + "." + $key + " (and no defaults set) in " + Obj(map))"""
           }
           if (key == "json" && isJsonWrapper) {
             q"json = Obj(map)"
