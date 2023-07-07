@@ -123,7 +123,7 @@ trait CompileRW {
             } else {
               inline erasedValue[hd] match {
                 case _: Option[optHd] => None
-                case _ => sys.error(s"Unable to find field ${getClassName[A]}.$hdLabelValue (and no defaults set) in ${Obj(map)}")
+                case _ => throw RWException(s"Unable to find field ${getClassName[A]}.$hdLabelValue (and no defaults set) in ${Obj(map)}")
               }
             }
             def default = defaults.getOrElse(hdLabelValue, defaultAlternative)
