@@ -60,7 +60,7 @@ trait RWImplicits {
       from[Map[K, V]](
         _.map { case (key, value) => key.json.asString -> value.json },
         _.asObj.value.map { case (key, value) => str(key).as[K] -> value.as[V] },
-        DefType.Dynamic
+        DefType.Obj("[key]" -> valueRW.definition)
       )
     } else {
       RW.from[Map[K, V]](
