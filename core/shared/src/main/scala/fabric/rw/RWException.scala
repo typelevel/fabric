@@ -21,4 +21,4 @@
 
 package fabric.rw
 
-case class RWException(message: String) extends RuntimeException()
+case class RWException(message: String) extends RuntimeException(message)
