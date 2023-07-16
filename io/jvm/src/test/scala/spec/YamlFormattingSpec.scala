@@ -70,6 +70,7 @@ class YamlFormattingSpec extends AnyWordSpec with Matchers {
     val yamlString = resource(yamlName)
     val json = JsonParser(jsonString)
     val yaml = YamlFormatter(json)
+    println(yaml)
     yaml should be(yamlString)
   }
 
