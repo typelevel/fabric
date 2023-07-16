@@ -47,7 +47,7 @@ object YamlFormatter extends Formatter {
           }
           .mkString("\n", "\n", "")
       case Str(s) if s.contains("\n") => s.split('\n').map(s => s"${pad()}$s").mkString("|-\n", "\n", "")
-      case Str(s) => s
+      case Str(s) => s"'$s'"
     }
   }
 }
