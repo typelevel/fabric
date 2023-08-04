@@ -28,7 +28,7 @@ trait TemplateConfig {
   def int(path: JsonPath): Int
   def dec(path: JsonPath): BigDecimal
   def bool(path: JsonPath): Boolean
-  def dynamic(path: JsonPath): Json
+  def json(path: JsonPath): Json
   def `enum`(path: JsonPath, values: List[Json]): Json
 }
 

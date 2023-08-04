@@ -69,7 +69,7 @@ object FabricGenerator {
         case DefType.Bool => "Boolean"
         case DefType.Enum(_) => throw new RuntimeException("Unsupported")
         case DefType.Poly(_) => throw new RuntimeException("Unsupported")
-        case DefType.Dynamic => "Json"
+        case DefType.Json => "Json"
         case DefType.Null => throw new RuntimeException(
             "Null type found in definition! Not supported for code generation!"
           )

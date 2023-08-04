@@ -50,6 +50,9 @@ object ByOffset {
   implicit val rw: RW[ByOffset] = RW.from(
     r = t => obj("offset" -> t.offset, "direction" -> t.direction.json),
     w = j => ByOffset(j("offset").asInt, j("direction").as[OffsetDirection]),
-    d = DefType.Dynamic
+    d = DefType.Obj(
+      "offset" -> fabric.rw.intRW.definition,
+      "direction" -> OffsetDirection.rw.definition
+    )
   )
 }

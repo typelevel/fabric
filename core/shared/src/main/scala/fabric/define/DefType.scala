@@ -57,7 +57,7 @@ sealed trait DefType {
 }
 
 object DefType {
-  implicit def rw: RW[DefType] = RW.from[DefType](r = dt2V, w = v2dt, d = DefType.Dynamic)
+  implicit def rw: RW[DefType] = RW.from[DefType](r = dt2V, w = v2dt, d = DefType.Json)
 
   private def dt2V(dt: DefType): Json = dt match {
     case Obj(map) => obj(
@@ -75,7 +75,7 @@ object DefType {
         "type" -> "poly",
         "values" -> values.map { case (key, dt) => key -> dt2V(dt) }
       )
-    case Dynamic => obj("type" -> "dynamic")
+    case Json => obj("type" -> "json")
     case Null => obj("type" -> "null")
   }
 
@@ -93,7 +93,7 @@ object DefType {
       case "boolean" => Bool
       case "enum" => Enum(o.value("values").asVector.toList)
       case "poly" => Poly(o.value("values").asMap.map { case (key, json) => key -> v2dt(json) })
-      case "dynamic" => Dynamic
+      case "json" => Json
       case "null" => Null
     }
   }
@@ -173,8 +173,8 @@ object DefType {
   case object Bool extends DefType {
     override protected def template(path: JsonPath, config: TemplateConfig): Json = config.bool(path)
   }
-  case object Dynamic extends DefType {
-    override protected def template(path: JsonPath, config: TemplateConfig): Json = config.dynamic(path)
+  case object Json extends DefType {
+    override protected def template(path: JsonPath, config: TemplateConfig): Json = config.json(path)
   }
   case class Enum(values: List[Json]) extends DefType {
     override protected def template(path: JsonPath, config: TemplateConfig): Json = config.`enum`(path, values)

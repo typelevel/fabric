@@ -68,7 +68,7 @@ object RW extends CompileRW {
     override def definition: DefType = DefType.Str
   }
 
-  def wrapped[T](key: String, asJson: T => Json, fromJson: Json => T, definition: DefType = DefType.Dynamic): RW[T] =
+  def wrapped[T](key: String, asJson: T => Json, fromJson: Json => T, definition: DefType = DefType.Json): RW[T] =
     RW.from(
       r = t => obj(key -> asJson(t)),
       w = j => fromJson(j(key)),
@@ -83,26 +83,6 @@ object RW extends CompileRW {
     *   the singleton value to use
     */
   def static[T](value: T): RW[T] = from(_ => obj(), _ => value, DefType.Obj())
-
-  /**
-    * Convenience functionality for working with enumerations
-    *
-    * @param fieldName
-    *   the field name to refer to in the Json
-    * @param mapping
-    *   a mapping of key/value pairs representing the String in fieldName to the
-    *   representative value
-    */
-  def enumeration[T](fieldName: String, mapping: (String, T)*): RW[T] = {
-    val f2T: Map[String, T] = mapping.toMap
-    val t2F: Map[T, String] = f2T.map(_.swap)
-
-    from(
-      (t: T) => obj(fieldName -> t2F(t)),
-      (v: Json) => f2T(v.asObj.value(fieldName).asStr.value),
-      DefType.Dynamic
-    )
-  }
 
   /**
     * Convenience functionality for working with polymorphic types
