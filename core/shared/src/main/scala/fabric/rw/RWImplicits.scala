@@ -30,8 +30,8 @@ import scala.util.matching.Regex
 
 trait RWImplicits {
   implicit lazy val unitRW: RW[Unit] = from(_ => Null, _ => (), DefType.Null)
-  implicit lazy val valueRW: RW[Json] = from(identity, identity, DefType.Dynamic)
-  implicit lazy val objRW: RW[Obj] = from(o => o, v => v.asObj, DefType.Dynamic)
+  implicit lazy val valueRW: RW[Json] = from(identity, identity, DefType.Json)
+  implicit lazy val objRW: RW[Obj] = from(o => o, v => v.asObj, DefType.Json)
 
   implicit lazy val boolRW: RW[Boolean] = from[Boolean](bool, _.asBool.value, DefType.Bool)
 
@@ -92,7 +92,7 @@ trait RWImplicits {
         case Vector(k, v) => (k.as[K], v.as[V])
         case v => throw new RuntimeException(s"Invalid shape for tuple2: $v")
       },
-    d = DefType.Arr(DefType.Dynamic)
+    d = DefType.Arr(DefType.Json)
   )
 
   implicit def tuple3RW[T1: RW, T2: RW, T3: RW]: RW[(T1, T2, T3)] = from[(T1, T2, T3)](
@@ -102,7 +102,7 @@ trait RWImplicits {
         case Vector(t1, t2, t3) => (t1.as[T1], t2.as[T2], t3.as[T3])
         case v => throw new RuntimeException(s"Invalid shape for tuple3: $v")
       },
-    d = DefType.Arr(DefType.Dynamic)
+    d = DefType.Arr(DefType.Json)
   )
 
   implicit def tuple4RW[T1: RW, T2: RW, T3: RW, T4: RW]: RW[(T1, T2, T3, T4)] = from[(T1, T2, T3, T4)](
@@ -112,7 +112,7 @@ trait RWImplicits {
         case Vector(t1, t2, t3, t4) => (t1.as[T1], t2.as[T2], t3.as[T3], t4.as[T4])
         case v => throw new RuntimeException(s"Invalid shape for tuple4: $v")
       },
-    d = DefType.Arr(DefType.Dynamic)
+    d = DefType.Arr(DefType.Json)
   )
 
   implicit def listRW[V: RW]: RW[List[V]] = from[List[V]](

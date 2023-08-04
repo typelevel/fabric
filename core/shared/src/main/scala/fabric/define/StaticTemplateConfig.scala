@@ -28,7 +28,7 @@ case class StaticTemplateConfig(
   i: Int = 0,
   d: BigDecimal = BigDecimal(0),
   b: Boolean = true,
-  dyn: Json = obj()
+  json: Json = obj()
 ) extends TemplateConfig {
   override def string(path: JsonPath): String = s
 
@@ -38,7 +38,7 @@ case class StaticTemplateConfig(
 
   override def bool(path: JsonPath): Boolean = b
 
-  override def dynamic(path: JsonPath): Json = dyn
+  override def json(path: JsonPath): Json = json
 
   override def `enum`(path: JsonPath, values: List[Json]): Json = values.head
 }
