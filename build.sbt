@@ -38,6 +38,8 @@ ThisBuild / developers := List(tlGitHubDev("darkfrog26", "Matt Hicks"))
 // Dependency versions
 val collectionCompatVersion: String = "2.11.0"
 
+val reactifyVersion: String = "4.1.0"
+
 val scalaTestVersion: String = "3.2.16"
 
 val scalaCheckVersion: String = "3.2.14.0"
@@ -52,7 +54,16 @@ val jsoniterJavaVersion: String = "0.9.23"
 val circeVersion: String = "0.14.2"
 val uPickleVersion: String = "2.0.0"
 
-lazy val root = tlCrossRootProject.aggregate(core.js, core.jvm, core.native, io.js, io.jvm)
+lazy val root = tlCrossRootProject.aggregate(
+  core.js,
+  core.jvm,
+  core.native,
+  io.js,
+  io.jvm,
+  reactify.js,
+  reactify.jvm,
+  reactify.native
+)
 
 lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .crossType(CrossType.Full)
@@ -100,6 +111,19 @@ lazy val io = crossProject(JSPlatform, JVMPlatform)
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-xml" % jacksonVersion,
       "com.jsoniter" % "jsoniter" % jsoniterJavaVersion,
       "com.typesafe" % "config" % typesafeConfigVersion
+    )
+  )
+  .dependsOn(core)
+
+lazy val reactify = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+  .crossType(CrossType.Full)
+  .settings(
+    name := "fabric-reactify",
+    mimaPreviousArtifacts := Set.empty,
+    libraryDependencies ++= Seq(
+      "com.outr" %%% "reactify" % reactifyVersion,
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
+      "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
     )
   )
   .dependsOn(core)
