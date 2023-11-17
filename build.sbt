@@ -46,12 +46,16 @@ val scalaCheckVersion: String = "3.2.14.0"
 
 // Parse module dependencies
 val literallyVersion: String = "1.1.0"
+
 val jacksonVersion: String = "2.16.0"
-val typesafeConfigVersion: String = "1.4.2"
+
+val typesafeConfigVersion: String = "1.4.3"
+
 val jsoniterJavaVersion: String = "0.9.23"
 
 // Benchmarks
 val circeVersion: String = "0.14.2"
+
 val uPickleVersion: String = "2.0.0"
 
 lazy val root = tlCrossRootProject.aggregate(
