@@ -45,10 +45,13 @@ class YamlFormattingSpec extends AnyWordSpec with Matchers {
               |is
               |multi-line""".stripMargin,
           "test5" -> "This is \"quoted\" text.",
-          "test6" -> arr(Null)
+          "test6" -> arr(Null),
+          "test7" -> "This isn't going to fail!"
         )
       )
       val yamlString = YamlFormatter(v)
+      val expected = resource("formatted.yaml")
+      yamlString should be(expected)
       val json = JsonParser(yamlString, Format.Yaml)
       json should be(v)
     }
@@ -70,7 +73,6 @@ class YamlFormattingSpec extends AnyWordSpec with Matchers {
     val yamlString = resource(yamlName)
     val json = JsonParser(jsonString)
     val yaml = YamlFormatter(json)
-    println(yaml)
     yaml should be(yamlString)
   }
 
