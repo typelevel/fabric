@@ -29,6 +29,7 @@ import fabric.define.DefType
   * same type
   */
 trait RW[T] extends Reader[T] with Writer[T] {
+  def className: Option[String] = None
   def definition: DefType
 
   def withPreWrite(f: Json => Json): RW[T] = EnhancedRW[T](this, preWrite = List(f))

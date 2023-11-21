@@ -42,6 +42,9 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       val back = value.as[Person]
       back should be(person)
     }
+    "verify the class name of Person" in {
+      Person.rw.className should be(Some("spec.Person"))
+    }
     "convert from empty obj to Defaults" in {
       val v = obj()
       val d = v.as[Defaults]
