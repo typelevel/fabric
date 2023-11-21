@@ -27,14 +27,16 @@ import fabric.rw.*
 
 import scala.deriving.*
 import scala.compiletime.*
-import scala.quoted._
+import scala.quoted.*
+import scala.reflect.*
 
 import scala.collection.immutable.VectorMap
 
 trait CompileRW {
-  inline final def derived[T <: Product](using inline T: Mirror.ProductOf[T]): RW[T] = gen[T]
+  inline final def derived[T <: Product](using inline T: Mirror.ProductOf[T], ct: ClassTag[T]): RW[T] = gen[T]
 
-  inline def gen[T <: Product](using Mirror.ProductOf[T]): RW[T] = new ClassRW[T] {
+  inline def gen[T <: Product](using Mirror.ProductOf[T], ClassTag[T]): RW[T] = new ClassRW[T] {
+    override def className: Option[String] = toClassName[T]
     override protected def t2Map(t: T): Map[String, Json] = toMap(t)
     override protected def map2T(map: Map[String, Json]): T = fromMap[T](map)
     override def definition: DefType = toDefinition[T]
@@ -47,6 +49,9 @@ trait CompileRW {
   inline def genW[T <: Product](using Mirror.ProductOf[T]): Writer[T] = new ClassW[T] {
     override protected def map2T(map: Map[String, Json]): T = fromMap[T](map)
   }
+
+  inline def toClassName[T](using ct: ClassTag[T]): Option[String] =
+    Some(ct.runtimeClass.getName)
 
   inline def toDefinition[T <: Product](using p: Mirror.ProductOf[T]): DefType = {
     DefType.Obj(toDefinitionElems[T, p.MirroredElemTypes, p.MirroredElemLabels](0))

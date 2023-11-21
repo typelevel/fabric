@@ -187,6 +187,7 @@ object RWMacros {
     import context.universe._
 
     val tpe = t.tpe
+    val className = tpe.typeSymbol.asClass.fullName
     val reader = caseClassR[T](context)
     val writer = caseClassW[T](context)
     val definition = caseClassD[T](context)
@@ -199,6 +200,7 @@ object RWMacros {
             private val r = $reader
             private val w = $writer
 
+            override def className: Option[String] = Some($className)
             override def read(t: $tpe): Json = r.read(t)
             override def write(value: Json): $tpe = w.write(value)
             override def definition: DefType = $definition
