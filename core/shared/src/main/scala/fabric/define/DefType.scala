@@ -86,16 +86,16 @@ object DefType {
     val o = v.asObj
     o.value("type").asString match {
       case "object" => Obj(
-        map = o.value("values").asMap.map { case (key, value) => key -> v2dt(value) },
-        className = o.value.getOrElse("className", Null) match {
-          case Null => None
-          case s: Str => Some(s.value)
-          case j => throw new RuntimeException(s"Unsupported className value: $j")
-        }
-      )
+          map = o.value("values").asMap.map { case (key, value) => key -> v2dt(value) },
+          className = o.value.getOrElse("className", Null) match {
+            case Null => None
+            case s: Str => Some(s.value)
+            case j => throw new RuntimeException(s"Unsupported className value: $j")
+          }
+        )
       case "array" => Arr(
-        t = v2dt(o.value("value"))
-      )
+          t = v2dt(o.value("value"))
+        )
       case "optional" => Opt(v2dt(o.value("value")))
       case "string" => Str
       case "numeric" => o.value("precision").asString match {

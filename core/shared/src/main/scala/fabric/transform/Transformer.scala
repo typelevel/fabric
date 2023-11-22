@@ -80,6 +80,7 @@ object Transformer {
   implicit val rw: RW[Transformer] = RW.from(
     r = t => obj("json" -> t.json, "paths" -> t.paths.json),
     w = j => new Transformer(j("json"), j("paths").as[List[JsonPath]]),
-    d = DefType.Obj(Some("fabric.transform.Transformer"), "json" -> DefType.Json, "paths" -> DefType.Arr(JsonPath.rw.definition))
+    d = DefType
+      .Obj(Some("fabric.transform.Transformer"), "json" -> DefType.Json, "paths" -> DefType.Arr(JsonPath.rw.definition))
   )
 }
