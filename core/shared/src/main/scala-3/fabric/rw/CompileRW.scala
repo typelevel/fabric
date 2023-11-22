@@ -36,7 +36,6 @@ trait CompileRW {
   inline final def derived[T <: Product](using inline T: Mirror.ProductOf[T], ct: ClassTag[T]): RW[T] = gen[T]
 
   inline def gen[T <: Product](using Mirror.ProductOf[T], ClassTag[T]): RW[T] = new ClassRW[T] {
-    override def className: Option[String] = toClassName[T]
     override protected def t2Map(t: T): Map[String, Json] = toMap(t)
     override protected def map2T(map: Map[String, Json]): T = fromMap[T](map)
     override def definition: DefType = toDefinition[T]
@@ -51,10 +50,10 @@ trait CompileRW {
   }
 
   inline def toClassName[T](using ct: ClassTag[T]): Option[String] =
-    Some(ct.runtimeClass.getName)
+    Some(ct.runtimeClass.getName.replace("$", "."))
 
-  inline def toDefinition[T <: Product](using p: Mirror.ProductOf[T]): DefType = {
-    DefType.Obj(toDefinitionElems[T, p.MirroredElemTypes, p.MirroredElemLabels](0))
+  inline def toDefinition[T <: Product](using p: Mirror.ProductOf[T], ct: ClassTag[T]): DefType = {
+    DefType.Obj(toDefinitionElems[T, p.MirroredElemTypes, p.MirroredElemLabels](0), toClassName[T])
   }
 
   inline def toDefinitionElems[A <: Product, T <: Tuple, L <: Tuple](index: Int): Map[String, DefType] = {

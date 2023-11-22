@@ -43,7 +43,7 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       back should be(person)
     }
     "verify the class name of Person" in {
-      Person.rw.className should be(Some("spec.Person"))
+      Person.rw.definition.className should be(Some("spec.Person"))
     }
     "convert from empty obj to Defaults" in {
       val v = obj()
@@ -92,9 +92,10 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
     "verify Person's DefType" in {
       Person.rw.definition should be(
         DefType.Obj(
+          Some("spec.Person"),
           "name" -> DefType.Str,
           "age" -> DefType.Int,
-          "address" -> DefType.Obj("city" -> DefType.Str, "state" -> DefType.Str)
+          "address" -> DefType.Obj(Some("spec.Address"), "city" -> DefType.Str, "state" -> DefType.Str)
         )
       )
     }

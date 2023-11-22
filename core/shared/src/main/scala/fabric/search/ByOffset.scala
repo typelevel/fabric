@@ -51,6 +51,7 @@ object ByOffset {
     r = t => obj("offset" -> t.offset, "direction" -> t.direction.json),
     w = j => ByOffset(j("offset").asInt, j("direction").as[OffsetDirection]),
     d = DefType.Obj(
+      Some("fabric.search.ByOffset"),
       "offset" -> fabric.rw.intRW.definition,
       "direction" -> OffsetDirection.rw.definition
     )

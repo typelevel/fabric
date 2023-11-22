@@ -37,8 +37,8 @@ object SearchEntry {
     "byName" -> ByName.rw,
     "byOffset" -> ByOffset.rw,
     "byRegex" -> ByRegex.rw,
-    "wildcard" -> RW.static(Wildcard),
-    "doubleWildcard" -> RW.static(DoubleWildcard)
+    "wildcard" -> RW.static("fabric.search.Wildcard", Wildcard),
+    "doubleWildcard" -> RW.static("fabric.search.DoubleWildcard", DoubleWildcard)
   )
 
   def search(

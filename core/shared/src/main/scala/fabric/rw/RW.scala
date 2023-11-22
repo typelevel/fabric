@@ -29,7 +29,6 @@ import fabric.define.DefType
   * same type
   */
 trait RW[T] extends Reader[T] with Writer[T] {
-  def className: Option[String] = None
   def definition: DefType
 
   def withPreWrite(f: Json => Json): RW[T] = EnhancedRW[T](this, preWrite = List(f))
@@ -73,7 +72,7 @@ object RW extends CompileRW {
     RW.from(
       r = t => obj(key -> asJson(t)),
       w = j => fromJson(j(key)),
-      d = DefType.Obj(key -> definition)
+      d = DefType.Obj(Some(key), key -> definition)
     )
 
   /**
@@ -83,7 +82,7 @@ object RW extends CompileRW {
     * @param value
     *   the singleton value to use
     */
-  def static[T](value: T): RW[T] = from(_ => obj(), _ => value, DefType.Obj())
+  def static[T](className: String, value: T): RW[T] = from(_ => obj(), _ => value, DefType.Obj(Some(className)))
 
   /**
     * Convenience functionality for working with polymorphic types
