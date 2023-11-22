@@ -69,6 +69,7 @@ object JsonPath {
       ),
     w = json => JsonPath(json("entries").asVector.toList.map(JsonPathEntry.rw.write)),
     d = DefType.Obj(
+      Some("fabric.JsonPath"),
       "entries" -> DefType.Arr(JsonPathEntry.rw.definition)
     )
   )

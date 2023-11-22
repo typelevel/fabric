@@ -52,7 +52,7 @@ object FabricGenerator {
         case _ => false
       }
       def typeFor(name: String, dt: DefType): String = dt match {
-        case DefType.Obj(map) =>
+        case DefType.Obj(map, _) =>
           val className = resolver(name)
           additional = generate(className, map) :: additional
           if (className.contains('.')) {
@@ -120,7 +120,7 @@ object FabricGenerator {
     }
 
     dt match {
-      case DefType.Obj(map) => generate(rootName, map)
+      case DefType.Obj(map, _) => generate(rootName, map)
       case _ => throw new RuntimeException(
           s"Only DefType.Obj is supported for generation, but received: $dt"
         )

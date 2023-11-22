@@ -60,7 +60,7 @@ trait RWImplicits {
       from[Map[K, V]](
         _.map { case (key, value) => key.json.asString -> value.json },
         _.asObj.value.map { case (key, value) => str(key).as[K] -> value.as[V] },
-        DefType.Obj("[key]" -> valueRW.definition)
+        DefType.Obj(None, "[key]" -> valueRW.definition)
       )
     } else {
       RW.from[Map[K, V]](
@@ -78,6 +78,7 @@ trait RWImplicits {
           }.toMap,
         d = DefType.Arr(
           DefType.Obj(
+            None,
             "key" -> implicitly[RW[K]].definition,
             "value" -> implicitly[RW[V]].definition
           )

@@ -162,7 +162,8 @@ class FabricSpec extends AnyWordSpec with Matchers {
           "values" -> obj(
             "blank" -> obj(
               "type" -> "object",
-              "values" -> obj()
+              "values" -> obj(),
+              "className" -> "Blank"
             ),
             "polyValue" -> obj(
               "type" -> "object",
@@ -170,7 +171,8 @@ class FabricSpec extends AnyWordSpec with Matchers {
                 "s" -> obj(
                   "type" -> "string"
                 )
-              )
+              ),
+              "className" -> "spec.Polymorphic.PolyValue"
             )
           )
         )
@@ -259,7 +261,7 @@ sealed trait Polymorphic
 
 object Polymorphic {
   implicit val rw: RW[Polymorphic] = RW.poly[Polymorphic]()(
-    "blank" -> RW.static(Blank),
+    "blank" -> RW.static("Blank", Blank),
     "polyValue" -> PolyValue.rw
   )
 

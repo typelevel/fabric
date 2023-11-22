@@ -33,6 +33,7 @@ object RWMacros {
     import context.universe._
 
     val tpe = t.tpe
+    val className = tpe.typeSymbol.asClass.fullName
     val companion: Symbol = tpe.typeSymbol.companion
     val defaults = defaultsFor(context)(companion)
     tpe.decls.collectFirst {
@@ -53,7 +54,7 @@ object RWMacros {
             import _root_.fabric._
             import _root_.fabric.define._
 
-            DefType.Obj(..$fieldDefs)
+            DefType.Obj(Some($className), ..$fieldDefs)
            """)
       case None => context.abort(context.enclosingPosition, "Not a valid case class")
     }
@@ -187,7 +188,6 @@ object RWMacros {
     import context.universe._
 
     val tpe = t.tpe
-    val className = tpe.typeSymbol.asClass.fullName
     val reader = caseClassR[T](context)
     val writer = caseClassW[T](context)
     val definition = caseClassD[T](context)
@@ -200,7 +200,6 @@ object RWMacros {
             private val r = $reader
             private val w = $writer
 
-            override def className: Option[String] = Some($className)
             override def read(t: $tpe): Json = r.read(t)
             override def write(value: Json): $tpe = w.write(value)
             override def definition: DefType = $definition
