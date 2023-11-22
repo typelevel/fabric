@@ -234,7 +234,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
               "className" -> "spec.Address"
             )
           ),
-          "className" -> "spec.Person",
+          "className" -> "spec.Person"
         )
       )
     }
