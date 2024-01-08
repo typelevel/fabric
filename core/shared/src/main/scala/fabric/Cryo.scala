@@ -46,11 +46,11 @@ object Cryo {
           case (key, value) => sum + bytes(Str(key)) + bytes(value)
         }
       )
-    case Str(s) => bytes.Byte + bytes.Integer + s.length
-    case NumInt(_) => bytes.Byte + bytes.Long
-    case NumDec(bd) => bytes.Byte + bytes(Str(bd.toString()))
-    case Bool(_) => bytes.Byte + bytes.Byte
-    case Arr(v) => bytes.Byte + bytes.Integer + v.foldLeft(0)((sum, json) => sum + bytes(json))
+    case Str(s, _) => bytes.Byte + bytes.Integer + s.length
+    case NumInt(_, _) => bytes.Byte + bytes.Long
+    case NumDec(bd, _) => bytes.Byte + bytes(Str(bd.toString()))
+    case Bool(_, _) => bytes.Byte + bytes.Byte
+    case Arr(v, _) => bytes.Byte + bytes.Integer + v.foldLeft(0)((sum, json) => sum + bytes(json))
     case Null => bytes.Byte
   }
 
@@ -71,23 +71,23 @@ object Cryo {
         freeze(Str(key), bb)
         freeze(value, bb)
       }
-    case Str(s) =>
+    case Str(s, _) =>
       bb.put(identifiers.Str)
       bb.putInt(s.length)
       bb.put(s.getBytes("UTF-8"))
       ()
-    case NumInt(l) =>
+    case NumInt(l, _) =>
       bb.put(identifiers.NumInt)
       bb.putLong(l)
       ()
-    case NumDec(bd) =>
+    case NumDec(bd, _) =>
       bb.put(identifiers.NumDec)
       freeze(Str(bd.toString()), bb)
-    case Bool(b) =>
+    case Bool(b, _) =>
       bb.put(identifiers.Bool)
       bb.put(if (b) 1.toByte else 0.toByte)
       ()
-    case Arr(v) =>
+    case Arr(v, _) =>
       bb.put(identifiers.Arr)
       bb.putInt(v.length)
       v.foreach(json => freeze(json, bb))
