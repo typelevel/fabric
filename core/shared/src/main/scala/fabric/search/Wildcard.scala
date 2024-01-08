@@ -30,7 +30,7 @@ case object Wildcard extends SearchEntry {
     jsonPath: JsonPath
   ): List[JsonPath] = json match {
     case Obj(map) => map.toList.flatMap { case (key, value) => SearchEntry.search(value, entries, jsonPath \ key) }
-    case Arr(vec) => vec.toList.zipWithIndex.flatMap { case (value, index) =>
+    case Arr(vec, _) => vec.toList.zipWithIndex.flatMap { case (value, index) =>
         SearchEntry.search(value, entries, jsonPath \ index)
       }
     case _ => Nil
