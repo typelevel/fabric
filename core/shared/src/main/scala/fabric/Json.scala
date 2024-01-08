@@ -467,6 +467,11 @@ final class Obj private (val value: Map[String, Json], val reference: Option[Any
 
   override def `type`: JsonType[Obj] = JsonType.Obj
 
+  override def equals(obj: Any): Boolean = obj match {
+    case that: Obj => this.value == that.value && this.reference == that.reference
+    case _ => false
+  }
+
   override def toString: String = value.map { case (key, value) => s""""$key": $value""" }.mkString("{", ", ", "}")
 }
 
