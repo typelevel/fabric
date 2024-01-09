@@ -131,7 +131,7 @@ trait RWImplicits {
   implicit def setRW[V: RW]: RW[Set[V]] = from[Set[V]](
     v => Arr(v.map(_.json).toVector),
     {
-      case Arr(vector) => vector.map(_.as[V]).toSet
+      case Arr(vector, _) => vector.map(_.as[V]).toSet
       case v => throw new RuntimeException(s"Unsupported set: $v")
     },
     DefType.Arr(implicitly[RW[V]].definition)

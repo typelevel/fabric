@@ -80,7 +80,7 @@ object SimpleJsonParser extends FormatParser {
     }
 
     def parseKey(offset: Int): (Option[String], Int) = parse(offset) match {
-      case (Some(Str(key)), off) =>
+      case (Some(Str(key, _)), off) =>
         val colonIndex = content.indexOf(':', off)
         assert(
           colonIndex != -1,

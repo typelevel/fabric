@@ -26,7 +26,7 @@ import fabric.{Arr, Json, JsonPath, Obj}
 object RemoveEmptyFilter extends JsonFilter {
   override def apply(value: Json, path: JsonPath): Option[Json] = value match {
     case Obj(map) if map.isEmpty => None
-    case Arr(vector) if vector.isEmpty => None
+    case Arr(vector, _) if vector.isEmpty => None
     case _ => Some(value)
   }
 }

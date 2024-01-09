@@ -51,7 +51,7 @@ object JsonFilter {
         .flatten
         .toList
       filter(Obj(mutated: _*), path)
-    case Arr(vector) =>
+    case Arr(vector, _) =>
       val mutated = vector.zipWithIndex.flatMap { case (value, index) => internal(filter, value, path \ s"[$index]") }
       filter(Arr(mutated), path)
     case _ => filter(json, path)

@@ -32,12 +32,12 @@ object YamlFormatter extends Formatter {
     def pad(adjust: Int = 0): String = "".padTo((depth + adjust) * 2, ' ')
     def fix(s: String): String = s.replace("'", "''")
     json match {
-      case Arr(v) =>
+      case Arr(v, _) =>
         v.map(write(_, depth + 1)).map(s => s"${pad()}- ${s.dropWhile(_.isWhitespace)}").mkString("\n", "\n", "")
-      case Bool(b) => b.toString
+      case Bool(b, _) => b.toString
       case Null => ""
-      case NumInt(n) => n.toString
-      case NumDec(n) => n.toString()
+      case NumInt(n, _) => n.toString
+      case NumDec(n, _) => n.toString()
       case Obj(map) => map.toList
           .map { case (key, value) =>
             val v = write(value, depth + 1) match {
@@ -47,8 +47,8 @@ object YamlFormatter extends Formatter {
             s"${pad()}$key:$v"
           }
           .mkString("\n", "\n", "")
-      case Str(s) if s.contains("\n") => fix(s).split('\n').map(s => s"${pad()}$s").mkString("|-\n", "\n", "")
-      case Str(s) => s"'${fix(s)}'"
+      case Str(s, _) if s.contains("\n") => fix(s).split('\n').map(s => s"${pad()}$s").mkString("|-\n", "\n", "")
+      case Str(s, _) => s"'${fix(s)}'"
     }
   }
 }
