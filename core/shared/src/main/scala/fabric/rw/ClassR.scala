@@ -32,6 +32,6 @@ trait ClassR[T] extends Reader[T] {
       case jw: JsonWrapper => jw.json.asMap ++ map.filterNot(_._1 == "json")
       case _ => map
     }
-    Obj(updatedMap)
+    Obj(updatedMap, t)
   }
 }
