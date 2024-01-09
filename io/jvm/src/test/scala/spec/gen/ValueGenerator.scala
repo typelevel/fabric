@@ -28,9 +28,9 @@ object ValueGenerator {
   lazy val arbitraryValue: Arbitrary[Json] = Arbitrary(
     Gen.recursive[Json] { recurse =>
       Gen.oneOf(
-        Gen.resultOf(Str(_)),
-        Gen.resultOf(NumDec(_)),
-        Gen.resultOf(Bool(_)),
+        Gen.resultOf(Str(_, None)),
+        Gen.resultOf(NumDec(_, None)),
+        Gen.resultOf(Bool(_, None)),
         Gen.listOfN[Json](2, recurse).map(_.toVector).map(Arr(_)),
         Gen
           .listOfN[(String, Json)](

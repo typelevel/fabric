@@ -452,6 +452,8 @@ final class Obj private (val value: Map[String, Json], val reference: Option[Any
 
   def keys: Set[String] = value.keySet
 
+  def withReference(ref: Any): Obj = new Obj(value, Some(ref))
+
   override def genKey(b: StringBuilder): Unit = {
     b.append('{')
     value.toList.sortBy(_._1).foreach { case (key, value) =>
@@ -468,7 +470,7 @@ final class Obj private (val value: Map[String, Json], val reference: Option[Any
   override def `type`: JsonType[Obj] = JsonType.Obj
 
   override def equals(obj: Any): Boolean = obj match {
-    case that: Obj => this.value == that.value && this.reference == that.reference
+    case that: Obj => this.value == that.value
     case _ => false
   }
 
@@ -486,6 +488,8 @@ object Obj {
     } else {
       map
     }
+
+  def apply(value: Map[String, Json], reference: Any): Obj = new Obj(clean(value), Some(reference))
 
   def apply(value: Map[String, Json]): Obj = new Obj(clean(value))
 
@@ -562,6 +566,11 @@ case class Str(value: String, reference: Option[Any] = None) extends Json {
           )
         )
     case _ => super.asType[V](`type`)
+  }
+
+  override def equals(obj: Any): Boolean = obj match {
+    case Str(that, _) => this.value == that
+    case _ => false
   }
 
   override def toString: String = s""""${Str.escape(value)}""""
@@ -675,6 +684,11 @@ case class Bool(value: Boolean, reference: Option[Any] = None) extends Json {
 
   override def isEmpty: Boolean = false
 
+  override def equals(obj: Any): Boolean = obj match {
+    case Bool(b, _) => value == b
+    case _ => false
+  }
+
   override def toString: String = value.toString
 }
 
@@ -696,6 +710,11 @@ case class Arr(value: Vector[Json], reference: Option[Any] = None) extends Json 
   override def `type`: JsonType[Arr] = JsonType.Arr
 
   override def isEmpty: Boolean = value.isEmpty
+
+  override def equals(obj: Any): Boolean = obj match {
+    case Arr(value, _) => this.value == value
+    case _ => false
+  }
 
   override def toString: String = value.mkString("[", ", ", "]")
 }

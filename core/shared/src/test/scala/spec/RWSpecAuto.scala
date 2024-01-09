@@ -32,13 +32,12 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
     "convert Person to Json and back" in {
       val person = Person("Matt Hicks", 41, Address("San Jose", "California"))
       val value = person.json
-      value should be(
-        obj(
-          "name" -> "Matt Hicks",
-          "age" -> 41,
-          "address" -> obj("city" -> "San Jose", "state" -> "California")
-        )
+      val expected = obj(
+        "name" -> "Matt Hicks",
+        "age" -> 41,
+        "address" -> obj("city" -> "San Jose", "state" -> "California")
       )
+      value should be(expected)
       val back = value.as[Person]
       back should be(person)
     }
@@ -120,7 +119,7 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
         json = obj("quantity" -> 15, "color" -> "Blue")
       )
       val json: Json = sample.asJson
-      json should be(obj("color" -> "Green", "size" -> 9.2, "quantity" -> 15))
+      json should be(obj("color" -> "Green", "size" -> 9.2, "quantity" -> 15).withReference(sample))
     }
     "verify persisting null String values works" in {
       val user = User(null, "abc/123")
