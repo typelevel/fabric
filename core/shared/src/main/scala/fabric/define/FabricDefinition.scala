@@ -38,11 +38,11 @@ object FabricDefinition {
 
   def apply(json: Json): DefType = json match {
     case Obj(value) => DefType.Obj(value.map { case (k, v) => k -> apply(v) }, value.get("className").map(_.asString))
-    case Arr(value) => DefType.Arr(apply(value.toList))
-    case Str(_) => DefType.Str
-    case NumInt(_) => DefType.Int
-    case NumDec(_) => DefType.Dec
-    case Bool(_) => DefType.Bool
+    case Arr(value, _) => DefType.Arr(apply(value.toList))
+    case Str(_, _) => DefType.Str
+    case NumInt(_, _) => DefType.Int
+    case NumDec(_, _) => DefType.Dec
+    case Bool(_, _) => DefType.Bool
     case Null => DefType.Null
   }
 }

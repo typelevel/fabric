@@ -36,6 +36,11 @@ sealed trait Json extends Any {
   type Type
 
   /**
+    * Reference allows the reference for this Json to be included to provide additional information.
+    */
+  def reference: Option[Any]
+
+  /**
     * Looks up a Json by name in the children.
     *
     * Throws an exception if invoked on anything except `Obj`
@@ -58,7 +63,7 @@ sealed trait Json extends Any {
         case _ => None
       }
     case JsonPathEntry.Indexed(index) => this match {
-        case Arr(vec) => Try(vec(index)).toOption
+        case Arr(vec, _) => Try(vec(index)).toOption
         case _ => None
       }
   }
@@ -442,10 +447,12 @@ object Json {
 /**
   * Obj represents a Map of key-value pairs (String, Json)
   */
-final class Obj private (val value: Map[String, Json]) extends AnyVal with Json {
+final class Obj private (val value: Map[String, Json], val reference: Option[Any] = None) extends Json {
   override type Type = Obj
 
   def keys: Set[String] = value.keySet
+
+  def withReference(ref: Any): Obj = new Obj(value, Some(ref))
 
   override def genKey(b: StringBuilder): Unit = {
     b.append('{')
@@ -462,6 +469,11 @@ final class Obj private (val value: Map[String, Json]) extends AnyVal with Json 
 
   override def `type`: JsonType[Obj] = JsonType.Obj
 
+  override def equals(obj: Any): Boolean = obj match {
+    case that: Obj => this.value == that.value
+    case _ => false
+  }
+
   override def toString: String = value.map { case (key, value) => s""""$key": $value""" }.mkString("{", ", ", "}")
 }
 
@@ -476,6 +488,8 @@ object Obj {
     } else {
       map
     }
+
+  def apply(value: Map[String, Json], reference: Any): Obj = new Obj(clean(value), Some(reference))
 
   def apply(value: Map[String, Json]): Obj = new Obj(clean(value))
 
@@ -520,7 +534,7 @@ object Obj {
 /**
   * Str represents a String
   */
-case class Str(value: String) extends AnyVal with Json {
+case class Str(value: String, reference: Option[Any] = None) extends Json {
   override type Type = Str
 
   override def genKey(b: StringBuilder): Unit = b.append(value)
@@ -554,6 +568,11 @@ case class Str(value: String) extends AnyVal with Json {
     case _ => super.asType[V](`type`)
   }
 
+  override def equals(obj: Any): Boolean = obj match {
+    case Str(that, _) => this.value == that
+    case _ => false
+  }
+
   override def toString: String = s""""${Str.escape(value)}""""
 }
 
@@ -570,7 +589,7 @@ object Str {
   }.mkString
 }
 
-sealed trait Num extends Any with Json {
+sealed trait Num extends Json {
   def asInt: Int
   def asLong: Long
   def asFloat: Float
@@ -582,7 +601,7 @@ sealed trait Num extends Any with Json {
 /**
   * NumInt represents a numeric value and wraps a Long
   */
-case class NumInt(value: Long) extends Num {
+case class NumInt(value: Long, reference: Option[Any] = None) extends Num {
   override type Type = NumInt
 
   override def genKey(b: StringBuilder): Unit = b.append(value)
@@ -619,7 +638,7 @@ case class NumInt(value: Long) extends Num {
 /**
   * NumDec represents a numeric value and wraps a BigDecimal
   */
-case class NumDec(value: BigDecimal) extends Num {
+case class NumDec(value: BigDecimal, reference: Option[Any] = None) extends Num {
   override type Type = NumDec
 
   override def genKey(b: StringBuilder): Unit = b.append(value)
@@ -656,7 +675,7 @@ case class NumDec(value: BigDecimal) extends Num {
 /**
   * Bool represents a boolean value
   */
-case class Bool(value: Boolean) extends AnyVal with Json {
+case class Bool(value: Boolean, reference: Option[Any] = None) extends Json {
   override type Type = Bool
 
   override def genKey(b: StringBuilder): Unit = b.append(value)
@@ -665,13 +684,18 @@ case class Bool(value: Boolean) extends AnyVal with Json {
 
   override def isEmpty: Boolean = false
 
+  override def equals(obj: Any): Boolean = obj match {
+    case Bool(b, _) => value == b
+    case _ => false
+  }
+
   override def toString: String = value.toString
 }
 
 /**
   * Arr represents an array (Vector[Json])
   */
-case class Arr(value: Vector[Json]) extends AnyVal with Json {
+case class Arr(value: Vector[Json], reference: Option[Any] = None) extends Json {
   override type Type = Arr
 
   override def genKey(b: StringBuilder): Unit = {
@@ -687,6 +711,11 @@ case class Arr(value: Vector[Json]) extends AnyVal with Json {
 
   override def isEmpty: Boolean = value.isEmpty
 
+  override def equals(obj: Any): Boolean = obj match {
+    case Arr(value, _) => this.value == value
+    case _ => false
+  }
+
   override def toString: String = value.mkString("[", ", ", "]")
 }
 
@@ -697,6 +726,8 @@ sealed trait Null extends Json
   */
 object Null extends Null {
   override type Type = Null
+
+  override def reference: Option[Any] = None
 
   override def genKey(b: StringBuilder): Unit = b.append("null")
 

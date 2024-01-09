@@ -29,14 +29,14 @@ case class JsonFormatter(config: JsonFormatterConfig) extends Formatter {
   def apply(value: Json): String = write(value, 0)
 
   private def write(value: Json, depth: Int): String = value match {
-    case Arr(v) =>
+    case Arr(v, _) =>
       val content =
         v.map(value => s"${config.newLine()}${config.indent(depth + 1)}${write(value, depth + 1)}").mkString(",")
       s"[$content${config.newLine()}${config.indent(depth)}]"
-    case Bool(b) => b.toString
+    case Bool(b, _) => b.toString
     case Null => "null"
-    case NumInt(n) => n.toString
-    case NumDec(n) => n.toString()
+    case NumInt(n, _) => n.toString
+    case NumDec(n, _) => n.toString()
     case Obj(map) =>
       val content = map.toList
         .map { case (key, value) =>
@@ -45,7 +45,7 @@ case class JsonFormatter(config: JsonFormatterConfig) extends Formatter {
         }
         .mkString(",")
       s"{$content${config.newLine()}${config.indent(depth)}}"
-    case Str(s) => config.encodeString(s)
+    case Str(s, _) => config.encodeString(s)
   }
 }
 
