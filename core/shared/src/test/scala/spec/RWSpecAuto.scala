@@ -137,6 +137,18 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
 //      car.json should be(Str("Car"))
 //      "SUV".json.as[VehicleType] should be(VehicleType.SUV)
 //    }
+
+    "work properly with nulls and defaults" in {
+      val json = obj(
+        "offset" -> Null,
+        "limit" -> Null,
+        "list" -> Null
+      )
+      val test = json.as[DefaultTest]
+      test.offset should be(0)
+      test.limit should be(100)
+      test.list should be(List("Default"))
+    }
   }
 
   case class User(name: String, _id: String) {
@@ -151,5 +163,11 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
 
   object WrapperSample {
     implicit val rw: RW[WrapperSample] = RW.gen
+  }
+
+  case class DefaultTest(offset: Int = 0, limit: Int = 100, list: List[String] = List("Default"))
+
+  object DefaultTest {
+    implicit val rw: RW[DefaultTest] = RW.gen
   }
 }

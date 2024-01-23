@@ -30,6 +30,8 @@ import scala.compiletime.*
 import scala.quoted.*
 import scala.reflect.*
 
+import scala.util.Try
+
 import scala.collection.immutable.VectorMap
 
 trait CompileRW {
@@ -121,7 +123,6 @@ trait CompileRW {
             val hdLabelValue: String = constValue[hdLabel].asInstanceOf[String]
             val hdValueOption: Option[Json] = map.get(hdLabelValue)
             val hdWritable: Writer[hd] = summonInline[Writer[hd]]
-            val valueOption: Option[hd] = hdValueOption.map(hdWritable.write)
             def defaultAlternative = if (hdLabelValue == "json" && isJsonWrapper) {
               Obj(map)
             } else {
@@ -130,8 +131,13 @@ trait CompileRW {
                 case _ => throw RWException(s"Unable to find field ${getClassName[A]}.$hdLabelValue (and no defaults set) in ${Obj(map)}")
               }
             }
-            def default = defaults.getOrElse(hdLabelValue, defaultAlternative)
-            val value = valueOption.getOrElse(default)
+            lazy val default = Try(defaults.getOrElse(hdLabelValue, defaultAlternative)).toOption
+            val value = hdValueOption.map {
+              case Null if default.nonEmpty => default.get
+              case json => hdWritable.write(json)
+            }.getOrElse(default.get)
+//            val valueOption: Option[hd] = hdValueOption.map(hdWritable.write)
+//            val value = valueOption.getOrElse(default)
             arr(index) = value
             fromMapElems[A, tl, tlLabels](map, index + 1, arr, defaults)
           case EmptyTuple => sys.error("Not possible")

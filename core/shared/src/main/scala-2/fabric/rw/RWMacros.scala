@@ -142,16 +142,21 @@ object RWMacros {
           val name = field.asTerm.name
           val key = name.decodedName.toString
           val returnType = tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
-          val default = defaults.get(index) match {
-            case Some(m) => q"$companion.$m"
-            case None if returnType.resultType <:< typeOf[Option[_]] => q"""None"""
+          val (default, hasDefault) = defaults.get(index) match {
+            case Some(m) => q"$companion.$m" -> true
+            case None if returnType.resultType <:< typeOf[Option[_]] => q"""None""" -> true
             case None =>
-              q"""throw RWException("Unable to find field " + ${tpe.toString} + "." + $key + " (and no defaults set) in " + Obj(map))"""
+              q"""throw RWException("Unable to find field " + ${tpe.toString} + "." + $key + " (and no defaults set) in " + Obj(map))""" -> false
           }
           if (key == "json" && isJsonWrapper) {
             q"json = Obj(map)"
           } else {
-            q"""$name = map.get($key).map(_.as[$returnType]).getOrElse($default)"""
+            q"""
+               $name = map.get($key).map {
+                 case Null if $hasDefault => $default
+                 case json => json.as[$returnType]
+               }.getOrElse($default)
+             """
           }
         }
         context.Expr[Writer[T]](q"""
