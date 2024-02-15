@@ -28,7 +28,8 @@ sealed trait JsonPathEntry extends Any
 
 object JsonPathEntry {
   implicit val rw: RW[JsonPathEntry] = RW.poly[JsonPathEntry]()(
-    Named.rw, Indexed.rw
+    Named.rw,
+    Indexed.rw
   )
 
   case class Named(name: String) extends AnyVal with JsonPathEntry
