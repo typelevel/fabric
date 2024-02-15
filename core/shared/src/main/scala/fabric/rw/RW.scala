@@ -82,7 +82,8 @@ object RW extends CompileRW {
     * @param value
     *   the singleton value to use
     */
-  def static[T](className: String, value: T): RW[T] = from(_ => obj(), _ => value, DefType.Obj(Some(className)))
+  def static[T](value: T): RW[T] =
+    from(_ => obj(), _ => value, DefType.Obj(Some(cleanClassName(value.getClass.getName))))
 
   /**
     * Convenience functionality for working with polymorphic types
@@ -95,14 +96,18 @@ object RW extends CompileRW {
     * @param types
     *   a list of tuples with the type names associated with their RW
     */
-  def poly[P](fieldName: String = "type", getType: P => String = defaultGetType _)(
-    types: (String, RW[_ <: P])*
+  def poly[P](fieldName: String = "type", classNameMapping: String => String = defaultClassNameMapping)(
+    types: RW[_ <: P]*
   ): RW[P] = {
-    val typeMap = types.toMap
+    def typeName(rw: RW[_ <: P]): String = {
+      val className = rw.definition.className.getOrElse(throw new RuntimeException(s"No className defined for $rw"))
+      classNameMapping(className)
+    }
+    val typeMap = Map(types.map(rw => typeName(rw).toLowerCase -> rw): _*)
     from(
       r = (p: P) => {
-        val `type` = getType(p)
-        typeMap.get(`type`) match {
+        val `type` = classNameMapping(p.getClass.getName)
+        typeMap.get(`type`.toLowerCase) match {
           case Some(rw) => rw.asInstanceOf[RW[P]].read(p).merge(obj("type" -> `type`))
           case None => throw new RuntimeException(
               s"Type not found [${`type`}] converting from value $p. Available types are: [${typeMap.keySet.mkString(", ")}]"
@@ -110,7 +115,7 @@ object RW extends CompileRW {
         }
       },
       w = (json: Json) => {
-        val `type` = json(fieldName).asString
+        val `type` = json(fieldName).asString.toLowerCase
         typeMap.get(`type`) match {
           case Some(rw) => rw.write(json)
           case None => throw new RuntimeException(
@@ -118,19 +123,26 @@ object RW extends CompileRW {
             )
         }
       },
-      d = DefType.Poly(types.map { case (key, rw) =>
+      d = DefType.Poly(types.map { rw =>
         val obj = rw.definition.asInstanceOf[DefType.Obj]
+        val key = typeName(rw)
         key -> obj
       }.toMap)
     )
   }
 
-  /**
-    * Used by poly by default to getType using the class name with the first
-    * character lowercase
-    */
-  private def defaultGetType[P](p: P): String = {
-    val name = p.getClass.getSimpleName.replace("$", "")
-    s"${name.charAt(0).toLower}${name.substring(1)}"
+  def cleanClassName(className: String): String = className.replace("$", ".") match {
+    case s if s.endsWith(".") => s.substring(0, s.length - 1)
+    case s => s
   }
+
+  def defaultClassNameMapping(className: String): String = {
+    val cn = cleanClassName(className)
+    val index = cn.lastIndexOf('.')
+    if (index != -1) {
+      cn.substring(index + 1)
+    } else {
+      cn
+    }
+  }.replace("$", "")
 }

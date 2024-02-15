@@ -145,8 +145,8 @@ class FabricSpec extends AnyWordSpec with Matchers {
       json.toString should be("{\"name\": null, \"age\": 21, \"data\": null}")
     }
     "use polymorphic values" in {
-      val json1 = obj("type" -> "blank")
-      val json2 = obj("type" -> "polyValue", "s" -> "Hello, World!")
+      val json1 = obj("type" -> "Blank")
+      val json2 = obj("type" -> "PolyValue", "s" -> "Hello, World!")
 
       val p1 = json1.as[Polymorphic]
       p1 should be(Polymorphic.Blank)
@@ -160,12 +160,12 @@ class FabricSpec extends AnyWordSpec with Matchers {
         obj(
           "type" -> "poly",
           "values" -> obj(
-            "blank" -> obj(
+            "Blank" -> obj(
               "type" -> "object",
               "values" -> obj(),
-              "className" -> "Blank"
+              "className" -> "spec.Polymorphic.Blank"
             ),
-            "polyValue" -> obj(
+            "PolyValue" -> obj(
               "type" -> "object",
               "values" -> obj(
                 "s" -> obj(
@@ -261,8 +261,7 @@ sealed trait Polymorphic
 
 object Polymorphic {
   implicit val rw: RW[Polymorphic] = RW.poly[Polymorphic]()(
-    "blank" -> RW.static("Blank", Blank),
-    "polyValue" -> PolyValue.rw
+    RW.static(Blank), PolyValue.rw
   )
 
   case object Blank extends Polymorphic
