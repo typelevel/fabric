@@ -261,7 +261,8 @@ sealed trait Polymorphic
 
 object Polymorphic {
   implicit val rw: RW[Polymorphic] = RW.poly[Polymorphic]()(
-    RW.static(Blank), PolyValue.rw
+    RW.static(Blank),
+    PolyValue.rw
   )
 
   case object Blank extends Polymorphic
