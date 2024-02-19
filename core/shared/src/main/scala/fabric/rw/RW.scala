@@ -46,7 +46,7 @@ object RW extends CompileRW {
 
   def enumeration[T](
     list: List[T],
-    asString: T => String = (t: T) => t.getClass.getSimpleName.replace("$", ""),
+    asString: T => String = (t: T) => defaultClassNameMapping(t.getClass.getName),
     caseSensitive: Boolean = false
   ): RW[T] = new RW[T] {
     private def fixString(s: String): String = if (caseSensitive) s else s.toLowerCase
@@ -131,7 +131,7 @@ object RW extends CompileRW {
     )
   }
 
-  def cleanClassName(className: String): String = className.replace("$", ".") match {
+  def cleanClassName(className: String): String = className.replace("$u0020", " ").replace("$", ".") match {
     case s if s.endsWith(".") => s.substring(0, s.length - 1)
     case s => s
   }

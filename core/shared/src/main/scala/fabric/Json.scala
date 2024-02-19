@@ -544,20 +544,16 @@ case class Str(value: String, reference: Option[Any] = None) extends Json {
   override def isEmpty: Boolean = value.isEmpty
 
   override def asType[V <: Json](`type`: JsonType[V]): V = `type` match {
-    case JsonType.Bool => Try(Bool(value.toBoolean)).toOption
-        .map(_.asInstanceOf[V])
-        .getOrElse(
-          throw ConversionException(
-            s"$value is a Str and can't be converted to Bool"
-          )
+    case JsonType.Bool => Try(Bool(value.toBoolean)).toOption.getOrElse(
+        throw ConversionException(
+          s"$value is a Str and can't be converted to Bool"
         )
-    case JsonType.NumInt => Try(NumInt(value.toLong)).toOption
-        .map(_.asInstanceOf[V])
-        .getOrElse(
-          throw ConversionException(
-            s"$value is a Str and can't be converted to NumInt"
-          )
+      )
+    case JsonType.NumInt => Try(NumInt(value.toLong)).toOption.getOrElse(
+        throw ConversionException(
+          s"$value is a Str and can't be converted to NumInt"
         )
+      )
     case JsonType.NumDec | JsonType.Num => Try(NumDec(BigDecimal(value))).toOption
         .map(_.asInstanceOf[V])
         .getOrElse(
