@@ -131,13 +131,19 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
         )
       )
     }
-    // TODO: Enable once Scala 3 support for sealed traits is working
-//    "supporting sealed traits" in {
-//      val car: VehicleType = VehicleType.Car
-//      car.json should be(Str("Car"))
-//      "SUV".json.as[VehicleType] should be(VehicleType.SUV)
-//    }
-
+    "supporting sealed traits" in {
+      val car: VehicleType = VehicleType.Car
+      car.json should be(Str("Car"))
+      "SUV".json.as[VehicleType] should be(VehicleType.SUV)
+      VehicleType.rw.definition.asInstanceOf[DefType.Enum].values should be(
+        List[Json](
+          "Car",
+          "SUV",
+          "Truck",
+          "Mini Van"
+        )
+      )
+    }
     "work properly with nulls and defaults" in {
       val json = obj(
         "offset" -> Null,

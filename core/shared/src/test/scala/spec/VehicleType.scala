@@ -19,16 +19,18 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-//package spec
-//
-//import fabric.rw.RW
-//
-//trait VehicleType
-//
-//object VehicleType {
-//  implicit val rw: RW[VehicleType] = RW.gen
-//
-//  case object Car extends VehicleType
-//  case object SUV extends VehicleType
-//  case object Truck extends VehicleType
-//}
+package spec
+
+import fabric.rw.RW
+
+trait VehicleType
+
+object VehicleType {
+  // TODO: Switch to RW.gen once Scala 3 has support for sealed traits
+  implicit val rw: RW[VehicleType] = RW.enumeration(List(Car, SUV, Truck, `Mini Van`))
+
+  case object Car extends VehicleType
+  case object SUV extends VehicleType
+  case object Truck extends VehicleType
+  case object `Mini Van` extends VehicleType
+}
