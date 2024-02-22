@@ -120,5 +120,6 @@ object Cryo {
       val v = (0 until size).toVector.map(_ => thaw(bb))
       Arr(v)
     case identifiers.Null => Null
+    case v => throw new UnsupportedOperationException(s"Unsupported: $v")
   }
 }
