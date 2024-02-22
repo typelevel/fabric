@@ -23,7 +23,7 @@ package fabric.search
 
 import fabric.define.DefType
 import fabric.rw.RW
-import fabric.{Json, JsonPath, Obj}
+import fabric._
 
 case class ByName(name: String) extends AnyVal with SearchEntry {
   override def search(

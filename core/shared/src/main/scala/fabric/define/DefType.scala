@@ -22,7 +22,7 @@
 package fabric.define
 
 import fabric._
-import fabric.rw.{Convertible, RW}
+import fabric.rw._
 
 import scala.collection.immutable.VectorMap
 import scala.util.Try

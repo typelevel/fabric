@@ -21,8 +21,8 @@
 
 package fabric.search
 
-import fabric.rw.{Asable, Convertible, RW}
-import fabric.{Json, JsonPath, Obj}
+import fabric.rw._
+import fabric._
 
 import scala.util.matching.Regex
 

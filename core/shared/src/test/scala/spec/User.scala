@@ -21,7 +21,7 @@
 
 package spec
 
-import fabric.rw.RW
+import fabric.rw._
 
 case class User(name: String = "Unknown", age: Int)
 

@@ -21,7 +21,7 @@
 
 package fabric.filter
 
-import fabric.{Arr, Json, JsonPath, Obj}
+import fabric._
 
 trait JsonFilter {
   def apply(value: Json, path: JsonPath): Option[Json]

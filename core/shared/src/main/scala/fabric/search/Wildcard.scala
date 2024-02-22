@@ -21,7 +21,7 @@
 
 package fabric.search
 
-import fabric.{Arr, Json, JsonPath, Obj}
+import fabric._
 
 case object Wildcard extends SearchEntry {
   override def search(
