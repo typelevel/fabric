@@ -22,6 +22,7 @@
 package spec
 
 import fabric._
+import fabric.rw._
 import fabric.react.ReactParent
 import reactify._
 import org.scalatest.matchers.should.Matchers

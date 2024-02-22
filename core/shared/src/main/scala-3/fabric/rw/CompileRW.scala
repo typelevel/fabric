@@ -84,7 +84,6 @@ trait CompileRW {
       case _: (hd *: tl) => {
         inline erasedValue[L] match {
           case _: (hdLabel *: tlLabels) =>
-            import fabric.rw._
             val hdLabelValue = constValue[hdLabel].asInstanceOf[String]
             val hdValue = a.productElement(index).asInstanceOf[hd]
             val hdReader = summonInline[Reader[hd]]
@@ -119,7 +118,6 @@ trait CompileRW {
       case _: (hd *: tl) =>
         inline erasedValue[L] match {
           case _: (hdLabel *: tlLabels) =>
-            import fabric.rw._
             val hdLabelValue: String = constValue[hdLabel].asInstanceOf[String]
             val hdValueOption: Option[Json] = map.get(hdLabelValue)
             val hdWritable: Writer[hd] = summonInline[Writer[hd]]

@@ -23,7 +23,7 @@ package fabric.rw
 
 import fabric.define.DefType
 import fabric.rw.RW.{from, string}
-import fabric.{arr, bool, num, obj, str, Arr, Json, Null, NumInt, Obj}
+import fabric._
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.util.matching.Regex
