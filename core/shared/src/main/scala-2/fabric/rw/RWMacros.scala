@@ -116,10 +116,12 @@ object RWMacros {
       case m: MethodSymbol if m.name.toString.matches(DefaultRegexString) =>
         m.name.toString match {
           case DefaultRegex(position) => (position.toInt - 1) -> m
+          case s => throw new UnsupportedOperationException(s"Unable to parse: $s")
         }
       case m: MethodSymbol if m.name.toString.matches(Default211RegexString) =>
         m.name.toString match {
           case Default211Regex(position) => (position.toInt - 1) -> m
+          case s => throw new UnsupportedOperationException(s"Unable to parse: $s")
         }
     }.toMap
   }
