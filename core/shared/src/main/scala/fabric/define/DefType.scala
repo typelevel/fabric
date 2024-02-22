@@ -85,10 +85,14 @@ object DefType {
   private def v2dt(v: Json): DefType = {
     val o = v.asObj
     o.value("type").asString match {
-      case "object" => Obj(
+      case "object" =>
+        val map: Map[String, Json] = o.value
+        val cnOption: Option[Json] = map.get("className")
+        val cn: Json = cnOption.getOrElse(fabric.Null)
+        Obj(
           map = o.value("values").asMap.map { case (key, value) => key -> v2dt(value) },
-          className = o.value.getOrElse("className", Null) match {
-            case Null => None
+          className = cn match {
+            case fabric.Null => None
             case s: Str => Some(s.value)
             case j => throw new RuntimeException(s"Unsupported className value: $j")
           }
