@@ -62,7 +62,7 @@ object JacksonParser extends FormatParser {
     if (next == JsonToken.END_OBJECT) {
       Obj(map)
     } else {
-      val key = parser.getCurrentName
+      val key = parser.currentName()
       val value = parse(parser)
       parseObj(parser, map + (key -> value))
     }
