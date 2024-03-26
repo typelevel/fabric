@@ -36,5 +36,13 @@ class JsonParsingSpec extends AnyWordSpec with Matchers {
       val json = json"""{"name": "Matt Hicks", "age": 41}"""
       json should be(obj("name" -> "Matt Hicks", "age" -> 41))
     }
+    "encode and then decode escaped String" in {
+      val json = obj(
+        "testing" -> "\\N"
+      )
+      val jsonString = JsonFormatter.Default(json)
+      val parsed = JsonParser(jsonString)
+      parsed should be(json)
+    }
   }
 }
