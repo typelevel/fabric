@@ -51,8 +51,8 @@ object JacksonParser extends FormatParser {
     case JsonToken.VALUE_NUMBER_FLOAT => NumDec(BigDecimal(parser.getValueAsDouble))
     case JsonToken.VALUE_NUMBER_INT => NumInt(parser.getValueAsLong)
     case JsonToken.VALUE_NULL => Null
-    case JsonToken.VALUE_TRUE => Bool(true)
-    case JsonToken.VALUE_FALSE => Bool(false)
+    case JsonToken.VALUE_TRUE => Bool(value = true)
+    case JsonToken.VALUE_FALSE => Bool(value = false)
     case t => throw new RuntimeException(s"Unsupported token: $t")
   }
 
