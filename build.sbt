@@ -36,9 +36,9 @@ ThisBuild / scmInfo := Some(
 ThisBuild / developers := List(tlGitHubDev("darkfrog26", "Matt Hicks"))
 
 // Dependency versions
-val collectionCompatVersion: String = "2.11.0"
+val collectionCompatVersion: String = "2.12.0"
 
-val reactifyVersion: String = "4.1.0"
+val reactifyVersion: String = "4.1.1"
 
 val scalaTestVersion: String = "3.2.18"
 
@@ -75,8 +75,9 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     name := "fabric-core",
     mimaPreviousArtifacts := Set.empty,
     libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
-      "org.scalatestplus" %%% "scalacheck-1-16" % scalaCheckVersion % Test
+      // TODO: Re-enable %%% when scalatest support ScalaNative 0.5
+      "org.scalatest" %% "scalatest" % scalaTestVersion % Test,
+      "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
     ),
     libraryDependencies ++= (
       if (scalaVersion.value.startsWith("3")) {
@@ -104,7 +105,8 @@ lazy val io = crossProject(JSPlatform, JVMPlatform)
     libraryDependencies ++= Seq(
       "org.typelevel" %%% "literally" % literallyVersion,
       "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion % Provided,
-      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
+      // TODO: Re-enable %%% when scalatest support ScalaNative 0.5
+      "org.scalatest" %% "scalatest" % scalaTestVersion % Test,
       "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
     )
   )
@@ -126,7 +128,8 @@ lazy val reactify = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     mimaPreviousArtifacts := Set.empty,
     libraryDependencies ++= Seq(
       "com.outr" %%% "reactify" % reactifyVersion,
-      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
+      // TODO: Re-enable %%% when scalatest support ScalaNative 0.5
+      "org.scalatest" %% "scalatest" % scalaTestVersion % Test,
       "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
     )
   )
