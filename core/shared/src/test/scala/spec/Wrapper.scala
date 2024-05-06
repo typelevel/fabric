@@ -23,11 +23,8 @@ package spec
 
 import fabric.rw._
 
-import scala.annotation.nowarn
-
 case class Wrapper[T](name: String, value: T, other: Option[T])
 
-@nowarn
 object Wrapper {
   implicit def rw[T](implicit trw: RW[T]): RW[Wrapper[T]] = RW.gen
 }
