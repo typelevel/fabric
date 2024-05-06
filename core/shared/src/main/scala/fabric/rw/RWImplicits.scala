@@ -23,9 +23,9 @@ package fabric.rw
 
 import fabric.define.DefType
 import fabric.rw.RW.{from, string}
-import fabric._
+import fabric.*
 
-import scala.concurrent.duration.{DurationLong, FiniteDuration}
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.matching.Regex
 
 trait RWImplicits {
@@ -49,10 +49,13 @@ trait RWImplicits {
 
   implicit lazy val regexRW: RW[Regex] = string[Regex](_.toString(), _.r)
 
-  implicit lazy val finiteDurationRW: RW[FiniteDuration] = from[FiniteDuration](
-    r = fd => fd.toMillis.json,
-    w = j => j.asLong.millis,
-    d = DefType.Int
+  implicit val durationRW: RW[FiniteDuration] = RW.string(
+    asString = _.toString(),
+    fromString = s =>
+      Duration(s) match {
+        case f: FiniteDuration => f
+        case d => throw new RuntimeException(s"$d ($s) is not a finite duration")
+      }
   )
 
   implicit def mapRW[K, V](implicit keyRW: RW[K], valueRW: RW[V]): RW[Map[K, V]] =
