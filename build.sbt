@@ -96,7 +96,6 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       )
     }
   )
-  .disablePlugins(TypelevelScalaNativeGitHubPlugin)
 
 lazy val io = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Full)
@@ -135,7 +134,6 @@ lazy val reactify = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     )
   )
   .dependsOn(core)
-  .disablePlugins(TypelevelScalaNativeGitHubPlugin)
 
 lazy val bench = project
   .in(file("bench"))
