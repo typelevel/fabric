@@ -42,21 +42,23 @@ val reactifyVersion: String = "4.1.1"
 
 val scalaTestVersion: String = "3.2.18"
 
-val scalaCheckVersion: String = "3.2.14.0"
+val scalaCheckVersion: String = "3.2.18.0"
 
 // Parse module dependencies
 val literallyVersion: String = "1.2.0"
 
 val jacksonVersion: String = "2.17.1"
 
+val apacheCommonsTextVersion: String = "1.12.0"
+
 val typesafeConfigVersion: String = "1.4.3"
 
 val jsoniterJavaVersion: String = "0.9.23"
 
 // Benchmarks
-val circeVersion: String = "0.14.2"
+val circeVersion: String = "0.14.7"
 
-val uPickleVersion: String = "2.0.0"
+val uPickleVersion: String = "3.3.1"
 
 lazy val root = tlCrossRootProject.aggregate(
   core.js,
@@ -75,9 +77,8 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     name := "fabric-core",
     mimaPreviousArtifacts := Set.empty,
     libraryDependencies ++= Seq(
-      // TODO: Re-enable %%% when scalatest support ScalaNative 0.5
-      "org.scalatest" %% "scalatest" % scalaTestVersion % Test,
-      "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
+      "org.scalatestplus" %%% "scalacheck-1-18" % scalaCheckVersion % Test
     ),
     libraryDependencies ++= (
       if (scalaVersion.value.startsWith("3")) {
@@ -104,18 +105,18 @@ lazy val io = crossProject(JSPlatform, JVMPlatform)
     mimaPreviousArtifacts := Set.empty,
     libraryDependencies ++= Seq(
       "org.typelevel" %%% "literally" % literallyVersion,
+      "com.jsoniter" % "jsoniter" % jsoniterJavaVersion,
       "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion % Provided,
-      // TODO: Re-enable %%% when scalatest support ScalaNative 0.5
-      "org.scalatest" %% "scalatest" % scalaTestVersion % Test,
-      "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
+      "org.scalatestplus" %%% "scalacheck-1-18" % scalaCheckVersion % Test
     )
   )
   .jvmSettings(
     libraryDependencies ++= Seq(
+      "org.apache.commons" % "commons-text" % apacheCommonsTextVersion,
       "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonVersion,
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-xml" % jacksonVersion,
-      "com.jsoniter" % "jsoniter" % jsoniterJavaVersion,
       "com.typesafe" % "config" % typesafeConfigVersion
     )
   )
@@ -128,9 +129,8 @@ lazy val reactify = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     mimaPreviousArtifacts := Set.empty,
     libraryDependencies ++= Seq(
       "com.outr" %%% "reactify" % reactifyVersion,
-      // TODO: Re-enable %%% when scalatest support ScalaNative 0.5
-      "org.scalatest" %% "scalatest" % scalaTestVersion % Test,
-      "org.scalatestplus" %% "scalacheck-1-16" % scalaCheckVersion % Test
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
+      "org.scalatestplus" %%% "scalacheck-1-18" % scalaCheckVersion % Test
     )
   )
   .dependsOn(core)
