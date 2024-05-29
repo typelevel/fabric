@@ -33,6 +33,7 @@ object JacksonParser extends FormatParser {
     .enable(JParser.Feature.ALLOW_SINGLE_QUOTES)
     .enable(JParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
     .enable(JParser.Feature.ALLOW_YAML_COMMENTS)
+    .enable(JParser.Feature.INCLUDE_SOURCE_IN_LOCATION)
 
   override def format: Format = Format.Json
 

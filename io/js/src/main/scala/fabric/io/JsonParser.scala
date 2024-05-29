@@ -27,4 +27,6 @@ object JsonParser extends MultiFormatParser {
   override def parsers: List[FormatParser] = List(JSJsonParser)
 
   def apply(content: String): Json = apply(content, Format.Json)
+
+  private[io] def escapeJson(s: String): String = s.replace("\\", "\\\\").replace("\n", "\\n").replace("\"", "\\\"")
 }

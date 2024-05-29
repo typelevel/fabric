@@ -29,7 +29,7 @@ trait JsonFormatterConfig {
   def keyValueSeparator(): String = ": "
 
   def encodeString(s: String): String = {
-    val e = s.replace("\\", "\\\\").replace("\n", "\\n").replace("\"", "\\\"")
+    val e = JsonParser.escapeJson(s)
     s""""$e""""
   }
 }

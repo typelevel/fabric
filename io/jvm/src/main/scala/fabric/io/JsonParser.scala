@@ -22,6 +22,7 @@
 package fabric.io
 
 import fabric.Json
+import org.apache.commons.text.StringEscapeUtils
 
 import java.io.File
 import java.nio.file.Path
@@ -40,4 +41,6 @@ object JsonParser extends MultiFormatParser {
   def apply(file: File): Json = apply(file, Format.Json)
   def apply(path: Path): Json = apply(path, Format.Json)
   def apply(content: String): Json = apply(content, Format.Json)
+
+  private[io] def escapeJson(s: String): String = StringEscapeUtils.escapeJson(s)
 }
