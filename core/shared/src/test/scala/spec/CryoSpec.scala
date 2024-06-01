@@ -21,12 +21,25 @@
 
 package spec
 
-import fabric._
+import fabric.*
+import fabric.cryo.{ByteBufferPool, Cryo}
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class CryoSpec extends AnyWordSpec with Matchers {
+  private val largeJson = obj(
+    "name" -> "Matt \"Matteo\" Hicks",
+    "age" -> 41,
+    "numbers" -> List(1, 2, 3),
+    "address" -> obj(
+      "street" -> "123 Somewhere Rd.\nBox 123",
+      "city" -> "San Jose",
+      "state" -> "California",
+      "zipcode" -> 95136
+    )
+  )
+
   "Cryo" should {
     def freezeAndThaw(json: Json): Assertion = {
       val bb = Cryo.freeze(json, allocateDirect = true)
@@ -34,7 +47,6 @@ class CryoSpec extends AnyWordSpec with Matchers {
       val thawed = Cryo.thaw(bb)
       thawed should be(json)
     }
-
     "freeze and thaw a Str properly" in {
       val json = Str("Hello, World!")
       freezeAndThaw(json)
@@ -44,18 +56,21 @@ class CryoSpec extends AnyWordSpec with Matchers {
       freezeAndThaw(json)
     }
     "freeze and thaw a complex obj" in {
-      val json = obj(
-        "name" -> "Matt \"Matteo\" Hicks",
-        "age" -> 41,
-        "numbers" -> List(1, 2, 3),
-        "address" -> obj(
-          "street" -> "123 Somewhere Rd.\nBox 123",
-          "city" -> "San Jose",
-          "state" -> "California",
-          "zipcode" -> 95136
-        )
-      )
-      freezeAndThaw(json)
+      freezeAndThaw(largeJson)
+    }
+    "freeze and thaw a simple obj using the pool" in {
+      val json = obj("value" -> 5)
+      val bytes = Cryo.freeze(json)
+      val thawed = Cryo.thaw(bytes)
+      json should be(thawed)
+    }
+    "dispose the pool and overflow the new pool to verify resizing" in {
+      ByteBufferPool.dispose()
+      ByteBufferPool.ByteBufferSize = 10
+      val bytes = Cryo.freeze(largeJson)
+      val thawed = Cryo.thaw(bytes)
+      largeJson should be(thawed)
+      ByteBufferPool.ByteBufferSize should be(320)
     }
   }
 }
