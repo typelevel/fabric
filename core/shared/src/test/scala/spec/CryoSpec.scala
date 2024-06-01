@@ -64,6 +64,26 @@ class CryoSpec extends AnyWordSpec with Matchers {
       val thawed = Cryo.thaw(bytes)
       json should be(thawed)
     }
+    "freeze and that a multi-type obj using the pool" in {
+      val json = obj(
+        "string" -> "Hello, World",
+        "integer" -> 42,
+        "bigDecimal" -> BigDecimal(123),
+        "array" -> arr(
+          1,
+          "two",
+          BigDecimal(3)
+        ),
+        "bool" -> true,
+        "null" -> Null
+      )
+      val bytes = Cryo.freeze(json)
+      val thawed = Cryo.thaw(bytes)
+      json should be(thawed)
+    }
+    "freeze and thaw null" in {
+      Cryo.thaw(Cryo.freeze(Null)) should be(Null)
+    }
     "dispose the pool and overflow the new pool to verify resizing" in {
       ByteBufferPool.dispose()
       ByteBufferPool.ByteBufferSize = 10
