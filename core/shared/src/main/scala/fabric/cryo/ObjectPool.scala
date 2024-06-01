@@ -45,7 +45,7 @@ trait ObjectPool[T] {
 
   protected def resetForPool(value: T): Option[T] = Some(value)
 
-  protected def dispose(value: T): Unit = {}
+  protected def dispose(value: T): Unit = assert(value != null)
 
   private def get(): T = Option(queue.poll()) match {
     case Some(value) =>
