@@ -66,8 +66,9 @@ object Cryo {
       }
     case Str(s, _) =>
       bb.put(identifiers.Str)
-      bb.putInt(s.length)
-      bb.put(s.getBytes("UTF-8"))
+      val bytes = s.getBytes("UTF-8")
+      bb.putInt(bytes.length)
+      bb.put(bytes)
       ()
     case NumInt(l, _) =>
       bb.put(identifiers.NumInt)
@@ -113,8 +114,9 @@ object Cryo {
         bytes
       }
     catch {
-      case _: BufferOverflowException if ByteBufferPool.AutoResize =>
+      case t: BufferOverflowException if ByteBufferPool.AutoResize =>
         val size = bytes(json)
+        if (size < ByteBufferPool.ByteBufferSize) throw t
         println(
           s"*** WARNING: ByteBufferPool overflowed (Tried: $size, Actual: ${ByteBufferPool.ByteBufferSize}). Resizing the pool and trying again."
         )
@@ -149,9 +151,14 @@ object Cryo {
     case v => throw new UnsupportedOperationException(s"Unsupported: $v")
   }
 
-  def thaw(bytes: Array[Byte]): Json = ByteBufferPool.use { bb =>
-    bb.put(bytes)
-    bb.flip()
-    thaw(bb)
+  def thaw(bytes: Array[Byte]): Json = {
+    if (ByteBufferPool.ByteBufferSize < bytes.length) {
+      ByteBufferPool.resizePool(bytes.length)
+    }
+    ByteBufferPool.use { bb =>
+      bb.put(bytes)
+      bb.flip()
+      thaw(bb)
+    }
   }
 }

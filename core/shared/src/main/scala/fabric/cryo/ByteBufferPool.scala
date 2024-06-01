@@ -50,7 +50,7 @@ object ByteBufferPool extends ObjectPool[ByteBuffer] {
     }
 
   override protected def resetForPool(bb: ByteBuffer): Option[ByteBuffer] = {
-    bb.rewind()
+    bb.clear()
     Some(bb)
   }
 
