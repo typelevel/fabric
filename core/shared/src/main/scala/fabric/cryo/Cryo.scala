@@ -19,9 +19,11 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package fabric
+package fabric.cryo
 
-import java.nio.ByteBuffer
+import fabric.{Arr, Bool, Json, Null, NumDec, NumInt, Obj, Str}
+
+import java.nio.{BufferOverflowException, ByteBuffer}
 import scala.collection.immutable.VectorMap
 
 object Cryo {
@@ -52,15 +54,6 @@ object Cryo {
     case Bool(_, _) => bytes.Byte + bytes.Byte
     case Arr(v, _) => bytes.Byte + bytes.Integer + v.foldLeft(0)((sum, json) => sum + bytes(json))
     case Null => bytes.Byte
-  }
-
-  def freeze(json: Json, allocateDirect: Boolean): ByteBuffer = {
-    val size = bytes(json)
-    val bb =
-      if (allocateDirect) ByteBuffer.allocateDirect(size)
-      else ByteBuffer.allocate(size)
-    freeze(json, bb)
-    bb
   }
 
   def freeze(json: Json, bb: ByteBuffer): Unit = json match {
@@ -96,6 +89,39 @@ object Cryo {
       ()
   }
 
+  /**
+    * WARNING: This allocates a new ByteBuffer each time it's called, so is wildly inefficient.
+    */
+  def freeze(json: Json, allocateDirect: Boolean): ByteBuffer = {
+    val size = bytes(json)
+    val bb =
+      if (allocateDirect) ByteBuffer.allocateDirect(size)
+      else ByteBuffer.allocate(size)
+    freeze(json, bb)
+    bb
+  }
+
+  /**
+    * This uses the ByteBufferPool to reuse ByteBuffers which is efficient, but can lead to more memory usage.
+    */
+  def freeze(json: Json): Array[Byte] =
+    try ByteBufferPool.use { bb =>
+        freeze(json, bb)
+        bb.flip()
+        val bytes = new Array[Byte](bb.remaining())
+        bb.get(bytes)
+        bytes
+      }
+    catch {
+      case _: BufferOverflowException if ByteBufferPool.AutoResize =>
+        val size = bytes(json)
+        println(
+          s"*** WARNING: ByteBufferPool overflowed (Tried: $size, Actual: ${ByteBufferPool.ByteBufferSize}). Resizing the pool and trying again."
+        )
+        ByteBufferPool.resizePool(size)
+        freeze(json)
+    }
+
   def thaw(bb: ByteBuffer): Json = bb.get() match {
     case identifiers.Obj =>
       val size = bb.getInt
@@ -121,5 +147,11 @@ object Cryo {
       Arr(v)
     case identifiers.Null => Null
     case v => throw new UnsupportedOperationException(s"Unsupported: $v")
+  }
+
+  def thaw(bytes: Array[Byte]): Json = ByteBufferPool.use { bb =>
+    bb.put(bytes)
+    bb.flip()
+    thaw(bb)
   }
 }
