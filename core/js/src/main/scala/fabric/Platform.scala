@@ -24,8 +24,7 @@ package fabric
 import scala.concurrent.duration.FiniteDuration
 
 object Platform {
-  def sleep(delay: FiniteDuration): Unit = {
+  def sleep(delay: FiniteDuration): Unit =
     // No delay necessary, since JS doesn't have blocking
     assert(delay.toMillis >= 0L)
-  }
 }
