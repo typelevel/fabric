@@ -77,7 +77,9 @@ class CryoSpec extends AnyWordSpec with Matchers {
         "bool" -> true,
         "null" -> Null
       )
+      val expectedSize = Cryo.bytes(json)
       val bytes = Cryo.freeze(json)
+      bytes.length should be(expectedSize)
       val thawed = Cryo.thaw(bytes)
       json should be(thawed)
     }
