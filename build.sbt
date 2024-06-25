@@ -42,7 +42,7 @@ val reactifyVersion: String = "4.1.1"
 
 val scalaTestVersion: String = "3.2.18"
 
-val scalaCheckVersion: String = "3.2.18.0"
+val scalaCheckVersion: String = "3.2.19.0"
 
 // Parse module dependencies
 val literallyVersion: String = "1.2.0"
