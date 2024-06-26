@@ -604,12 +604,11 @@ case class NumInt(value: Long, reference: Option[Any] = None) extends Num {
 
   override def `type`: JsonType[NumInt] = JsonType.NumInt
 
-  override def asType[V <: Json](`type`: JsonType[V]): V =
-    if (`type` == JsonType.NumDec) {
-      NumDec(BigDecimal(value)).asInstanceOf[V]
-    } else {
-      super.asType[V](`type`)
-    }
+  override def asType[V <: Json](`type`: JsonType[V]): V = `type` match {
+    case JsonType.NumDec => NumDec(BigDecimal(value))
+    case JsonType.Bool => Bool(value > 0L)
+    case _ => super.asType(`type`)
+  }
 
   override def asByte: Byte = value.toByte
   override def asShort: Short = value.toShort
@@ -641,12 +640,11 @@ case class NumDec(value: BigDecimal, reference: Option[Any] = None) extends Num 
 
   override def `type`: JsonType[NumDec] = JsonType.NumDec
 
-  override def asType[V <: Json](`type`: JsonType[V]): V =
-    if (`type` == JsonType.NumInt) {
-      NumInt(value.toLong).asInstanceOf[V]
-    } else {
-      super.asType[V](`type`)
-    }
+  override def asType[V <: Json](`type`: JsonType[V]): V = `type` match {
+    case JsonType.NumInt => NumInt(value.toLong)
+    case JsonType.Bool => Bool(value > BigDecimal(0))
+    case _ => super.asType(`type`)
+  }
 
   override def asByte: Byte = value.toByte
   override def asShort: Short = value.toShort
