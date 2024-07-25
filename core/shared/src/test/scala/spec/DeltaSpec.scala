@@ -22,7 +22,7 @@
 package spec
 
 import fabric.*
-import fabric.rw.Convertible
+import fabric.rw.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
