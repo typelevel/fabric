@@ -51,8 +51,8 @@ object Delta {
             case Arr(vector2, _) =>
               val maxLength = math.max(vector1.length, vector2.length)
               val v = (0 until maxLength).toVector.map { index =>
-                val j1 = vector1.unapply(index).getOrElse(Null)
-                val j2 = vector2.unapply(index).getOrElse(Null)
+                val j1 = if (vector1.length > index) vector1(index) else Null
+                val j2 = if (vector2.length > index) vector2(index) else Null
                 f(j1, j2)
               }
               Arr(v)
