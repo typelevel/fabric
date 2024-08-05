@@ -40,8 +40,7 @@ case class JsonFormatter(config: JsonFormatterConfig) extends Formatter {
     case Obj(map) =>
       val content = map.toList
         .map { case (key, value) =>
-          s"${config.newLine()}${config.indent(depth + 1)}${config.encodeString(key)}${config
-              .keyValueSeparator()}${write(value, depth + 1)}"
+          s"${config.newLine()}${config.indent(depth + 1)}${config.encodeString(key)}${config.keyValueSeparator()}${write(value, depth + 1)}"
         }
         .mkString(",")
       s"{$content${config.newLine()}${config.indent(depth)}}"
