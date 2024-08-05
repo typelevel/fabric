@@ -102,6 +102,16 @@ sealed trait Json extends Any {
   })
 
   /**
+    * Gets the value of the lookup or returns the value from orElse.
+    */
+  final def getOrElse(lookup: String, orElse: => Json): Json = get(lookup).getOrElse(orElse)
+
+  /**
+    * Will return the value if available, or Null if it's not
+    */
+  final def getOrNull(lookup: String): Json = getOrElse(lookup, Null)
+
+  /**
     * Modifies the value at the specified path and returns back a new root Json
     * with the modified path.
     *

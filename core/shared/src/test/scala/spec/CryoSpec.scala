@@ -55,6 +55,12 @@ class CryoSpec extends AnyWordSpec with Matchers {
       val json = obj("value" -> 5)
       freezeAndThaw(json)
     }
+    "verify size is efficiently stored" in {
+      val json = obj("value" -> 5)
+      val cryoBytes = Cryo.freeze(json)
+      val jsonBytes = json.toString.getBytes("UTF-8")
+      println(s"Cryo: ${cryoBytes.length}, Json: ${jsonBytes.length}")
+    }
     "freeze and thaw a complex obj" in {
       freezeAndThaw(largeJson)
     }

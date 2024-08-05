@@ -38,6 +38,7 @@ object Cryo {
   }
   private object bytes {
     val Byte: Int = 1
+    val Short: Int = 2
     val Integer: Int = 4
     val Long: Int = 8
   }
