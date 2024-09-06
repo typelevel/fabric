@@ -47,7 +47,8 @@ object RW extends CompileRW {
   def enumeration[T](
     list: List[T],
     asString: T => String = (t: T) => defaultClassNameMapping(t.getClass.getName),
-    caseSensitive: Boolean = false
+    caseSensitive: Boolean = false,
+    className: Option[String] = None
   ): RW[T] = new RW[T] {
     private def fixString(s: String): String = if (caseSensitive) s else s.toLowerCase
 
@@ -57,7 +58,7 @@ object RW extends CompileRW {
 
     override def read(t: T): Json = str(asString(t))
 
-    override val definition: DefType = DefType.Enum(list.map(t => Str(asString(t))))
+    override val definition: DefType = DefType.Enum(list.map(t => Str(asString(t))), className)
   }
 
   def string[T](asString: T => String, fromString: String => T): RW[T] = new RW[T] {
@@ -96,7 +97,11 @@ object RW extends CompileRW {
     * @param types
     *   a list of tuples with the type names associated with their RW
     */
-  def poly[P](fieldName: String = "type", classNameMapping: String => String = defaultClassNameMapping)(
+  def poly[P](
+    fieldName: String = "type",
+    classNameMapping: String => String = defaultClassNameMapping,
+    className: Option[String] = None
+  )(
     types: RW[_ <: P]*
   ): RW[P] = {
     def typeName(rw: RW[_ <: P]): String = {
@@ -123,11 +128,14 @@ object RW extends CompileRW {
             )
         }
       },
-      d = DefType.Poly(types.map { rw =>
-        val obj = rw.definition.asInstanceOf[DefType.Obj]
-        val key = typeName(rw)
-        key -> obj
-      }.toMap)
+      d = DefType.Poly(
+        types.map { rw =>
+          val obj = rw.definition.asInstanceOf[DefType.Obj]
+          val key = typeName(rw)
+          key -> obj
+        }.toMap,
+        className
+      )
     )
   }
 

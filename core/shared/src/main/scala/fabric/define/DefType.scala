@@ -73,10 +73,11 @@ object DefType {
     case Int => obj("type" -> "numeric", "precision" -> "integer")
     case Dec => obj("type" -> "numeric", "precision" -> "decimal")
     case Bool => obj("type" -> "boolean")
-    case Enum(values) => obj("type" -> "enum", "values" -> values)
-    case Poly(values) => obj(
+    case Enum(values, cn) => obj("type" -> "enum", "values" -> values, "className" -> cn.json)
+    case Poly(values, cn) => obj(
         "type" -> "poly",
-        "values" -> values.map { case (key, dt) => key -> dt2V(dt) }
+        "values" -> values.map { case (key, dt) => key -> dt2V(dt) },
+        "className" -> cn.json
       )
     case Json => obj("type" -> "json")
     case Null => obj("type" -> "null")
@@ -107,8 +108,9 @@ object DefType {
           case "decimal" => Dec
         }
       case "boolean" => Bool
-      case "enum" => Enum(o.value("values").asVector.toList)
-      case "poly" => Poly(o.value("values").asMap.map { case (key, json) => key -> v2dt(json) })
+      case "enum" => Enum(o.value("values").asVector.toList, o.get("className").map(_.asString))
+      case "poly" =>
+        Poly(o.value("values").asMap.map { case (key, json) => key -> v2dt(json) }, o.get("className").map(_.asString))
       case "json" => Json
       case "null" => Null
     }
@@ -205,14 +207,10 @@ object DefType {
 
     override protected def template(path: JsonPath, config: TemplateConfig): Json = config.json(path)
   }
-  case class Enum(values: List[Json]) extends DefType {
-    override def className: Option[String] = None
-
+  case class Enum(values: List[Json], className: Option[String]) extends DefType {
     override protected def template(path: JsonPath, config: TemplateConfig): Json = config.`enum`(path, values)
   }
-  case class Poly(values: Map[String, DefType]) extends DefType {
-    override def className: Option[String] = None
-
+  case class Poly(values: Map[String, DefType], className: Option[String]) extends DefType {
     override protected def template(path: JsonPath, config: TemplateConfig): Json = values.head._2.template(path, config)
   }
   case object Null extends DefType {
