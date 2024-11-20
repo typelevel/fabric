@@ -23,7 +23,6 @@ package fabric.rw
 
 import fabric.*
 import fabric.define.*
-import fabric.rw.*
 
 import scala.deriving.*
 import scala.compiletime.*
