@@ -26,8 +26,6 @@ import scala.annotation.nowarn
 import fabric.*
 import fabric.define.*
 
-import fabric.rw.*
-
 import scala.deriving.*
 import scala.compiletime.*
 import scala.quoted.*
@@ -39,6 +37,8 @@ import scala.collection.immutable.VectorMap
 
 @nowarn("msg=unused import")
 trait CompileRW {
+  import fabric.rw.*
+
   inline final def derived[T <: Product](using inline T: Mirror.ProductOf[T], ct: ClassTag[T]): RW[T] = gen[T]
 
   inline def gen[T <: Product](using Mirror.ProductOf[T], ClassTag[T]): RW[T] = new ClassRW[T] {
