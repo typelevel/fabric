@@ -35,7 +35,7 @@ import scala.util.Try
 
 import scala.collection.immutable.VectorMap
 
-@nowarn("msg=unused import")
+@nowarn()
 trait CompileRW {
   import fabric.rw.*
 
