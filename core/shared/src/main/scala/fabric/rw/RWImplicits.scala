@@ -89,6 +89,26 @@ trait RWImplicits {
       )
     }
 
+  implicit def eitherRW[Left: RW, Right: RW]: RW[Either[Left, Right]] = from[Either[Left, Right]](
+    r = {
+      case Left(value) => obj("left" -> value.json)
+      case Right(value) => obj("right" -> value.json)
+    },
+    w = j => {
+      val obj = j.asObj
+      if (obj.value.contains("left")) {
+        Left(obj.value("left").as[Left])
+      } else {
+        Right(obj.value("right").as[Right])
+      }
+    },
+    d = DefType.Obj(
+      Some("scala.util.Either"),
+      "left" -> DefType.Opt(implicitly[RW[Left]].definition),
+      "right" -> DefType.Opt(implicitly[RW[Right]].definition)
+    )
+  )
+
   implicit def tuple2RW[K: RW, V: RW]: RW[(K, V)] = from[(K, V)](
     r = t => arr(t._1.json, t._2.json),
     w = j =>

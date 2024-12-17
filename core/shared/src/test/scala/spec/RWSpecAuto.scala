@@ -155,6 +155,12 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       test.limit should be(100)
       test.list should be(List("Default"))
     }
+    "properly support Either" in {
+      val either: Either[String, Int] = Right(5)
+      val json = either.json
+      val result = json.as[Either[String, Int]]
+      result should be(Right(5))
+    }
   }
 
   case class User(name: String, _id: String) {
