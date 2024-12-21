@@ -249,6 +249,10 @@ class FabricSpec extends AnyWordSpec with Matchers {
         )
       )
     }
+    "verify object asString should not work" in {
+      val json: Json = obj()
+      a[RuntimeException] should be thrownBy (json.asString)
+    }
   }
 }
 

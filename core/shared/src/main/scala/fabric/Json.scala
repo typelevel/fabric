@@ -287,7 +287,7 @@ sealed trait Json extends Any {
   def asType[V <: Json](`type`: JsonType[V]): V =
     if (this.`type`.is(`type`)) {
       this.asInstanceOf[V]
-    } else if (`type` == JsonType.Str) {
+    } else if (`type` == JsonType.Str && !isObj && !isArr) {
       str(toString).asInstanceOf[V]
     } else {
       throw new RuntimeException(s"$this is a ${this.`type`}, not a ${`type`}")
