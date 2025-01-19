@@ -75,11 +75,10 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       DefType.Dec.merge(DefType.Int) should be(DefType.Dec)
       DefType.Int.merge(DefType.Dec) should be(DefType.Dec)
     }
-    "fail with conflicting types" in {
+    "fail with conflicting types" in
       assertThrows[RuntimeException](
         FabricDefinition(List(obj("name" -> "Bad"), num(5)))
       )
-    }
     "validate a definition" in {
       val definition = DefType.Obj(None, "name" -> DefType.Str, "age" -> DefType.Opt(DefType.Int))
       val value = obj("name" -> "Jane Doe", "age" -> 50)
