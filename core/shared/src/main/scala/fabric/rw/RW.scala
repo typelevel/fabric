@@ -83,8 +83,7 @@ object RW extends CompileRW {
     * @param value
     *   the singleton value to use
     */
-  def static[T](value: T): RW[T] =
-    from(_ => obj(), _ => value, DefType.Obj(Some(cleanClassName(value.getClass.getName))))
+  def static[T](value: T): RW[T] = from(_ => obj(), _ => value, DefType.Obj(Some(cleanClassName(value.getClass.getName))))
 
   /**
     * Convenience functionality for working with polymorphic types
