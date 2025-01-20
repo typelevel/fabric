@@ -55,15 +55,12 @@ class YamlFormattingSpec extends AnyWordSpec with Matchers {
       val json = JsonParser(yamlString, Format.Yaml)
       json should be(v)
     }
-    "format a minimal JSON file to YAML properly" in {
+    "format a minimal JSON file to YAML properly" in
       verifyToYaml("openapi-minimal")
-    }
-    "format a simple JSON file to YAML properly" in {
+    "format a simple JSON file to YAML properly" in
       verifyToYaml("openapi-simple")
-    }
-    "format a complex JSON file to YAML properly" in {
+    "format a complex JSON file to YAML properly" in
       verifyToYaml("openapi-tictactoe")
-    }
   }
 
   private def verifyToYaml(name: String): Assertion = {
