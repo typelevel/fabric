@@ -46,10 +46,10 @@ The focus of this project is minimalism and flexibility. To that end, the featur
 ### Setup
 
 For SBT simply include:
-`libraryDependencies += "org.typelevel" %%% "fabric-core" % "1.15.6"`
+`libraryDependencies += "org.typelevel" %%% "fabric-core" % "1.15.7"`
 
 For parsing support include:
-`libraryDependencies += "org.typelevel" %%% "fabric-io" % "1.15.6"`
+`libraryDependencies += "org.typelevel" %%% "fabric-io" % "1.15.7"`
 
 ### Create
 
