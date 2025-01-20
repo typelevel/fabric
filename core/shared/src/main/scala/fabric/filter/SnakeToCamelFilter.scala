@@ -32,7 +32,7 @@ object SnakeToCamelFilter extends JsonFilter {
     case _ => Some(value)
   }
 
-  private def toCamel(key: String): String = key.toList
+  private def toCamel(key: String): String = key.toLowerCase.toList
     .foldLeft(List.empty[Char]) {
       case ('_' :: xs, c) => c.toUpper :: xs
       case (xs, c) => c :: xs
