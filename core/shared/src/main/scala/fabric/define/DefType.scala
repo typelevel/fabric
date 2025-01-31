@@ -53,6 +53,10 @@ sealed trait DefType {
       that
     } else if (this == that.opt) {
       this
+    } else if (this.isOpt || that.isOpt) {
+      DefType.Opt(DefType.Str) // Handle generic Optional
+    } else if (this == DefType.Str || that == DefType.Str && !this.isOpt && !that.isOpt) {
+      DefType.Str
     } else {
       throw new RuntimeException(s"Incompatible typed:\n$this\n\n$that")
     }
