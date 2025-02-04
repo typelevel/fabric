@@ -36,7 +36,7 @@ ThisBuild / scmInfo := Some(
 ThisBuild / developers := List(tlGitHubDev("darkfrog26", "Matt Hicks"))
 
 // Dependency versions
-val collectionCompatVersion: String = "2.12.0"
+val collectionCompatVersion: String = "2.13.0"
 
 val reactifyVersion: String = "4.1.3"
 
