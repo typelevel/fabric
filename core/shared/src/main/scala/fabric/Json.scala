@@ -441,6 +441,15 @@ sealed trait Json extends Any {
 }
 
 object Json {
+  implicit object JsonOrdering extends Ordering[Json] {
+    override def compare(x: Json, y: Json): Int = x match {
+      case NumInt(l, _) if y.isNumInt => l.compareTo(y.asLong)
+      case NumDec(bd, _) if y.isNumDec => bd.compareTo(y.asBigDecimal)
+      case n: Num if y.isNum => n.asDouble.compareTo(y.asDouble)
+      case Str(s, _) if y.isStr => s.compareTo(y.asString)
+      case _ => 0
+    }
+  }
 
   /**
     * Merges multiple Values together. Convenience functionality to handle more
