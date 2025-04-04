@@ -21,8 +21,10 @@
 
 package fabric.rw
 
-import fabric._
+import fabric.*
 import fabric.define.DefType
+
+import scala.reflect.ClassTag
 
 /**
   * RW provides a single class representation of a Reader and Writer for the
@@ -44,12 +46,13 @@ object RW extends CompileRW {
     override def definition: DefType = d
   }
 
-  def enumeration[T](
+  def enumeration[T: ClassTag](
     list: List[T],
     asString: T => String = (t: T) => defaultClassNameMapping(t.getClass.getName),
-    caseSensitive: Boolean = false,
-    className: Option[String] = None
+    caseSensitive: Boolean = false
   ): RW[T] = new RW[T] {
+    val className: String = implicitly[ClassTag[T]].runtimeClass.getName
+
     private def fixString(s: String): String = if (caseSensitive) s else s.toLowerCase
 
     private lazy val map = list.map(t => fixString(asString(t)) -> t).toMap
@@ -58,7 +61,7 @@ object RW extends CompileRW {
 
     override def read(t: T): Json = str(asString(t))
 
-    override val definition: DefType = DefType.Enum(list.map(t => Str(asString(t))), className)
+    override val definition: DefType = DefType.Enum(list.map(t => Str(asString(t))), Some(className))
   }
 
   def string[T](asString: T => String, fromString: String => T): RW[T] = new RW[T] {
@@ -90,16 +93,12 @@ object RW extends CompileRW {
     *
     * @param fieldName
     *   the field name stored in the value (defaults to "type")
-    * @param getType
-    *   a function to determine the field value from an instance (defaults to
-    *   the class name with the first character lowercase - defaultGetType)
-    * @param types
-    *   a list of tuples with the type names associated with their RW
+    * @param classNameMapping
+    *   a function to convert from the actual class name to a stringified class name
     */
-  def poly[P](
+  def poly[P: ClassTag](
     fieldName: String = "type",
-    classNameMapping: String => String = defaultClassNameMapping,
-    className: Option[String] = None
+    classNameMapping: String => String = defaultClassNameMapping
   )(
     types: RW[_ <: P]*
   ): RW[P] = {
@@ -107,6 +106,7 @@ object RW extends CompileRW {
       val className = rw.definition.className.getOrElse(throw new RuntimeException(s"No className defined for $rw"))
       classNameMapping(className)
     }
+    val className: String = implicitly[ClassTag[P]].runtimeClass.getName
     val typeMap = Map(types.map(rw => typeName(rw).toLowerCase -> rw): _*)
     from(
       r = (p: P) => {
@@ -133,7 +133,7 @@ object RW extends CompileRW {
           val key = typeName(rw)
           key -> obj
         }.toMap,
-        className
+        Some(className)
       )
     )
   }
