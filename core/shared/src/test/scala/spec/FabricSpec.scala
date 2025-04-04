@@ -175,7 +175,7 @@ class FabricSpec extends AnyWordSpec with Matchers {
               "className" -> "spec.Polymorphic.PolyValue"
             )
           ),
-          "className" -> Null
+          "className" -> "spec.Polymorphic"
         )
       )
     }
