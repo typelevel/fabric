@@ -22,6 +22,7 @@
 package spec
 
 import fabric._
+import fabric.dsl.*
 import fabric.filter.RemoveEmptyFilter
 import fabric.search._
 import org.scalatest.matchers.should.Matchers

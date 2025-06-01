@@ -22,6 +22,7 @@
 package spec
 
 import fabric._
+import fabric.dsl.*
 import fabric.filter._
 import fabric.merge.{ArrConcatMerge, MergeConfig}
 import fabric.rw._

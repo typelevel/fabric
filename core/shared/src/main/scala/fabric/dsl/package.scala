@@ -19,49 +19,13 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package spec
+package fabric
 
-import fabric._
-import fabric.dsl.*
-import fabric.rw._
-import fabric.react.ReactParent
-import reactify._
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
-
-class ReactParentSpec extends AnyWordSpec with Matchers {
-  "ReactParent" should {
-    "properly handle initialization of Person" in {
-      Person.name() should be("John Doe")
-      Person.age() should be(21)
-      Person.json() should be(
-        obj(
-          "name" -> "John Doe",
-          "age" -> 21
-        )
-      )
-    }
-    "change the name and age" in {
-      Person.name @= "Jane Doe"
-      Person.age @= 20
-      Person.json() should be(
-        obj(
-          "name" -> "Jane Doe",
-          "age" -> 20
-        )
-      )
-    }
-  }
-}
-
-object Person extends ReactParent {
-  val name: Var[String] = reactive[String]("name", "")
-  val age: Var[Int] = reactive[Int]("age", 0)
-
-  override protected def load(): Option[Json] = Some(
-    obj(
-      "name" -> "John Doe",
-      "age" -> 21
-    )
-  )
+package object dsl {
+  implicit def string2Json(s: String): Json = str(s)
+  implicit def double2Json(d: Double): Json = num(d)
+  implicit def bigDecimal2Json(bd: BigDecimal): Json = num(bd)
+  implicit def int2Json(i: Int): Json = num(i)
+  implicit def long2Json(l: Long): Json = num(l)
+  implicit def bool2Json(b: Boolean): Json = bool(b)
 }

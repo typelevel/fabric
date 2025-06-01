@@ -112,7 +112,7 @@ object RW extends CompileRW {
       r = (p: P) => {
         val `type` = classNameMapping(p.getClass.getName)
         typeMap.get(`type`.toLowerCase) match {
-          case Some(rw) => rw.asInstanceOf[RW[P]].read(p).merge(obj("type" -> `type`))
+          case Some(rw) => rw.asInstanceOf[RW[P]].read(p).merge(obj("type" -> str(`type`)))
           case None => throw new RuntimeException(
               s"Type not found [${`type`}] converting from value $p. Available types are: [${typeMap.keySet.mkString(", ")}]"
             )

@@ -45,7 +45,7 @@ package object fabric {
   /**
     * Create a Str from the supplied String
     */
-  implicit def str(s: String): Json = if (s == null) Null else Str(s)
+  def str(s: String): Json = if (s == null) Null else Str(s)
 
   /**
     * Create a Num from the supplied String
@@ -55,19 +55,19 @@ package object fabric {
   /**
     * Create a Num from the supplied Double
     */
-  implicit def num(value: Double): Num = NumDec(BigDecimal(value))
+  def num(value: Double): Num = NumDec(BigDecimal(value))
 
   /**
     * Create a Num from the supplied BigDecimal
     */
-  implicit def num(value: BigDecimal): Num = NumDec(value)
+  def num(value: BigDecimal): Num = NumDec(value)
 
-  implicit def num(value: Int): Num = NumInt(value.toLong)
+  def num(value: Int): Num = NumInt(value.toLong)
 
-  implicit def num(value: Long): Num = NumInt(value)
+  def num(value: Long): Num = NumInt(value)
 
   /**
     * Create a Bool from the supplied Boolean
     */
-  implicit def bool(b: Boolean): Bool = Bool(b)
+  def bool(b: Boolean): Bool = Bool(b)
 }
