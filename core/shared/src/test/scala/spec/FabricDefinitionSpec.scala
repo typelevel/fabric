@@ -21,6 +21,7 @@
 
 package spec
 
+import fabric.dsl.*
 import fabric.define._
 import fabric.rw._
 import fabric.{define, _}

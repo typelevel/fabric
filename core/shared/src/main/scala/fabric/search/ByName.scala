@@ -42,7 +42,7 @@ case class ByName(name: String) extends AnyVal with SearchEntry {
 object ByName {
   implicit val rw: RW[ByName] = RW.wrapped(
     key = "name",
-    asJson = _.name,
+    asJson = bn => str(bn.name),
     fromJson = j => ByName(j.asString),
     definition = DefType.Str
   )

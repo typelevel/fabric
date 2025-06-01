@@ -22,6 +22,7 @@
 package spec
 
 import fabric.*
+import fabric.dsl.*
 import fabric.cryo.{ByteBufferPool, Cryo}
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers

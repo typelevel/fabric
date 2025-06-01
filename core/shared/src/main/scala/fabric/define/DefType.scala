@@ -67,24 +67,24 @@ object DefType {
 
   private def dt2V(dt: DefType): Json = dt match {
     case Obj(map, cn) => obj(
-        "type" -> "object",
+        "type" -> str("object"),
         "values" -> fabric.Obj(map.map { case (key, dt) => key -> dt2V(dt) }),
         "className" -> cn.json
       )
-    case Arr(t) => obj("type" -> "array", "value" -> dt2V(t))
-    case Opt(t) => obj("type" -> "optional", "value" -> dt2V(t))
-    case Str => obj("type" -> "string")
-    case Int => obj("type" -> "numeric", "precision" -> "integer")
-    case Dec => obj("type" -> "numeric", "precision" -> "decimal")
-    case Bool => obj("type" -> "boolean")
-    case Enum(values, cn) => obj("type" -> "enum", "values" -> values, "className" -> cn.json)
+    case Arr(t) => obj("type" -> str("array"), "value" -> dt2V(t))
+    case Opt(t) => obj("type" -> str("optional"), "value" -> dt2V(t))
+    case Str => obj("type" -> str("string"))
+    case Int => obj("type" -> str("numeric"), "precision" -> str("integer"))
+    case Dec => obj("type" -> str("numeric"), "precision" -> str("decimal"))
+    case Bool => obj("type" -> str("boolean"))
+    case Enum(values, cn) => obj("type" -> str("enum"), "values" -> values, "className" -> cn.json)
     case Poly(values, cn) => obj(
-        "type" -> "poly",
+        "type" -> str("poly"),
         "values" -> values.map { case (key, dt) => key -> dt2V(dt) },
         "className" -> cn.json
       )
-    case Json => obj("type" -> "json")
-    case Null => obj("type" -> "null")
+    case Json => obj("type" -> str("json"))
+    case Null => obj("type" -> str("null"))
   }
 
   private def v2dt(v: Json): DefType = {
@@ -179,7 +179,7 @@ object DefType {
   case object Str extends DefType {
     override def className: Option[String] = None
 
-    override protected def template(path: JsonPath, config: TemplateConfig): Json = config.string(path)
+    override protected def template(path: JsonPath, config: TemplateConfig): Json = str(config.string(path))
   }
   case object Int extends DefType {
     override def className: Option[String] = None
@@ -189,7 +189,7 @@ object DefType {
       case _ => super.merge(that)
     }
 
-    override protected def template(path: JsonPath, config: TemplateConfig): Json = config.int(path)
+    override protected def template(path: JsonPath, config: TemplateConfig): Json = num(config.int(path))
   }
   case object Dec extends DefType {
     override def className: Option[String] = None
@@ -199,12 +199,12 @@ object DefType {
       case _ => super.merge(that)
     }
 
-    override protected def template(path: JsonPath, config: TemplateConfig): Json = config.dec(path)
+    override protected def template(path: JsonPath, config: TemplateConfig): Json = num(config.dec(path))
   }
   case object Bool extends DefType {
     override def className: Option[String] = None
 
-    override protected def template(path: JsonPath, config: TemplateConfig): Json = config.bool(path)
+    override protected def template(path: JsonPath, config: TemplateConfig): Json = bool(config.bool(path))
   }
   case object Json extends DefType {
     override def className: Option[String] = None

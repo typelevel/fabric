@@ -48,7 +48,7 @@ case class ByOffset(offset: Int, direction: OffsetDirection) extends SearchEntry
 
 object ByOffset {
   implicit val rw: RW[ByOffset] = RW.from(
-    r = t => obj("offset" -> t.offset, "direction" -> t.direction.json),
+    r = t => obj("offset" -> num(t.offset), "direction" -> t.direction.json),
     w = j => ByOffset(j("offset").asInt, j("direction").as[OffsetDirection]),
     d = DefType.Obj(
       Some("fabric.search.ByOffset"),

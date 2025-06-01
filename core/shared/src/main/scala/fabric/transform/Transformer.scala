@@ -59,9 +59,9 @@ class Transformer(val json: Json, val paths: List[JsonPath]) {
     val value = j(p)
     j.modify(path) { destination =>
       if (destination.isStr) {
-        s"${destination.asString}$separator${value.asString}"
+        str(s"${destination.asString}$separator${value.asString}")
       } else {
-        value.asString
+        value
       }
     }
   }
@@ -70,7 +70,7 @@ class Transformer(val json: Json, val paths: List[JsonPath]) {
     val value = j(p).asString
     val matcher = regex.pattern.matcher(value)
     matcher.matches()
-    (1 to matcher.groupCount()).foldLeft(j)((json, group) => json.modify(to(group - 1))(_ => matcher.group(group)))
+    (1 to matcher.groupCount()).foldLeft(j)((json, group) => json.modify(to(group - 1))(_ => str(matcher.group(group))))
   }
 
   def delete(): Json = modify(_ => obj())

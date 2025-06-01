@@ -22,6 +22,7 @@
 package spec
 
 import fabric._
+import fabric.dsl.*
 import fabric.io.{Format, JsonParser, YamlFormatter}
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers

@@ -22,6 +22,7 @@
 package spec
 
 import fabric._
+import fabric.dsl.*
 import fabric.define.DefType
 import fabric.rw._
 import org.scalatest.matchers.should.Matchers

@@ -36,7 +36,7 @@ object JsonPathEntry {
   object Named {
     implicit val rw: RW[Named] = RW.wrapped[Named](
       key = "name",
-      asJson = _.name,
+      asJson = n => str(n.name),
       fromJson = j => Named(j.asString),
       definition = DefType.Str
     )
@@ -45,7 +45,7 @@ object JsonPathEntry {
   object Indexed {
     implicit val rw: RW[Indexed] = RW.wrapped[Indexed](
       key = "index",
-      asJson = _.index,
+      asJson = i => num(i.index),
       fromJson = j => Indexed(j.asInt),
       definition = DefType.Int
     )
