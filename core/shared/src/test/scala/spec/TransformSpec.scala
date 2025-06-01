@@ -37,7 +37,7 @@ class TransformSpec extends AnyWordSpec with Matchers {
           )
         )
       )
-      val transformed = json.transform(Search("level1", "level2", "product")).copy("product")
+      val transformed = json.transform(Search("level1", "level2", "product")).copy(JsonPath("product"))
       transformed should be(
         obj(
           "level1" -> obj(
@@ -109,7 +109,7 @@ class TransformSpec extends AnyWordSpec with Matchers {
         ),
         "product" -> obj()
       )
-      val transformed = json.transform(Search(*, "product")).mergeTo("product")
+      val transformed = json.transform(Search(*, "product")).mergeTo(JsonPath("product"))
       transformed should be(
         obj(
           "one" -> obj(
@@ -142,7 +142,7 @@ class TransformSpec extends AnyWordSpec with Matchers {
         "third" -> "multiple",
         "fourth" -> "strings"
       )
-      val transformed = json.transform(Search(*)).concatenate("merged", " ")
+      val transformed = json.transform(Search(*)).concatenate(JsonPath("merged"), " ")
       transformed should be(
         obj(
           "first" -> "This",
@@ -160,9 +160,9 @@ class TransformSpec extends AnyWordSpec with Matchers {
         .extract(
           regex = "(.+):(.+):(.+)".r,
           to = Vector(
-            "hour",
-            "minute",
-            "second"
+            JsonPath("hour"),
+            JsonPath("minute"),
+            JsonPath("second")
           )
         )
       transformed should be(

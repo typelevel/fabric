@@ -31,7 +31,7 @@ class SearchSpec extends AnyWordSpec with Matchers {
     "find a single path" in {
       val json = obj("one" -> obj("two" -> obj("three" -> 3)))
       val results = json.search("one", "two", "three")
-      results should be(List[JsonPath]("one" \ "two" \ "three"))
+      results should be(List(JsonPath("one", "two", "three")))
     }
     "find multiple with a wildcard" in {
       val json = obj(
@@ -42,7 +42,7 @@ class SearchSpec extends AnyWordSpec with Matchers {
       )
       val results = json.search("one", *, "end")
       results should be(
-        List[JsonPath]("one" \ "two" \ "end", "one" \ "three" \ "end")
+        List(JsonPath("one", "two", "end"), JsonPath("one", "three", "end"))
       )
     }
     "find several with multiple wildcards" in {
@@ -56,9 +56,9 @@ class SearchSpec extends AnyWordSpec with Matchers {
       val results = json.search(*, *, *)
       results should be(
         List[JsonPath](
-          "one" \ "two" \ "end",
-          "one" \ "three" \ "end",
-          "one" \ "four" \ "final"
+          JsonPath("one", "two", "end"),
+          JsonPath("one", "three", "end"),
+          JsonPath("one", "four", "final")
         )
       )
     }
@@ -71,7 +71,7 @@ class SearchSpec extends AnyWordSpec with Matchers {
         )
       )
       val results = json.search(*, *, "final")
-      results should be(List[JsonPath]("one" \ "four" \ "final"))
+      results should be(List(JsonPath("one", "four", "final")))
     }
     "find one double wildcard" in {
       val json = obj(
@@ -82,7 +82,7 @@ class SearchSpec extends AnyWordSpec with Matchers {
         )
       )
       val results = json.search(**, "final")
-      results should be(List[JsonPath]("one" \ "four" \ "final"))
+      results should be(List(JsonPath("one", "four", "final")))
     }
     "find two double wildcard" in {
       val json = obj(
@@ -95,8 +95,8 @@ class SearchSpec extends AnyWordSpec with Matchers {
       val results = json.search(**, "final")
       results should be(
         List[JsonPath](
-          "one" \ "three" \ "end" \ "not-yet" \ "final",
-          "one" \ "four" \ "final"
+          JsonPath("one", "three", "end", "not-yet", "final"),
+          JsonPath("one", "four", "final")
         )
       )
     }
@@ -109,19 +109,19 @@ class SearchSpec extends AnyWordSpec with Matchers {
         )
       )
       val results = json.search(**, "t.+".r)
-      results should be(List[JsonPath]("one" \ "two", "one" \ "three"))
+      results should be(List(JsonPath("one", "two"), JsonPath("one", "three")))
     }
     "find via nth" in {
       val json = obj("list" -> arr(obj("one" -> 1), obj("two" -> 2), obj("three" -> 3)))
 
       val results = json.search("list", nth(1))
-      results should be(List("list" \ 1))
+      results should be(List(JsonPath("list", 1)))
     }
     "find via last" in {
       val json = obj("list" -> arr(obj("one" -> 1), obj("two" -> 2), obj("three" -> 3)))
 
       val results = json.search("list", last)
-      results should be(List("list" \ 2))
+      results should be(List(JsonPath("list", 2)))
     }
   }
 }

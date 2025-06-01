@@ -68,7 +68,7 @@ class FabricSpec extends AnyWordSpec with Matchers {
       s.getAsType(JsonType.Null) should be(None)
     }
     "extract the state" in {
-      val state = v("address" \ "state")
+      val state = v(JsonPath("address", "state"))
       state should be(str("California"))
     }
     "extract a complex path including indexes" in {
@@ -77,11 +77,11 @@ class FabricSpec extends AnyWordSpec with Matchers {
           obj("second" -> List(obj("third" -> 3), obj("fourth" -> 4)))
         )
       )
-      val fourth = json("first" \ 0 \ "second" \ 1 \ "fourth")
+      val fourth = json(JsonPath("first", 0, "second", 1, "fourth"))
       fourth should be(num(4))
     }
     "update the hierarchy" in {
-      val updated = v.modify("address" \ "state")(_ => str("Tennessee"))
+      val updated = v.modify(JsonPath("address", "state"))(_ => str("Tennessee"))
       updated should be(
         obj(
           "name" -> "Matt \"Matteo\" Hicks",
@@ -97,7 +97,7 @@ class FabricSpec extends AnyWordSpec with Matchers {
       )
     }
     "remove from the hierarchy" in {
-      val removed = v.remove("address" \ "state")
+      val removed = v.remove(JsonPath("address", "state"))
       removed should be(
         obj(
           "name" -> "Matt \"Matteo\" Hicks",
@@ -212,7 +212,7 @@ class FabricSpec extends AnyWordSpec with Matchers {
     }
     "apply RemovePathFilter" in {
       val json = obj("first_level" -> obj("second_level" -> obj("third_level" -> true)))
-      val filter = SnakeToCamelFilter && RemovePathFilter("firstLevel" \ "secondLevel")
+      val filter = SnakeToCamelFilter && RemovePathFilter(JsonPath("firstLevel", "secondLevel"))
       json.filter(filter) should be(Some(obj("firstLevel" -> obj())))
     }
     "merge with a custom override" in {
