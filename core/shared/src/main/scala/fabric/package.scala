@@ -20,8 +20,6 @@
  */
 
 package object fabric {
-  implicit def string2Path(s: String): JsonPath = new JsonPath(List(s))
-
   implicit def map2Obj(map: Map[String, Json]): Obj = Obj(map)
 
   implicit def seq2Arr(seq: Seq[Json]): Arr = Arr(seq.toVector)
