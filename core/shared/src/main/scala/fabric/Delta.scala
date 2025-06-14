@@ -67,7 +67,7 @@ object Delta {
                 if (j1 == j2) {
                   None
                 } else {
-                  Some(key -> f(j1, j2))
+                  delta(j1, j2, f).map(result => key -> result)
                 }
               } *)
             case _ => f(json1, json2)

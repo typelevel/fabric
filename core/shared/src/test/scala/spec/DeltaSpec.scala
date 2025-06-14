@@ -106,5 +106,38 @@ class DeltaSpec extends AnyWordSpec with Matchers {
         )
       )
     }
+    "build structured diff" in {
+      val json1 = obj(
+        "one" -> 1,
+        "two" -> 2,
+        "three" -> obj(
+          "first" -> 1,
+          "second" -> obj(
+            "value" -> "test 1"
+          )
+        )
+      )
+      val json2 = obj(
+        "one" -> 1,
+        "two" -> 2,
+        "three" -> obj(
+          "first" -> 1,
+          "second" -> obj(
+            "value" -> "test 2"
+          )
+        )
+      )
+      Delta.changed(json1, json2) should be(
+        Some(
+          obj(
+            "three" -> obj(
+              "second" -> obj(
+                "value" -> "test 2"
+              )
+            )
+          )
+        )
+      )
+    }
   }
 }
