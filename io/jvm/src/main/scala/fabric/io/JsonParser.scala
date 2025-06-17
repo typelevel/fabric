@@ -25,7 +25,7 @@ import fabric.Json
 import org.apache.commons.text.StringEscapeUtils
 
 import java.io.File
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 import scala.io.Source
 
 /**
@@ -34,6 +34,20 @@ import scala.io.Source
   */
 object JsonParser extends MultiFormatParser {
   override def parsers: List[FormatParser] = List(HoconParser, JacksonParser, PropertiesParser, XMLParser, YamlParser)
+
+  def lines(file: File): List[Json] = {
+    val source = Source.fromFile(file, "UTF-8")
+    try {
+      source
+        .getLines()
+        .map(apply(_, Format.Json))
+        .toList
+    } finally {
+      source.close()
+    }
+  }
+
+  def lines(path: Path): List[Json] = lines(path.toFile)
 
   def apply(file: File, format: Format): Json = apply(Source.fromFile(file, "UTF-8"), format)
   def apply(path: Path, format: Format): Json = apply(Source.fromFile(path.toFile, "UTF-8"), format)

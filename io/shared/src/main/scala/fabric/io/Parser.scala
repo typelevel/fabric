@@ -35,5 +35,7 @@ trait Parser {
     apply(s, format)
   }
 
+  def lines(content: String): List[Json] = content.split('\n').map(apply(_, Format.Json)).toList
+
   def apply(content: String, format: Format): Json
 }
