@@ -37,14 +37,8 @@ object JsonParser extends MultiFormatParser {
 
   def lines(file: File): List[Json] = {
     val source = Source.fromFile(file, "UTF-8")
-    try {
-      source
-        .getLines()
-        .map(apply(_, Format.Json))
-        .toList
-    } finally {
-      source.close()
-    }
+    try source.getLines().map(apply(_, Format.Json)).toList
+    finally source.close()
   }
 
   def lines(path: Path): List[Json] = lines(path.toFile)
