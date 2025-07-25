@@ -35,7 +35,7 @@ package object fabric {
   /**
     * Create an Obj from the params
     */
-  def obj(params: (String, Json)*): Obj = Obj(params: _*)
+  def obj(params: (String, Json)*): Obj = Obj(params*)
 
   /**
     * Create an Arr from the params
