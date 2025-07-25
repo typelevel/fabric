@@ -107,7 +107,7 @@ object RW extends CompileRW {
       classNameMapping(className)
     }
     val className: String = implicitly[ClassTag[P]].runtimeClass.getName
-    val typeMap = Map(types.map(rw => typeName(rw).toLowerCase -> rw)*)
+    val typeMap = Map(types.map(rw => typeName(rw).toLowerCase -> rw) *)
     from(
       r = (p: P) => {
         val `type` = classNameMapping(p.getClass.getName)

@@ -132,7 +132,7 @@ object Cryo {
         val key = thaw(bb).asString
         val value = thaw(bb)
         key -> value
-      }: _*)
+      } *)
       Obj(map)
     case identifiers.Str =>
       val size = bb.getInt
