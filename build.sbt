@@ -3,7 +3,7 @@ val scala213 = "2.13.16"
 
 val scala212 = "2.12.20"
 
-val scala3 = "3.3.6"
+val scala3 = "3.7.1"
 
 val scala2 = List(scala213, scala212)
 val scalaVersions = scala3 :: scala2
@@ -14,6 +14,7 @@ ThisBuild / organization := "org.typelevel"
 ThisBuild / startYear := Some(2021)
 ThisBuild / licenses := Seq(License.MIT)
 ThisBuild / scalaVersion := scala3
+ThisBuild / javaOptions ++= Seq("-Xss50M")
 ThisBuild / javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
 ThisBuild / crossScalaVersions := scalaVersions
 
