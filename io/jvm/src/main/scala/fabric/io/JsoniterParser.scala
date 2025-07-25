@@ -77,6 +77,6 @@ object JsoniterParser extends FormatParser {
     }
     recurse()
 
-    Obj(list.reverse: _*)
+    Obj(list.reverse *)
   }
 }

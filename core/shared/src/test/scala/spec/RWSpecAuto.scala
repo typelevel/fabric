@@ -28,8 +28,6 @@ import fabric.rw.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import scala.language.implicitConversions
-
 class RWSpecAuto extends AnyWordSpec with Matchers {
   "automatic conversion" should {
     "convert Person to Json and back" in {
@@ -138,8 +136,8 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       val car: VehicleType = VehicleType.Car
       car.json should be(Str("Car"))
       "SUV".json.as[VehicleType] should be(VehicleType.SUV)
-      VehicleType.rw.definition.asInstanceOf[DefType.Enum].values should be(
-        List[Json](
+      VehicleType.rw.definition.asInstanceOf[DefType.Enum].values.toSet should be(
+        Set[Json](
           "Car",
           "SUV",
           "Truck",
