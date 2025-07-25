@@ -56,7 +56,23 @@ object RWMacros {
 
             DefType.Obj(Some($className), ..$fieldDefs)
            """)
-      case None => context.abort(context.enclosingPosition, "Not a valid case class")
+      case None =>
+        val caseObjects = companion.typeSignature.members.collect {
+          case s: ModuleSymbol if s.moduleClass.asType.toType <:< tpe => s.name
+        }.toList
+
+        if (caseObjects.isEmpty) {
+          context.abort(context.enclosingPosition, "Not a valid case class or sealed trait with case objects")
+        } else {
+          // Generate a DefType for an enumeration by delegating to RW.enumeration
+          context.Expr[DefType](q"""
+            import _root_.fabric._
+            import _root_.fabric.define._
+            import _root_.fabric.rw._
+
+            RW.enumeration[$tpe](List(..$caseObjects)).definition
+           """)
+        }
     }
   }
 
@@ -66,6 +82,7 @@ object RWMacros {
     import context.universe._
 
     val tpe = t.tpe
+    val companion: Symbol = tpe.typeSymbol.companion
     tpe.decls.collectFirst {
       case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
     } match {
@@ -85,13 +102,13 @@ object RWMacros {
             }
            """)
       case None =>
-        val caseObjects = tpe.companion.members.collect {
-          case s if s.typeSignature <:< t.tpe => s.name
-        }
+        val caseObjects = companion.typeSignature.members.collect {
+          case s: ModuleSymbol if s.moduleClass.asType.toType <:< tpe => s.name
+        }.toList
         if (caseObjects.isEmpty) {
           context.abort(
             context.enclosingPosition,
-            s"$t is not a valid case class (no primary constructor found)"
+            s"$t is not a valid case class (no primary constructor found) and no case objects detected!"
           )
         } else {
           context.Expr[Reader[T]](q"""
@@ -170,9 +187,9 @@ object RWMacros {
             }
            """)
       case None =>
-        val caseObjects = tpe.companion.members.collect {
-          case s if s.typeSignature <:< t.tpe => s.name
-        }
+        val caseObjects = companion.typeSignature.members.collect {
+          case s: ModuleSymbol if s.moduleClass.asType.toType <:< tpe => s.name
+        }.toList
         if (caseObjects.isEmpty) {
           context.abort(
             context.enclosingPosition,

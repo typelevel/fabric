@@ -22,7 +22,7 @@
 package fabric.io
 
 import fabric.Json
-import fabric.rw.{Asable, RW}
+import fabric.rw.*
 
 trait IOFeatures {
   implicit class StringIOExtras(s: String) {
