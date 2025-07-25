@@ -28,15 +28,12 @@ import fabric.rw._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import scala.collection.immutable.VectorMap
-
-class AutoDerivationSpec extends AnyWordSpec with Matchers {
-
+class Scala3Spec extends AnyWordSpec with Matchers {
   final case class Address(city:String, state: String) derives RW
   final case class Person(name: String, age: Int, address: Address) derives RW
 
-  "automatic derivarion" should {
-    "convert Person to Json and back" in {
+  "Scala 3 Specific Functionality" should {
+    "use derives to convert Person to Json and back" in {
       val person = Person("Matt Hicks", 41, Address("San Jose", "California"))
       val value = person.json
       value should be(
@@ -49,5 +46,17 @@ class AutoDerivationSpec extends AnyWordSpec with Matchers {
       val back = value.as[Person]
       back should be(person)
     }
+    "handle built-in enums" in {
+      Color.Green.json should be(str("Green"))
+      str("Green").as[Color] should be(Color.Green)
+    }
+  }
+
+  enum Color {
+    case Red, Green, Blue
+  }
+
+  object Color {
+    implicit val rw: RW[Color] = RW.genEnum
   }
 }
