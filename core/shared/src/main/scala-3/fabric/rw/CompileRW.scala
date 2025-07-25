@@ -24,6 +24,7 @@ package fabric.rw
 import scala.annotation.nowarn
 
 import fabric.*
+import fabric.rw.*
 import fabric.define.*
 
 import scala.deriving.*
@@ -37,8 +38,6 @@ import scala.collection.immutable.VectorMap
 
 @nowarn()
 trait CompileRW {
-  import fabric.rw.*
-
   inline final def derived[T <: Product](using inline T: Mirror.ProductOf[T], ct: ClassTag[T]): RW[T] = gen[T]
 
   inline def gen[T <: Product](using Mirror.ProductOf[T], ClassTag[T]): RW[T] =
@@ -50,6 +49,35 @@ trait CompileRW {
 
   inline def genW[T <: Product](using Mirror.ProductOf[T]): Writer[T] =
     ${ CompileRW.genWMacro[T] }
+
+  // Enum support
+  inline def genEnum[T](using m: Mirror.SumOf[T]): RW[T] = new RW[T] {
+    override def read(value: T): Json = Str(enumName(value))
+
+    override def write(json: Json): T = json match {
+      case Str(name, _) => fromName[T](name)
+      case _ => throw RWException(s"Expected string for enum, got: $json")
+    }
+
+    override def definition: DefType = DefType.Str
+  }
+
+  inline def genEnumR[T](using m: Mirror.SumOf[T]): Reader[T] = new Reader[T] {
+    override def read(value: T): Json = Str(enumName(value))
+  }
+
+  inline def genEnumW[T](using m: Mirror.SumOf[T]): Writer[T] = new Writer[T] {
+    override def write(json: Json): T = json match {
+      case Str(name, _) => fromName[T](name)
+      case _ => throw new RWException(s"Expected string for enum, got: $json")
+    }
+  }
+
+  inline def enumName[T](value: T)(using m: Mirror.SumOf[T]): String =
+    value.asInstanceOf[scala.reflect.Enum].productPrefix
+
+  inline def fromName[T](name: String)(using m: Mirror.SumOf[T]): T =
+    ${ CompileRW.fromNameImpl[T]('name, 'm) }
 
   inline def toClassName[T](using ct: ClassTag[T]): Option[String] =
     Some(ct.runtimeClass.getName.replace("$", "."))
@@ -177,6 +205,26 @@ object CompileRW extends CompileRW {
     import quotes.reflect._
 
     Expr(TypeTree.of[T].symbol.companionClass.fullName)
+  }
+
+  def fromNameImpl[T: Type](name: Expr[String], mirror: Expr[Mirror.SumOf[T]])(using Quotes): Expr[T] = {
+    import quotes.reflect._
+
+    val tpe = TypeRepr.of[T]
+    val typeSymbol = tpe.typeSymbol
+
+    // Get the companion module
+    val companion = typeSymbol.companionModule
+
+    // For enums, use the valueOf method which is standard
+    val valueOfMethod = companion.methodMember("valueOf").headOption.getOrElse {
+      report.errorAndAbort(s"No valueOf method found for enum ${typeSymbol.name}")
+    }
+
+    Apply(
+      Select(Ref(companion), valueOfMethod),
+      List(name.asTerm)
+    ).asExprOf[T]
   }
 
   def genMacro[T <: Product: Type](using Quotes): Expr[RW[T]] = {

@@ -23,7 +23,7 @@ package spec
 
 import fabric.rw.RW
 
-trait VehicleType
+sealed trait VehicleType
 
 object VehicleType {
   // TODO: Switch to RW.gen once Scala 3 has support for sealed traits
