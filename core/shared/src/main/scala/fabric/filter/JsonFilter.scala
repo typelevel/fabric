@@ -50,7 +50,7 @@ object JsonFilter {
         .map { case (key, value) => internal(filter, value, path \ key).map(updated => key -> updated) }
         .flatten
         .toList
-      filter(Obj(mutated: _*), path)
+      filter(Obj(mutated*), path)
     case Arr(vector, _) =>
       val mutated = vector.zipWithIndex.flatMap { case (value, index) => internal(filter, value, path \ s"[$index]") }
       filter(Arr(mutated), path)

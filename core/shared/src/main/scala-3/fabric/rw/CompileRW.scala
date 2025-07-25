@@ -77,7 +77,7 @@ trait CompileRW {
     value.asInstanceOf[scala.reflect.Enum].productPrefix
 
   inline def fromName[T](name: String)(using m: Mirror.SumOf[T]): T =
-    ${ CompileRW.fromNameImpl[T]('name, 'm) }
+    ${ CompileRW.fromNameImpl[T]('name) }
 
   inline def toClassName[T](using ct: ClassTag[T]): Option[String] =
     Some(ct.runtimeClass.getName.replace("$", "."))
@@ -207,7 +207,7 @@ object CompileRW extends CompileRW {
     Expr(TypeTree.of[T].symbol.companionClass.fullName)
   }
 
-  def fromNameImpl[T: Type](name: Expr[String], mirror: Expr[Mirror.SumOf[T]])(using Quotes): Expr[T] = {
+  def fromNameImpl[T: Type](name: Expr[String])(using Quotes): Expr[T] = {
     import quotes.reflect._
 
     val tpe = TypeRepr.of[T]
@@ -230,11 +230,6 @@ object CompileRW extends CompileRW {
   def genMacro[T <: Product: Type](using Quotes): Expr[RW[T]] = {
     import quotes.reflect._
 
-    val tpe = TypeRepr.of[T]
-    val typeSymbol = tpe.typeSymbol
-    val fields = typeSymbol.caseFields
-    val companion = typeSymbol.companionModule
-
     val mirror = Expr.summon[Mirror.ProductOf[T]].getOrElse {
       report.errorAndAbort(s"No Mirror.ProductOf found for ${Type.show[T]}")
     }
@@ -256,8 +251,6 @@ object CompileRW extends CompileRW {
   }
 
   def genWMacro[T <: Product: Type](using Quotes): Expr[Writer[T]] = {
-    import quotes.reflect._
-
     '{
       new ClassW[T] {
         override protected def map2T(map: Map[String, Json]): T = {
@@ -297,7 +290,7 @@ object CompileRW extends CompileRW {
             report.errorAndAbort(s"No Writer found for field $fieldName of type ${Type.show[ft]}")
           }
 
-          val isOptional = fieldTypeRepr <:< TypeRepr.of[Option[_]]
+          val isOptional = fieldTypeRepr <:< TypeRepr.of[Option[?]]
           val fieldNameStr = Expr(fieldName)
           val isJsonWrapperExpr = Expr(isJsonWrapperType)
           val classNameExpr = Expr(typeSymbol.fullName)

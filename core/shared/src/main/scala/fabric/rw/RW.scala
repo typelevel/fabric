@@ -100,14 +100,14 @@ object RW extends CompileRW {
     fieldName: String = "type",
     classNameMapping: String => String = defaultClassNameMapping
   )(
-    types: RW[_ <: P]*
+    types: RW[? <: P]*
   ): RW[P] = {
-    def typeName(rw: RW[_ <: P]): String = {
+    def typeName(rw: RW[? <: P]): String = {
       val className = rw.definition.className.getOrElse(throw new RuntimeException(s"No className defined for $rw"))
       classNameMapping(className)
     }
     val className: String = implicitly[ClassTag[P]].runtimeClass.getName
-    val typeMap = Map(types.map(rw => typeName(rw).toLowerCase -> rw): _*)
+    val typeMap = Map(types.map(rw => typeName(rw).toLowerCase -> rw)*)
     from(
       r = (p: P) => {
         val `type` = classNameMapping(p.getClass.getName)
