@@ -3,7 +3,7 @@ val scala213 = "2.13.16"
 
 val scala212 = "2.12.20"
 
-val scala3 = "3.7.1"
+val scala3 = "3.3.6"
 
 val scala2 = List(scala213, scala212)
 val scalaVersions = scala3 :: scala2
@@ -38,7 +38,7 @@ ThisBuild / developers := List(tlGitHubDev("darkfrog26", "Matt Hicks"))
 // Dependency versions
 val collectionCompatVersion: String = "2.13.0"
 
-val reactifyVersion: String = "4.1.4"
+val reactifyVersion: String = "4.1.3"
 
 val scalaTestVersion: String = "3.2.19"
 
@@ -63,12 +63,12 @@ val uPickleVersion: String = "3.3.1"
 lazy val root = tlCrossRootProject.aggregate(
   core.js,
   core.jvm,
-//  core.native,
+  core.native,
   io.js,
   io.jvm,
   reactify.js,
   reactify.jvm,
-//  reactify.native
+  reactify.native
 )
 
 lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
@@ -104,7 +104,7 @@ lazy val io = crossProject(JSPlatform, JVMPlatform)
     name := "fabric-io",
     mimaPreviousArtifacts := Set.empty,
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "literally" % literallyVersion exclude ("org.scala-lang", "scala3-library_3"),
+      "org.typelevel" %% "literally" % literallyVersion,
       "com.jsoniter" % "jsoniter" % jsoniterJavaVersion,
       "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion % Provided,
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
