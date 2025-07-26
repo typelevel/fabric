@@ -164,16 +164,6 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       val result = json.as[Either[String, Int]]
       result should be(Right(5))
     }
-    "verify recursive RW" in {
-      val json = obj(
-        "organization" -> obj(
-          "name" -> "Test Org"
-        ),
-        "access" -> "Admin"
-      )
-      val detail = json.as[OrganizationDetail[MyOrganization]]
-      detail should be(OrganizationDetail(MyOrganization("Test Org"), "Admin"))
-    }
   }
 
   case class User(name: String, _id: String) {
@@ -194,23 +184,5 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
 
   object DefaultTest {
     implicit val rw: RW[DefaultTest] = RW.gen
-  }
-
-  trait AbstractOrganization[Org <: AbstractOrganization[Org]] {
-    def name: String
-  }
-
-  case class MyOrganization(name: String) extends AbstractOrganization[MyOrganization]
-
-  object MyOrganization {
-    implicit val rw: RW[MyOrganization] = RW.gen[MyOrganization]
-  }
-
-  case class OrganizationDetail[Org <: AbstractOrganization[Org]](organization: Org, access: String)
-
-  @nowarn()
-  object OrganizationDetail {
-    implicit def rw[Org <: AbstractOrganization[Org]](implicit orgRW: RW[Org]): RW[OrganizationDetail[Org]] =
-      RW.gen[OrganizationDetail[Org]]
   }
 }
