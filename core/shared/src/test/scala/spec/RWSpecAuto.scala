@@ -167,6 +167,10 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       val json = fv.json
       json.as[FacetValue] should be(fv)
     }
+    "verify className extraction" in {
+      UserType.rw.definition.className should be(Some("spec.RWSpecAuto.UserType"))
+      FacetValue.rw.definition.className should be(Some("spec.RWSpecAuto.FacetValue"))
+    }
   }
 
   case class User(name: String, _id: String) {
@@ -195,5 +199,15 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
     implicit val rw: RW[FacetValue] = RW.gen
 
     def apply(path: String*): FacetValue = FacetValue(path.toList)
+  }
+
+  sealed trait UserType
+
+  object UserType {
+    implicit val rw: RW[UserType] = RW.enumeration(List(Admin, Basic))
+
+    case object Admin extends UserType
+
+    case object Basic extends UserType
   }
 }

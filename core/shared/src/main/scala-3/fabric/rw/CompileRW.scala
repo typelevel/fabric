@@ -133,11 +133,13 @@ trait CompileRW {
 
   inline def getSimpleTypeName[T]: String = ${ CompileRW.getSimpleTypeNameImpl[T] }
 
+  inline def getFullTypeName[T]: String = ${ CompileRW.getFullTypeNameImpl[T] }
+
   // Helper for case objects
   inline def singleton[T](instance: T): RW[T] = new RW[T] {
     override def read(value: T): Json = Obj()
     override def write(json: Json): T = instance
-    override def definition: DefType = DefType.Obj(Map.empty, Some(getSimpleTypeName[T]))
+    override def definition: DefType = DefType.Obj(Map.empty, Some(getFullTypeName[T]))
   }
 
   // Enumeration support for sealed traits with only case objects
@@ -154,7 +156,7 @@ trait CompileRW {
         throw RWException(s"Expected string for enumeration, got: $json")
     }
 
-    override def definition: DefType = DefType.Enum(instanceToName.values.toList.map(str), className = Some(getSimpleTypeName[T]))
+    override def definition: DefType = DefType.Enum(instanceToName.values.toList.map(str), className = Some(getFullTypeName[T]))
   }
 
   inline def enumName[T](value: T)(using m: Mirror.SumOf[T]): String =
@@ -288,7 +290,8 @@ object CompileRW extends CompileRW {
   def getClassNameImpl[T](using Quotes, Type[T]): Expr[String] = {
     import quotes.reflect._
 
-    Expr(TypeTree.of[T].symbol.companionClass.fullName)
+    val fullName = TypeTree.of[T].symbol.companionClass.fullName.replace("$", ".")
+    Expr(fullName)
   }
 
   def getSimpleTypeNameImpl[T: Type](using Quotes): Expr[String] = {
@@ -302,6 +305,15 @@ object CompileRW extends CompileRW {
 
     // Handle case objects by stripping the trailing $
     Expr(simpleName.stripSuffix("$"))
+  }
+
+  def getFullTypeNameImpl[T: Type](using Quotes): Expr[String] = {
+    import quotes.reflect._
+    val tpe = TypeRepr.of[T]
+    val symbol = tpe.typeSymbol
+
+    // Get the full qualified name
+    Expr(symbol.fullName)
   }
 
   def fromNameImpl[T: Type](name: Expr[String])(using Quotes): Expr[T] = {
@@ -419,15 +431,14 @@ object CompileRW extends CompileRW {
     // Generate child RWs at macro expansion time
     val childRWsExpr = generateChildRWs[T](mirroredElemTypes)
 
-    // Compute the simple type name at macro time
-    val simpleTypeName = {
+    // Compute the full type name at macro time
+    val fullTypeName = {
       val tpe = TypeRepr.of[T]
       val symbol = tpe.typeSymbol
-      val fullName = symbol.fullName
-      val simpleName = fullName.split('.').last
-      simpleName.stripSuffix("$")
+      // Replace $ with . for consistency across Scala versions
+      symbol.fullName.replace("$", ".")
     }
-    val simpleTypeNameExpr = Expr(simpleTypeName)
+    val fullTypeNameExpr = Expr(fullTypeName)
 
     '{
       new RW[T] {
@@ -473,7 +484,7 @@ object CompileRW extends CompileRW {
           val childDefs = childRWs.map { case (name, rw) =>
             name -> rw.definition
           }.toMap
-          DefType.Poly(childDefs, Some($simpleTypeNameExpr))
+          DefType.Poly(childDefs, Some($fullTypeNameExpr))
         }
       }
     }
@@ -591,7 +602,7 @@ object CompileRW extends CompileRW {
           val isOptional = fieldTypeRepr <:< TypeRepr.of[Option[?]]
           val fieldNameStr = Expr(fieldName)
           val isJsonWrapperExpr = Expr(isJsonWrapperType)
-          val classNameExpr = Expr(typeSymbol.fullName)
+          val classNameExpr = Expr(typeSymbol.fullName.replace("$", "."))
 
           '{
             val defaults = $defaultsExpr

@@ -51,7 +51,7 @@ object RW extends CompileRW {
     asString: T => String = (t: T) => defaultClassNameMapping(t.getClass.getName),
     caseSensitive: Boolean = false
   ): RW[T] = new RW[T] {
-    val className: String = implicitly[ClassTag[T]].runtimeClass.getName
+    val className: String = implicitly[ClassTag[T]].runtimeClass.getName.replace('$', '.')
 
     private def fixString(s: String): String = if (caseSensitive) s else s.toLowerCase
 
