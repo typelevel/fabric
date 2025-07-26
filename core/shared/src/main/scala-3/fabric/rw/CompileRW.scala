@@ -349,8 +349,8 @@ object CompileRW extends CompileRW {
             val instancesList = Expr.ofList(instances)
             '{ RW.enumeration[T]($instancesList) }
           } else {
-            // Use the standard sealed trait approach for mixed hierarchies
-            '{ genSealedTrait[T](using $mirror) }
+            // Generate sealed trait RW directly instead of calling inline method
+            genSealedTraitMacro[T](mirror)
           }
         case None =>
           report.errorAndAbort(s"No Mirror.SumOf found for sealed trait ${typeSymbol.name}")
@@ -358,7 +358,8 @@ object CompileRW extends CompileRW {
     } else if (typeSymbol.flags.is(Flags.Enum)) {
       Expr.summon[Mirror.SumOf[T]] match {
         case Some(mirror) =>
-          '{ genEnum[T](using $mirror) }
+          // Generate enum RW directly instead of calling inline method
+          genEnumMacro[T](mirror)
         case None =>
           report.errorAndAbort(s"No Mirror.SumOf found for enum ${typeSymbol.name}")
       }
@@ -368,6 +369,153 @@ object CompileRW extends CompileRW {
     } else {
       report.errorAndAbort(s"${typeSymbol.name} is not a supported type for RW generation. It must be a case class, enum, or sealed trait.")
     }
+  }
+
+  def genEnumMacro[T: Type](mirror: Expr[Mirror.SumOf[T]])(using Quotes): Expr[RW[T]] = {
+    // Generate valueOf lookup at macro time
+    val valueOfExpr = generateValueOfLookup[T]()
+
+    '{
+      new RW[T] {
+        override def read(value: T): Json = Str(value.asInstanceOf[scala.reflect.Enum].productPrefix)
+
+        override def write(json: Json): T = json match {
+          case Str(name, _) => $valueOfExpr(name)
+          case _ => throw RWException(s"Expected string for enum, got: $json")
+        }
+
+        override def definition: DefType = DefType.Str
+      }
+    }
+  }
+
+  private def generateValueOfLookup[T: Type]()(using Quotes): Expr[String => T] = {
+    import quotes.reflect._
+
+    val tpe = TypeRepr.of[T]
+    val companion = tpe.typeSymbol.companionModule
+
+    '{ (name: String) =>
+      ${
+        val valueOfMethod = companion.methodMember("valueOf").headOption.getOrElse {
+          report.errorAndAbort(s"No valueOf method found for enum ${tpe.typeSymbol.name}")
+        }
+
+        Apply(
+          Select(Ref(companion), valueOfMethod),
+          List('name.asTerm)
+        ).asExprOf[T]
+      }
+    }
+  }
+
+  def genSealedTraitMacro[T: Type](mirror: Expr[Mirror.SumOf[T]])(using Quotes): Expr[RW[T]] = {
+    import quotes.reflect._
+
+    // Extract child types at macro expansion time
+    val mirrorTpe = mirror.asTerm.tpe.widen
+    val mirroredElemTypes = mirrorTpe.memberType(Symbol.requiredMethod("scala.deriving.Mirror.Sum.MirroredElemTypes")).dealias
+
+    // Generate child RWs at macro expansion time
+    val childRWsExpr = generateChildRWs[T](mirroredElemTypes)
+
+    // Compute the simple type name at macro time
+    val simpleTypeName = {
+      val tpe = TypeRepr.of[T]
+      val symbol = tpe.typeSymbol
+      val fullName = symbol.fullName
+      val simpleName = fullName.split('.').last
+      simpleName.stripSuffix("$")
+    }
+    val simpleTypeNameExpr = Expr(simpleTypeName)
+
+    '{
+      new RW[T] {
+        private val typeField = "_type"
+        private lazy val childRWs = $childRWsExpr
+
+        override def read(value: T): Json = {
+          val typeName = value.getClass.getSimpleName.stripSuffix("$")
+          val (_, rw) = childRWs.find(_._1 == typeName).getOrElse {
+            throw RWException(s"Unknown subtype: $typeName")
+          }
+
+          rw.asInstanceOf[RW[T]].read(value) match {
+            case obj: Obj => obj.merge(Obj(typeField -> Str(typeName)))
+            case other => Obj(typeField -> Str(typeName), "value" -> other)
+          }
+        }
+
+        override def write(json: Json): T = json match {
+          case obj @ Obj(map) =>
+            map.get(typeField) match {
+              case Some(Str(typeName, _)) =>
+                childRWs.find(_._1 == typeName) match {
+                  case Some((_, rw)) =>
+                    val cleanedMap = map - typeField
+                    val cleanedJson = if (cleanedMap.isEmpty && map.size == 2 && map.contains("value")) {
+                      map("value")
+                    } else {
+                      Obj(cleanedMap)
+                    }
+                    rw.asInstanceOf[RW[T]].write(cleanedJson)
+                  case None =>
+                    throw RWException(s"Unknown type discriminator: $typeName")
+                }
+              case _ =>
+                throw RWException(s"Missing or invalid $typeField field in JSON")
+            }
+          case _ =>
+            throw RWException(s"Expected JSON object for sealed trait, got: $json")
+        }
+
+        override def definition: DefType = {
+          val childDefs = childRWs.map { case (name, rw) =>
+            name -> rw.definition
+          }.toMap
+          DefType.Poly(childDefs, Some($simpleTypeNameExpr))
+        }
+      }
+    }
+  }
+
+  private def generateChildRWs[T: Type](elemTypes: Any)(using Quotes): Expr[List[(String, RW[_])]] = {
+    import quotes.reflect._
+
+    val tpe = elemTypes.asInstanceOf[TypeRepr]
+
+    def extractTypes(tpe: TypeRepr): List[TypeRepr] = tpe match {
+      case AppliedType(_, args) if tpe <:< TypeRepr.of[Tuple] =>
+        args.flatMap {
+          case t if t <:< TypeRepr.of[Tuple] => extractTypes(t)
+          case t => List(t)
+        }
+      case _ => List(tpe)
+    }
+
+    val childTypes = extractTypes(tpe)
+
+    val childExprs = childTypes.map { childType =>
+      childType.asType match {
+        case '[t] =>
+          val rw = Expr.summon[RW[t]].getOrElse {
+            report.errorAndAbort(s"No RW found for child type ${childType.show}")
+          }
+          val name = getSimpleTypeNameFromType(childType)
+          '{ (${ Expr(name) }, $rw.asInstanceOf[RW[_]]) }
+      }
+    }
+
+    Expr.ofList(childExprs)
+  }
+
+  private def getSimpleTypeNameFromType(tpe: Any)(using Quotes): String = {
+    import quotes.reflect._
+    val typeRepr = tpe.asInstanceOf[TypeRepr]
+    val symbol = typeRepr.typeSymbol
+    val fullName = symbol.fullName
+    val simpleName = fullName.split('.').last
+    simpleName.stripSuffix("$")
   }
 
   def genMacro[T: Type](using Quotes): Expr[RW[T]] = {
