@@ -119,7 +119,7 @@ object SimpleJsonParser extends FormatParser {
           }
       }
       recurse(offset)
-      (Obj(list.reverse: _*), adjust)
+      (Obj(list.reverse *), adjust)
     }
     def parseNumber(offset: Int): (Json, Int) = content.substring(offset).takeWhile(c => c.isDigit || c == '.') match {
       case s if s.contains('.') => (num(BigDecimal(s)), offset + s.length)

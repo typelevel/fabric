@@ -63,12 +63,12 @@ val uPickleVersion: String = "3.3.1"
 lazy val root = tlCrossRootProject.aggregate(
   core.js,
   core.jvm,
-  core.native,
+//  core.native,
   io.js,
   io.jvm,
   reactify.js,
   reactify.jvm,
-  reactify.native
+//  reactify.native
 )
 
 lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
@@ -104,7 +104,7 @@ lazy val io = crossProject(JSPlatform, JVMPlatform)
     name := "fabric-io",
     mimaPreviousArtifacts := Set.empty,
     libraryDependencies ++= Seq(
-      "org.typelevel" %%% "literally" % literallyVersion,
+      "org.typelevel" %% "literally" % literallyVersion exclude ("org.scala-lang", "scala3-library_3"),
       "com.jsoniter" % "jsoniter" % jsoniterJavaVersion,
       "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion % Provided,
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
