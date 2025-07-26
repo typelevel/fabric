@@ -9,7 +9,7 @@ val scala2 = List(scala213, scala212)
 val scalaVersions = scala3 :: scala2
 
 name := "fabric"
-ThisBuild / tlBaseVersion := "1.17"
+ThisBuild / tlBaseVersion := "1.18"
 ThisBuild / organization := "org.typelevel"
 ThisBuild / startYear := Some(2021)
 ThisBuild / licenses := Seq(License.MIT)
@@ -38,7 +38,7 @@ ThisBuild / developers := List(tlGitHubDev("darkfrog26", "Matt Hicks"))
 // Dependency versions
 val collectionCompatVersion: String = "2.13.0"
 
-val reactifyVersion: String = "4.1.3"
+val reactifyVersion: String = "4.1.4"
 
 val scalaTestVersion: String = "3.2.19"
 
