@@ -28,8 +28,6 @@ import fabric.rw.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import scala.annotation.nowarn
-
 class RWSpecAuto extends AnyWordSpec with Matchers {
   "automatic conversion" should {
     "convert Person to Json and back" in {
