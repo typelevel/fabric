@@ -21,7 +21,7 @@
 
 package spec
 
-import fabric._
+import fabric.*
 import fabric.dsl.*
 import fabric.io.SimpleJsonParser
 import org.scalatest.matchers.should.Matchers

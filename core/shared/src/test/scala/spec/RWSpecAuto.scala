@@ -162,6 +162,11 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       val result = json.as[Either[String, Int]]
       result should be(Right(5))
     }
+    "properly handle multiple apply methods" in {
+      val fv = FacetValue(List("One", "Two", "Three"))
+      val json = fv.json
+      json.as[FacetValue] should be(fv)
+    }
   }
 
   case class User(name: String, _id: String) {
@@ -182,5 +187,13 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
 
   object DefaultTest {
     implicit val rw: RW[DefaultTest] = RW.gen
+  }
+
+  case class FacetValue(path: List[String])
+
+  object FacetValue {
+    implicit val rw: RW[FacetValue] = RW.gen
+
+    def apply(path: String*): FacetValue = FacetValue(path.toList)
   }
 }

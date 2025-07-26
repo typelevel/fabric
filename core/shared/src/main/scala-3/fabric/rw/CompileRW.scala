@@ -570,7 +570,6 @@ object CompileRW extends CompileRW {
     }
 
     val fields = typeSymbol.caseFields
-    val companionModule = typeSymbol.companionModule
 
     // Check if T is a JsonWrapper
     val isJsonWrapperType = tpe <:< TypeRepr.of[JsonWrapper]
@@ -626,56 +625,17 @@ object CompileRW extends CompileRW {
       }
     }
 
-    // For case classes, we need to use the companion object's apply method
-    // Get the companion object reference based on the type
-    val companionRef = tpe match {
-      case AppliedType(tycon, typeArgs) =>
-        // For generic types like OrganizationDetail[Org], we need to get the companion
-        // and potentially apply type arguments
-        Ref(companionModule)
+    // Use the primary constructor directly
+    val primaryConstructor = typeSymbol.primaryConstructor
+
+    // Check if we need to handle type parameters
+    val constructorCall = tpe match {
+      case AppliedType(_, typeArgs) =>
+        New(TypeTree.of[T]).select(primaryConstructor).appliedToTypes(typeArgs).appliedToArgs(fieldExprs.map(_.asTerm))
       case _ =>
         // For non-generic types
-        Ref(companionModule)
+        New(TypeTree.of[T]).select(primaryConstructor).appliedToArgs(fieldExprs.map(_.asTerm))
     }
-
-    // Find the apply method in the companion
-    val applyMethods = companionModule.methodMember("apply")
-
-    // Find the correct apply method by checking parameter count
-    val applyMethod = applyMethods.find { method =>
-      method.paramSymss match {
-        case typeParams :: valueParams :: Nil if typeParams.forall(_.isType) =>
-          // Generic apply method with type parameters
-          valueParams.length == fields.length
-        case valueParams :: Nil if !valueParams.exists(_.isType) =>
-          // Non-generic apply method
-          valueParams.length == fields.length
-        case _ => false
-      }
-    }.getOrElse {
-      report.errorAndAbort(s"No suitable apply method found in companion object of ${typeSymbol.name}")
-    }
-
-    // Create the method call
-    val methodCall = Select(companionRef, applyMethod)
-
-    // Apply type arguments if needed
-    val appliedMethod = tpe match {
-      case AppliedType(_, typeArgs) if applyMethod.paramSymss.headOption.exists(_.forall(_.isType)) =>
-        // The apply method has type parameters, apply them
-        val typeTreeArgs = typeArgs.map { arg =>
-          arg.asType match {
-            case '[t] => TypeTree.of[t]
-          }
-        }
-        TypeApply(methodCall, typeTreeArgs)
-      case _ =>
-        // No type parameters needed
-        methodCall
-    }
-
-    // Apply the value arguments
-    val constructorCall = Apply(appliedMethod, fieldExprs.map(_.asTerm))
 
     constructorCall.asExprOf[T]
   }
