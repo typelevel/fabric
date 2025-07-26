@@ -28,6 +28,8 @@ import fabric.rw.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+import scala.annotation.nowarn
+
 class RWSpecAuto extends AnyWordSpec with Matchers {
   "automatic conversion" should {
     "convert Person to Json and back" in {
@@ -206,6 +208,7 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
 
   case class OrganizationDetail[Org <: AbstractOrganization[Org]](organization: Org, access: String)
 
+  @nowarn()
   object OrganizationDetail {
     implicit def rw[Org <: AbstractOrganization[Org]](implicit orgRW: RW[Org]): RW[OrganizationDetail[Org]] =
       RW.gen[OrganizationDetail[Org]]

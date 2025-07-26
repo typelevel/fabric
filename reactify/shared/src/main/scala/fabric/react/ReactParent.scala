@@ -27,7 +27,7 @@ import reactify._
 
 trait ReactParent {
   private val _json: Var[Json] = Var(load().getOrElse(obj()))
-  private val list: Var[List[RWVar[_]]] = Var(Nil)
+  private val list: Var[List[RWVar[?]]] = Var(Nil)
 
   def json: Val[Json] = _json
 
