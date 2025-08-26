@@ -101,7 +101,7 @@ object RW extends CompileRW {
   def poly[P: ClassTag](
     fieldName: String = "type",
     classNameMapping: String => String = defaultClassNameMapping,
-    typeAliases: (String, String)*
+    typeAliases: List[(String, String)] = Nil
   )(
     types: RW[? <: P]*
   ): RW[P] = {
@@ -109,16 +109,16 @@ object RW extends CompileRW {
       val className = rw.definition.className.getOrElse(throw new RuntimeException(s"No className defined for $rw"))
       classNameMapping(className)
     }
-    val directTypeMappings = types.map(rw => typeName(rw).toLowerCase -> rw).toMap
-    val aliasedTypeMappings = typeAliases.map { case (alias, direct) =>
+    val directTypeMappings = Map(types.toList.map(rw => typeName(rw).toLowerCase -> rw): _*)
+    val aliasedTypeMappings = Map(typeAliases.map { case (alias, direct) =>
       val rw = directTypeMappings.getOrElse(
         direct.toLowerCase,
         throw new RuntimeException(
-          s"Unable to map $alias -> $direct as $direct not found in ${directTypeMappings.map(_._1).mkString(", ")}"
+          s"Unable to map $alias -> $direct as $direct not found in ${directTypeMappings.keys.mkString(", ")}"
         )
       )
       alias.toLowerCase -> rw
-    }.toMap
+    }: _*)
     val className: String = implicitly[ClassTag[P]].runtimeClass.getName
     val typeMap = directTypeMappings ++ aliasedTypeMappings
     from(
