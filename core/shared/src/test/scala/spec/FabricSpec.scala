@@ -271,7 +271,7 @@ object Special {
 sealed trait Polymorphic
 
 object Polymorphic {
-  implicit val rw: RW[Polymorphic] = RW.poly[Polymorphic](typeAliases = "Empty" -> "Blank")(
+  implicit val rw: RW[Polymorphic] = RW.poly[Polymorphic](typeAliases = List("Empty" -> "Blank"))(
     RW.static(Blank),
     PolyValue.rw
   )
