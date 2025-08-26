@@ -38,7 +38,7 @@ ThisBuild / developers := List(tlGitHubDev("darkfrog26", "Matt Hicks"))
 // Dependency versions
 val collectionCompatVersion: String = "2.13.0"
 
-val reactifyVersion: String = "4.1.3"
+val reactifyVersion: String = "4.1.5"
 
 val scalaTestVersion: String = "3.2.19"
 
