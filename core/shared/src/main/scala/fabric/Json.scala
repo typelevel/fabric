@@ -435,7 +435,7 @@ sealed trait Json extends Any {
     */
   def getBoolean: Option[Boolean] = getBool.map(_.value)
 
-  def search(entries: SearchEntry*): List[JsonPath] = Search(entries *).search(this)
+  def search(entries: SearchEntry*): List[JsonPath] = Search(entries*).search(this)
 
   def transform(search: Search): Transformer = new Transformer(this, search.search(this))
 }
@@ -512,7 +512,7 @@ object Obj {
 
   def apply(value: Map[String, Json]): Obj = new Obj(clean(value))
 
-  def apply(values: (String, Json)*): Obj = apply(VectorMap(values *))
+  def apply(values: (String, Json)*): Obj = apply(VectorMap(values*))
 
   def unapply(obj: Obj): Some[Map[String, Json]] = Some(obj.value)
 

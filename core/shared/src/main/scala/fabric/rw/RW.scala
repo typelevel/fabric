@@ -95,10 +95,13 @@ object RW extends CompileRW {
     *   the field name stored in the value (defaults to "type")
     * @param classNameMapping
     *   a function to convert from the actual class name to a stringified class name
+    * @param typeAliases
+    *   allows aliases to RW types "Alias" -> "ExistingType", mostly for backwards compatability after class renaming
     */
   def poly[P: ClassTag](
     fieldName: String = "type",
-    classNameMapping: String => String = defaultClassNameMapping
+    classNameMapping: String => String = defaultClassNameMapping,
+    typeAliases: (String, String)*
   )(
     types: RW[? <: P]*
   ): RW[P] = {
@@ -106,8 +109,18 @@ object RW extends CompileRW {
       val className = rw.definition.className.getOrElse(throw new RuntimeException(s"No className defined for $rw"))
       classNameMapping(className)
     }
+    val directTypeMappings = types.map(rw => typeName(rw).toLowerCase -> rw).toMap
+    val aliasedTypeMappings = typeAliases.map { case (alias, direct) =>
+      val rw = directTypeMappings.getOrElse(
+        direct.toLowerCase,
+        throw new RuntimeException(
+          s"Unable to map $alias -> $direct as $direct not found in ${directTypeMappings.map(_._1).mkString(", ")}"
+        )
+      )
+      alias.toLowerCase -> rw
+    }.toMap
     val className: String = implicitly[ClassTag[P]].runtimeClass.getName
-    val typeMap = Map(types.map(rw => typeName(rw).toLowerCase -> rw) *)
+    val typeMap = directTypeMappings ++ aliasedTypeMappings
     from(
       r = (p: P) => {
         val `type` = classNameMapping(p.getClass.getName)

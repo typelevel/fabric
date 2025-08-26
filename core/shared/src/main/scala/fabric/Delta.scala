@@ -69,7 +69,7 @@ object Delta {
                 } else {
                   delta(j1, j2, f).map(result => key -> result)
                 }
-              } *)
+              }*)
             case _ => f(json1, json2)
           }
         case _ => f(json1, json2)
