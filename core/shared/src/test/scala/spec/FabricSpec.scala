@@ -148,6 +148,7 @@ class FabricSpec extends AnyWordSpec with Matchers {
     "use polymorphic values" in {
       val json1 = obj("type" -> "Blank")
       val json2 = obj("type" -> "PolyValue", "s" -> "Hello, World!")
+      val json3 = obj("type" -> "Empty")
 
       val p1 = json1.as[Polymorphic]
       p1 should be(Polymorphic.Blank)
@@ -156,6 +157,10 @@ class FabricSpec extends AnyWordSpec with Matchers {
       val p2 = json2.as[Polymorphic]
       p2 should be(Polymorphic.PolyValue("Hello, World!"))
       p2.json should be(json2)
+
+      val p3 = json3.as[Polymorphic]
+      p3 should be(Polymorphic.Blank)
+      p3.json should be(json1)
 
       Polymorphic.rw.definition.json should be(
         obj(
@@ -266,7 +271,7 @@ object Special {
 sealed trait Polymorphic
 
 object Polymorphic {
-  implicit val rw: RW[Polymorphic] = RW.poly[Polymorphic]()(
+  implicit val rw: RW[Polymorphic] = RW.poly[Polymorphic](typeAliases = "Empty" -> "Blank")(
     RW.static(Blank),
     PolyValue.rw
   )

@@ -132,15 +132,15 @@ object DefType {
       m2: Map[String, DefType]
     ): Map[String, DefType] = {
       val keys = m1.keySet ++ m2.keySet
-      VectorMap(keys.toList.map(key => key -> m1.getOrElse(key, Null).merge(m2.getOrElse(key, Null))) *)
+      VectorMap(keys.toList.map(key => key -> m1.getOrElse(key, Null).merge(m2.getOrElse(key, Null)))*)
     }
 
     override def template(path: JsonPath, config: TemplateConfig): Json = obj(map.toList.map { case (key, dt) =>
       key -> dt.template(path \ key, config)
-    } *)
+    }*)
   }
   object Obj {
-    def apply(className: Option[String], entries: (String, DefType)*): Obj = Obj(VectorMap(entries *), className)
+    def apply(className: Option[String], entries: (String, DefType)*): Obj = Obj(VectorMap(entries*), className)
   }
   case class Arr(t: DefType) extends DefType {
     override def className: Option[String] = None
