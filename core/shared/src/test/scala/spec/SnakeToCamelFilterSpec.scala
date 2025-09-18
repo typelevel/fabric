@@ -19,28 +19,30 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package fabric.filter
+package spec
 
-import fabric._
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import fabric.*
+import fabric.dsl.*
+import fabric.filter.SnakeToCamelFilter
 
-/**
-  * Converts snake_case to camelCase in obj keys
-  */
-object SnakeToCamelFilter extends JsonFilter {
-  override def apply(value: Json, path: JsonPath): Option[Json] = value match {
-    case Obj(map) => Some(Obj(map.map { case (key, value) => toCamel(key) -> value }))
-    case _ => Some(value)
-  }
-
-  private def toCamel(key: String): String = {
-    var s = key
-    if (s.charAt(0) == '_') s = s.substring(1)
-    while (s.contains("_")) {
-      val index = s.indexOf('_')
-      val prefix = s.substring(0, index)
-      val suffix = s.substring(index + 1).capitalize
-      s = s"$prefix$suffix"
+class SnakeToCamelFilterSpec extends AnyWordSpec with Matchers {
+  "SnakeToCamelFilter" should {
+    "convert a simple object" in {
+      obj(
+        "a_snake_field" -> "Test"
+      ).filterOne(SnakeToCamelFilter) should be(
+        obj(
+          "aSnakeField" -> "Test"
+        )
+      )
     }
-    s
+    "don't convert prefixed underscores" in {
+      obj("_prefixed" -> "Test").filterOne(SnakeToCamelFilter) should be(obj("prefixed" -> "Test"))
+    }
+    "only convert snake fields" in {
+      obj("camelCased" -> "Test").filterOne(SnakeToCamelFilter) should be(obj("camelCased" -> "Test"))
+    }
   }
 }
