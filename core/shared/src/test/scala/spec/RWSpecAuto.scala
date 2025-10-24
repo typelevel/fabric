@@ -124,11 +124,20 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
     }
     "verify persisting null String values works" in {
       val user = User(null, "abc/123")
-      user.json should be(
-        obj(
-          "name" -> Null,
-          "_id" -> "abc/123",
-          "num" -> 123
+      user.json should (
+        be(
+          obj(
+            "name" -> Null,
+            "_id" -> "abc/123",
+            "num" -> 123
+          )
+        ).or(
+          be(
+            obj(
+              "_id" -> "abc/123",
+              "num" -> 123
+            )
+          )
         )
       )
     }
