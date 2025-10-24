@@ -368,13 +368,7 @@ object CompileRW extends CompileRW {
           report.errorAndAbort(s"No Mirror.SumOf found for sealed trait ${typeSymbol.name}")
       }
     } else if (typeSymbol.flags.is(Flags.Enum)) {
-      Expr.summon[Mirror.SumOf[T]] match {
-        case Some(mirror) =>
-          // Generate enum RW directly instead of calling inline method
-          genEnumMacro[T](mirror)
-        case None =>
-          report.errorAndAbort(s"No Mirror.SumOf found for enum ${typeSymbol.name}")
-      }
+      genEnumMacro[T]()
     } else if (typeSymbol.flags.is(Flags.Case) && typeSymbol.isClassDef) {
       // Handle case classes - call genMacro directly
       genMacro[T]
@@ -383,7 +377,7 @@ object CompileRW extends CompileRW {
     }
   }
 
-  def genEnumMacro[T: Type](mirror: Expr[Mirror.SumOf[T]])(using Quotes): Expr[RW[T]] = {
+  def genEnumMacro[T: Type]()(using Quotes): Expr[RW[T]] = {
     // Generate valueOf lookup at macro time
     val valueOfExpr = generateValueOfLookup[T]()
 
