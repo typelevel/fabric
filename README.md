@@ -46,10 +46,10 @@ The focus of this project is minimalism and flexibility. To that end, the featur
 ### Setup
 
 For SBT simply include:
-`libraryDependencies += "org.typelevel" %%% "fabric-core" % "1.18.3"`
+`libraryDependencies += "org.typelevel" %%% "fabric-core" % "1.18.4"`
 
 For parsing support include:
-`libraryDependencies += "org.typelevel" %%% "fabric-io" % "1.18.3"`
+`libraryDependencies += "org.typelevel" %%% "fabric-io" % "1.18.4"`
 
 ### Create
 
@@ -89,7 +89,7 @@ val v2 = obj(
 // v2: Obj = {"age": 23, "numbers": [4, 5, 6], "address": {"state": "California"}}
 
 val v3 = v1.merge(v2)
-// v3: Json = {"age": 23, "numbers": [4, 5, 6], "address": {"state": "California", "street": "123 Somewhere Rd.", "city": "San Jose"}, "name": "John Doe"}
+// v3: Json = {"name": "John Doe", "age": 23, "numbers": [4, 5, 6], "address": {"street": "123 Somewhere Rd.", "city": "San Jose", "state": "California"}}
 ```
 
 It is worth mentioning that because values are immutable, `v1` and `v2` remain unchanged.
