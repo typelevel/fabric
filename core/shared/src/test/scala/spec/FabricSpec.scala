@@ -137,6 +137,27 @@ class FabricSpec extends AnyWordSpec with Matchers {
       )
       merged should be(expected)
     }
+    "properly retain order when merging" in {
+      val o1 = obj(
+        "a" -> "v1",
+        "b" -> "v1",
+        "c" -> "v1"
+      )
+      val o2 = obj(
+        "c" -> "v2",
+        "d" -> "v2",
+        "e" -> "v2"
+      )
+      val o3 = obj(
+        "e" -> "v3",
+        "f" -> "v3",
+        "g" -> "v3"
+      )
+      val json = o1.merge(o2).merge(o3)
+      json.toString should be(
+        "{\"a\": \"v1\", \"b\": \"v1\", \"c\": \"v2\", \"d\": \"v2\", \"e\": \"v3\", \"f\": \"v3\", \"g\": \"v3\"}"
+      )
+    }
     "convert to/from Special" in {
       val s = obj().as[Special]
       s.name should be(None)

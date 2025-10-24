@@ -30,10 +30,10 @@ object ObjMerge extends JsonMerge[Obj] {
     json2: Obj,
     config: MergeConfig
   ): Obj = {
-    var merged = json2.value
-    json1.value.foreach { case (k, v) =>
+    var merged = json1.value
+    json2.value.foreach { case (k, v) =>
       if (merged.contains(k)) {
-        merged += k -> config.merge(v, merged(k), path \ k)
+        merged += k -> config.merge(merged(k), v, path \ k)
       } else {
         merged += k -> v
       }
