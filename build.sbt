@@ -49,7 +49,7 @@ val literallyVersion: String = "1.2.0"
 
 val jacksonVersion: String = "2.20.0"
 
-val apacheCommonsTextVersion: String = "1.14.0"
+val apacheCommonsTextVersion: String = "1.15.0"
 
 val typesafeConfigVersion: String = "1.4.5"
 
