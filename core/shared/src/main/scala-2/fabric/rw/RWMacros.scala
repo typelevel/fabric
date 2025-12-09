@@ -171,7 +171,7 @@ object RWMacros {
             q"json = Obj(map)"
           } else {
             q"""
-               $name = map.get($key).map {
+               $name = map.get($key).orElse(map.collectFirst { case (k, v) if k.equalsIgnoreCase($key) => v }).map {
                  case Null if $hasDefault => $default
                  case json => json.as[$returnType]
                }.getOrElse($default)

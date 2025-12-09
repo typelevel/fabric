@@ -2,3 +2,7 @@
 .idea
 target
 bench/src/main/scala/bench/event/
+.bloop/
+.metals/
+.vscode/
+metals.sbt
