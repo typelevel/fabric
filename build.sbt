@@ -9,7 +9,7 @@ val scala2 = List(scala213, scala212)
 val scalaVersions = scala3 :: scala2
 
 name := "fabric"
-ThisBuild / tlBaseVersion := "1.18"
+ThisBuild / tlBaseVersion := "1.19"
 ThisBuild / organization := "org.typelevel"
 ThisBuild / startYear := Some(2021)
 ThisBuild / licenses := Seq(License.MIT)
