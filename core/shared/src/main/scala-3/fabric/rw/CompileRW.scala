@@ -135,6 +135,9 @@ trait CompileRW {
 
   inline def getFullTypeName[T]: String = ${ CompileRW.getFullTypeNameImpl[T] }
 
+  inline def findValueCaseInsensitive(map: Map[String, Json], key: String): Option[Json] =
+    map.get(key).orElse(map.collectFirst { case (k, v) if k.equalsIgnoreCase(key) => v })
+
   // Helper for case objects
   inline def singleton[T](instance: T): RW[T] = new RW[T] {
     override def read(value: T): Json = Obj()
@@ -233,7 +236,7 @@ trait CompileRW {
         inline erasedValue[L] match {
           case _: (hdLabel *: tlLabels) =>
             val hdLabelValue: String = constValue[hdLabel].asInstanceOf[String]
-            val hdValueOption: Option[Json] = map.get(hdLabelValue)
+            val hdValueOption: Option[Json] = findValueCaseInsensitive(map, hdLabelValue)
             val hdWritable: Writer[hd] = summonInline[Writer[hd]]
             def defaultAlternative = if (hdLabelValue == "json" && isJsonWrapper) {
               Obj(map)
@@ -600,7 +603,7 @@ object CompileRW extends CompileRW {
 
           '{
             val defaults = $defaultsExpr
-            val jsonOpt = $map.get($fieldNameStr)
+            val jsonOpt = _root_.fabric.rw.CompileRW.findValueCaseInsensitive($map, $fieldNameStr)
             val defaultOpt = defaults.get($fieldNameStr)
 
             jsonOpt match {

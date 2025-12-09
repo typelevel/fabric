@@ -180,6 +180,13 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       UserType.rw.definition.className should be(Some("spec.RWSpecAuto.UserType"))
       FacetValue.rw.definition.className should be(Some("spec.RWSpecAuto.FacetValue"))
     }
+    "handle wrong case for value derivation" in {
+      val json = obj(
+        "NAME" -> "John Doe",
+        "_ID" -> "123"
+      )
+      json.as[User] should be(User("John Doe", "123"))
+    }
   }
 
   case class User(name: String, _id: String) {
