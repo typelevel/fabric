@@ -12,6 +12,6 @@ addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.3.1")
 
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.8")
 
-addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.8.1")
+addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.8.2")
 
 addSbtPlugin("org.typelevel" % "sbt-typelevel" % "0.8.3")
