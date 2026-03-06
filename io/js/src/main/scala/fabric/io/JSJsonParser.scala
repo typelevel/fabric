@@ -42,6 +42,8 @@ object JSJsonParser extends FormatParser {
       d.toMap.map { case (key, value) => key -> parse(value) }
     case v: String => str(v)
     case v: Boolean => bool(v)
+    case v: Double if v.isWhole => num(v.toLong)
+    case v: Double => num(v)
     case v: Byte => num(v.doubleValue())
     case v: Float => num(v.toDouble)
     case v => throw new RuntimeException(
