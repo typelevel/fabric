@@ -21,22 +21,15 @@
 
 package fabric.rw
 
-import fabric.Json
+import scala.annotation.StaticAnnotation
 
-trait ClassW[T] extends Writer[T] {
-  protected def map2T(map: Map[String, Json]): T
-
-  override def write(value: Json): T = {
-    val map =
-      try value.asMap
-      catch {
-        case _: Exception =>
-          throw RWException(s"Expected JSON object but got ${value.`type`}: ${value.toString.take(100)}")
-      }
-    try map2T(map)
-    catch {
-      case e: RWException => throw e
-      case e: Exception => throw RWException(s"Deserialization failed: ${e.getMessage}")
-    }
-  }
-}
+/** Annotation to configure the discriminator field name for polymorphic RW derivation.
+  * Defaults to "type" if not specified.
+  *
+  * Example:
+  * {{{
+  * @typeField("_type")
+  * sealed trait MyTrait derives RW
+  * }}}
+  */
+class typeField(val name: String) extends StaticAnnotation

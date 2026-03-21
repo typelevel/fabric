@@ -38,7 +38,7 @@ import scala.collection.immutable.VectorMap
 
 @nowarn()
 trait CompileRW {
-  inline final def derived[T](using inline T: Mirror.ProductOf[T], ct: ClassTag[T]): RW[T] = gen[T]
+  inline final def derived[T](using ct: ClassTag[T]): RW[T] = gen[T]
 
   inline def gen[T](using ct: ClassTag[T]): RW[T] = ${ CompileRW.genDispatch[T] }
 
@@ -249,7 +249,7 @@ trait CompileRW {
             lazy val default = Try(defaults.getOrElse(hdLabelValue, defaultAlternative)).toOption
             val value = hdValueOption.map {
               case Null if default.nonEmpty => default.get
-              case json => hdWritable.write(json)
+              case json => RWFieldHelper.writeField(hdWritable, json, getClassName[A], hdLabelValue)
             }.getOrElse(default.get)
             arr(index) = value
             fromMapElems[A, tl, tlLabels](map, index + 1, arr, defaults)
@@ -265,6 +265,19 @@ trait CompileRW {
 }
 
 object CompileRW extends CompileRW {
+  /** Write a field value with error context wrapping. Non-inline to ensure try-catch works. */
+  def writeField[T](writer: Writer[T], json: Json, className: String, fieldName: String): T = {
+    try {
+      writer.write(json)
+    } catch {
+      case e: RWException => throw e.withPath(s"$className.$fieldName")
+      case e: Exception => throw RWException(
+        s"Failed to deserialize field '$fieldName': ${e.getMessage}",
+        path = List(s"$className.$fieldName")
+      )
+    }
+  }
+
   def getDefaultParmasImpl[T](using Quotes, Type[T]): Expr[Map[String, AnyRef]] = {
     import quotes.reflect._
     val sym = TypeTree.of[T].symbol
@@ -345,38 +358,42 @@ object CompileRW extends CompileRW {
     val tpe = TypeRepr.of[T]
     val typeSymbol = tpe.typeSymbol
 
-    // Check if it's a sealed trait/abstract class
-    if (typeSymbol.flags.is(Flags.Sealed) && (typeSymbol.flags.is(Flags.Trait) || typeSymbol.flags.is(Flags.Abstract))) {
-      Expr.summon[Mirror.SumOf[T]] match {
-        case Some(mirror) =>
-          // Check if all children are case objects
-          val childrenTypes = typeSymbol.children.map(_.termRef)
-          val allCaseObjects = childrenTypes.forall { childType =>
-            val childSymbol = childType.typeSymbol
-            childSymbol.flags.is(Flags.Module) && childSymbol.flags.is(Flags.Case)
+    // Check if it's a union type (A | B | C)
+    tpe.dealias match {
+      case or: OrType =>
+        genUnionMacro[T](or)
+      case _ =>
+        // Check simple enums FIRST — simple enums (all case objects) have valueOf and should use the enum path.
+        // Parameterized enums (with case class children) don't have valueOf and fall through to sealed trait.
+        if (typeSymbol.flags.is(Flags.Enum) && typeSymbol.companionModule.methodMember("valueOf").nonEmpty) {
+          genEnumMacro[T]()
+        } else if (typeSymbol.flags.is(Flags.Sealed) && (typeSymbol.flags.is(Flags.Trait) || typeSymbol.flags.is(Flags.Abstract) || typeSymbol.flags.is(Flags.Enum))) {
+          // Get child types directly from symbol — avoids Mirror.SumOf which has compatibility issues
+          val children = typeSymbol.children
+          val childrenTermRefs = children.flatMap { child =>
+            if (child.flags.is(Flags.Module)) Some(child.termRef)
+            else if (child.isClassDef) Some(child.typeRef)
+            else None
+          }
+          val allCaseObjects = children.forall { child =>
+            child.flags.is(Flags.Module) && child.flags.is(Flags.Case)
           }
 
           if (allCaseObjects) {
-            // Generate an enumeration-style RW for case objects
-            val instances = childrenTypes.map { childType =>
-              Ref(childType.termSymbol).asExprOf[T]
+            val instances = children.map { child =>
+              Ref(child.termRef.termSymbol).asExprOf[T]
             }
             val instancesList = Expr.ofList(instances)
             '{ RW.enumeration[T]($instancesList) }
           } else {
-            // Generate sealed trait RW directly instead of calling inline method
-            genSealedTraitMacro[T](mirror)
+            genSealedTraitFromChildren[T](children)
           }
-        case None =>
-          report.errorAndAbort(s"No Mirror.SumOf found for sealed trait ${typeSymbol.name}")
-      }
-    } else if (typeSymbol.flags.is(Flags.Enum)) {
-      genEnumMacro[T]()
-    } else if (typeSymbol.flags.is(Flags.Case) && typeSymbol.isClassDef) {
-      // Handle case classes - call genMacro directly
-      genMacro[T]
-    } else {
-      report.errorAndAbort(s"${typeSymbol.name} is not a supported type for RW generation. It must be a case class, enum, or sealed trait.")
+        } else if (typeSymbol.flags.is(Flags.Case) && typeSymbol.isClassDef) {
+          // Handle case classes - call genMacro directly
+          genMacro[T]
+        } else {
+          report.errorAndAbort(s"${typeSymbol.name} is not a supported type for RW generation. It must be a case class, enum, sealed trait, or union type.")
+        }
     }
   }
 
@@ -418,28 +435,60 @@ object CompileRW extends CompileRW {
     }
   }
 
-  def genSealedTraitMacro[T: Type](mirror: Expr[Mirror.SumOf[T]])(using Quotes): Expr[RW[T]] = {
+  def genSealedTraitFromChildren[T: Type](children: List[Any])(using Quotes): Expr[RW[T]] = {
     import quotes.reflect._
 
-    // Extract child types at macro expansion time
-    val mirrorTpe = mirror.asTerm.tpe.widen
-    val mirroredElemTypes = mirrorTpe.memberType(Symbol.requiredMethod("scala.deriving.Mirror.Sum.MirroredElemTypes")).dealias
-
-    // Generate child RWs at macro expansion time
-    val childRWsExpr = generateChildRWs[T](mirroredElemTypes)
-
-    // Compute the full type name at macro time
-    val fullTypeName = {
-      val tpe = TypeRepr.of[T]
-      val symbol = tpe.typeSymbol
-      // Replace $ with . for consistency across Scala versions
-      symbol.fullName.replace("$", ".")
+    val childSymbols = children.asInstanceOf[List[Symbol]]
+    val childTypes = childSymbols.map { child =>
+      if (child.flags.is(Flags.Module)) child.termRef
+      else child.typeRef
     }
+
+    val childExprs = childTypes.map { childType =>
+      childType.asType match {
+        case '[t] =>
+          val rw = Expr.summon[RW[t]].getOrElse {
+            // No existing RW — generate one for case class children
+            val childSym = childType.typeSymbol
+            if (childSym.isClassDef && childSym.flags.is(Flags.Case)) {
+              genMacro[t]
+            } else {
+              report.errorAndAbort(s"No RW found for child type ${childType.show}. Provide an RW instance or make it a case class.")
+            }
+          }
+          val name = getSimpleTypeNameFromType(childType)
+          '{ (${ Expr(name) }, $rw.asInstanceOf[RW[_]]) }
+      }
+    }
+    val childRWsExpr = Expr.ofList(childExprs)
+    genPolyRW[T](childRWsExpr)
+  }
+
+  /** Shared polymorphic RW generation for sealed traits and union types.
+    * Uses "type" discriminator field by default (consistent with RW.poly),
+    * configurable via @typeField("customName") annotation on the type. */
+  private def genPolyRW[T: Type](childRWsExpr: Expr[List[(String, RW[_])]])(using Quotes): Expr[RW[T]] = {
+    import quotes.reflect._
+
+    val tpe = TypeRepr.of[T]
+    val typeSymbol = tpe.typeSymbol
+
+    // Check for @typeField annotation to customize the discriminator field name
+    val fieldName = typeSymbol.annotations.collectFirst {
+      case ann if ann.tpe.typeSymbol.fullName == "fabric.rw.typeField" =>
+        ann match {
+          case Apply(_, List(Literal(StringConstant(name)))) => name
+          case _ => "type"
+        }
+    }.getOrElse("type")
+    val fieldNameExpr = Expr(fieldName)
+
+    val fullTypeName = typeSymbol.fullName.replace("$", ".")
     val fullTypeNameExpr = Expr(fullTypeName)
 
     '{
       new RW[T] {
-        private val typeField = "_type"
+        private val typeField = $fieldNameExpr
         private lazy val childRWs = $childRWsExpr
 
         override def read(value: T): Json = {
@@ -471,10 +520,10 @@ object CompileRW extends CompileRW {
                     throw RWException(s"Unknown type discriminator: $typeName")
                 }
               case _ =>
-                throw RWException(s"Missing or invalid $typeField field in JSON")
+                throw RWException(s"Missing or invalid '$typeField' field in JSON for polymorphic type")
             }
           case _ =>
-            throw RWException(s"Expected JSON object for sealed trait, got: $json")
+            throw RWException(s"Expected JSON object for polymorphic type, got: $json")
         }
 
         override def definition: DefType = {
@@ -485,6 +534,41 @@ object CompileRW extends CompileRW {
         }
       }
     }
+  }
+
+  /** Generate RW for Scala 3 union types (A | B | C).
+    * Extracts union member types and delegates to genSealedTraitFromChildren. */
+  def genUnionMacro[T: Type](orType: Any)(using Quotes): Expr[RW[T]] = {
+    import quotes.reflect._
+
+    // Flatten A | B | C into List(TypeRepr)
+    def flattenUnion(tpe: TypeRepr): List[TypeRepr] = tpe match {
+      case or: OrType => flattenUnion(or.left) ++ flattenUnion(or.right)
+      case other => List(other)
+    }
+
+    val memberTypes = flattenUnion(orType.asInstanceOf[TypeRepr])
+
+    // Generate child RW pairs — same as sealed trait children
+    val childExprs = memberTypes.map { memberType =>
+      memberType.asType match {
+        case '[t] =>
+          val rw = Expr.summon[RW[t]].getOrElse {
+            val childSym = memberType.typeSymbol
+            if (childSym.isClassDef && childSym.flags.is(Flags.Case)) {
+              genMacro[t]
+            } else {
+              report.errorAndAbort(s"No RW found for union member type ${memberType.show}. Ensure all union member types have an RW instance.")
+            }
+          }
+          val name = getSimpleTypeNameFromType(memberType)
+          '{ (${ Expr(name) }, $rw.asInstanceOf[RW[_]]) }
+      }
+    }
+    val childRWsExpr = Expr.ofList(childExprs)
+
+    // Reuse the same polymorphic RW generation as sealed traits
+    genPolyRW[T](childRWsExpr)
   }
 
   private def generateChildRWs[T: Type](elemTypes: Any)(using Quotes): Expr[List[(String, RW[_])]] = {
@@ -610,7 +694,7 @@ object CompileRW extends CompileRW {
               case Some(json) =>
                 json match {
                   case fabric.Null if defaultOpt.isDefined => defaultOpt.get.asInstanceOf[ft]
-                  case _ => $writer.write(json)
+                  case _ => _root_.fabric.rw.RWFieldHelper.writeField($writer, json, $classNameExpr, $fieldNameStr)
                 }
               case None =>
                 if ($fieldNameStr == "json" && $isJsonWrapperExpr) {
