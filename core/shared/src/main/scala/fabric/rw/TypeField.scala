@@ -23,7 +23,8 @@ package fabric.rw
 
 import scala.annotation.StaticAnnotation
 
-/** Annotation to configure the discriminator field name for polymorphic RW derivation.
+/**
+  * Annotation to configure the discriminator field name for polymorphic RW derivation.
   * Defaults to "type" if not specified.
   *
   * Example:
