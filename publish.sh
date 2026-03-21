@@ -2,9 +2,11 @@
 
 set -e
 
+export CI=true
+
 ./validate.sh
 sbt +clean
 sbt +root/compile
-sbt +test
+sbt +root/test
 sbt docs/mdoc
 sbt "util/runMain util.DoRelease $@"

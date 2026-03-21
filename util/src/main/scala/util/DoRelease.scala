@@ -66,7 +66,7 @@ object DoRelease {
     case n => throw new RuntimeException(s"Git Commit Failure: $n")
   }
 
-  private def gitTag(version: Version): Unit = s"git tag $version".! match {
+  private def gitTag(version: Version): Unit = s"""git tag -a $version -m "Release $version"""".! match {
     case 0 => // Success
     case n => throw new RuntimeException(s"Git Tag Failure: $n")
   }
