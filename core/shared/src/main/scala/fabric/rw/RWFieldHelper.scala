@@ -23,20 +23,18 @@ package fabric.rw
 
 import fabric.Json
 
-trait ClassW[T] extends Writer[T] {
-  protected def map2T(map: Map[String, Json]): T
-
-  override def write(value: Json): T = {
-    val map =
-      try value.asMap
-      catch {
-        case _: Exception =>
-          throw RWException(s"Expected JSON object but got ${value.`type`}: ${value.toString.take(100)}")
-      }
-    try map2T(map)
-    catch {
-      case e: RWException => throw e
-      case e: Exception => throw RWException(s"Deserialization failed: ${e.getMessage}")
+/** Runtime helper for field deserialization with error path tracking.
+  * Separate from CompileRW to ensure it's available at the call site of inlined code. */
+object RWFieldHelper {
+  def writeField[T](writer: Writer[T], json: Json, className: String, fieldName: String): T = {
+    try {
+      writer.write(json)
+    } catch {
+      case e: RWException => throw e.withPath(s"$className.$fieldName")
+      case e: Exception => throw RWException(
+        s"Failed to deserialize field '$fieldName': ${e.getMessage}",
+        path = List(s"$className.$fieldName")
+      )
     }
   }
 }

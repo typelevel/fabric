@@ -21,4 +21,13 @@
 
 package fabric.rw
 
-case class RWException(message: String) extends RuntimeException(message)
+case class RWException(message: String, path: List[String] = Nil)
+    extends RuntimeException(
+      if (path.nonEmpty) s"${path.mkString(".")} - $message" else message
+    ) {
+
+  /**
+    * Prepend a field/class name to the error path for nested context.
+    */
+  def withPath(segment: String): RWException = copy(path = segment :: path)
+}
