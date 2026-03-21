@@ -36,6 +36,14 @@ import scala.util.Try
 
 import scala.collection.immutable.VectorMap
 
+private def safeSimpleName(cls: Class[_]): String = {
+  val name = cls.getName
+  val lastDot = name.lastIndexOf('.')
+  val lastDollar = name.lastIndexOf('$')
+  val start = math.max(lastDot, lastDollar) + 1
+  name.substring(start)
+}
+
 @nowarn()
 trait CompileRW {
   inline final def derived[T](using ct: ClassTag[T]): RW[T] = gen[T]
@@ -78,7 +86,7 @@ trait CompileRW {
     private lazy val childRWs = getSealedTraitChildren[T, m.MirroredElemTypes]
 
     override def read(value: T): Json = {
-      val typeName = value.getClass.getSimpleName.stripSuffix("$")
+      val typeName = safeSimpleName(value.getClass)
       val (_, rw) = childRWs.find(_._1 == typeName).getOrElse {
         throw RWException(s"Unknown subtype: $typeName")
       }
@@ -496,7 +504,7 @@ object CompileRW extends CompileRW {
         private lazy val childRWs = $childRWsExpr
 
         override def read(value: T): Json = {
-          val typeName = value.getClass.getSimpleName.stripSuffix("$")
+          val typeName = safeSimpleName(value.getClass)
           val (_, rw) = childRWs.find(_._1 == typeName).getOrElse {
             throw RWException(s"Unknown subtype: $typeName")
           }
