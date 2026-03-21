@@ -23,18 +23,18 @@ package fabric.rw
 
 import fabric.Json
 
-/** Runtime helper for field deserialization with error path tracking.
-  * Separate from CompileRW to ensure it's available at the call site of inlined code. */
+/**
+  * Runtime helper for field deserialization with error path tracking.
+  * Separate from CompileRW to ensure it's available at the call site of inlined code.
+  */
 object RWFieldHelper {
-  def writeField[T](writer: Writer[T], json: Json, className: String, fieldName: String): T = {
-    try {
-      writer.write(json)
-    } catch {
+  def writeField[T](writer: Writer[T], json: Json, className: String, fieldName: String): T =
+    try writer.write(json)
+    catch {
       case e: RWException => throw e.withPath(s"$className.$fieldName")
       case e: Exception => throw RWException(
-        s"Failed to deserialize field '$fieldName': ${e.getMessage}",
-        path = List(s"$className.$fieldName")
-      )
+          s"Failed to deserialize field '$fieldName': ${e.getMessage}",
+          path = List(s"$className.$fieldName")
+        )
     }
-  }
 }
