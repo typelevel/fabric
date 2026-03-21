@@ -370,11 +370,6 @@ object CompileRW extends CompileRW {
         } else if (typeSymbol.flags.is(Flags.Sealed) && (typeSymbol.flags.is(Flags.Trait) || typeSymbol.flags.is(Flags.Abstract) || typeSymbol.flags.is(Flags.Enum))) {
           // Get child types directly from symbol — avoids Mirror.SumOf which has compatibility issues
           val children = typeSymbol.children
-          val childrenTermRefs = children.flatMap { child =>
-            if (child.flags.is(Flags.Module)) Some(child.termRef)
-            else if (child.isClassDef) Some(child.typeRef)
-            else None
-          }
           val allCaseObjects = children.forall { child =>
             child.flags.is(Flags.Module) && child.flags.is(Flags.Case)
           }
@@ -569,36 +564,6 @@ object CompileRW extends CompileRW {
 
     // Reuse the same polymorphic RW generation as sealed traits
     genPolyRW[T](childRWsExpr)
-  }
-
-  private def generateChildRWs[T: Type](elemTypes: Any)(using Quotes): Expr[List[(String, RW[_])]] = {
-    import quotes.reflect._
-
-    val tpe = elemTypes.asInstanceOf[TypeRepr]
-
-    def extractTypes(tpe: TypeRepr): List[TypeRepr] = tpe match {
-      case AppliedType(_, args) if tpe <:< TypeRepr.of[Tuple] =>
-        args.flatMap {
-          case t if t <:< TypeRepr.of[Tuple] => extractTypes(t)
-          case t => List(t)
-        }
-      case _ => List(tpe)
-    }
-
-    val childTypes = extractTypes(tpe)
-
-    val childExprs = childTypes.map { childType =>
-      childType.asType match {
-        case '[t] =>
-          val rw = Expr.summon[RW[t]].getOrElse {
-            report.errorAndAbort(s"No RW found for child type ${childType.show}")
-          }
-          val name = getSimpleTypeNameFromType(childType)
-          '{ (${ Expr(name) }, $rw.asInstanceOf[RW[_]]) }
-      }
-    }
-
-    Expr.ofList(childExprs)
   }
 
   private def getSimpleTypeNameFromType(tpe: Any)(using Quotes): String = {
