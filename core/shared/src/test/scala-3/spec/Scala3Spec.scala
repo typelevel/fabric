@@ -123,8 +123,7 @@ class Scala3Spec extends AnyWordSpec with Matchers {
       an[RWException] should be thrownBy badJson.as[Cat | Dog]
     }
     "include field path in deserialization errors" in {
-      case class Inner(value: Int) derives RW
-      case class Outer(name: String, inner: Inner) derives RW
+      import ErrorTest._
 
       val badJson = obj("name" -> "test", "inner" -> obj("value" -> "not_a_number"))
       val ex = intercept[RuntimeException] { badJson.as[Outer] }
@@ -132,7 +131,7 @@ class Scala3Spec extends AnyWordSpec with Matchers {
       (ex.getMessage should (include("inner") or include("Inner") or include("value")))
     }
     "report clear error for non-object JSON" in {
-      case class Simple(x: Int) derives RW
+      import ErrorTest._
       val ex = the[RWException] thrownBy str("oops").as[Simple]
       ex.getMessage should include("Expected JSON object")
     }
@@ -180,6 +179,12 @@ object ParameterizedEnumTest {
     case Circle(radius: Double)
     case Rectangle(width: Double, height: Double)
   }
+}
+
+object ErrorTest {
+  case class Inner(value: Int) derives RW
+  case class Outer(name: String, inner: Inner) derives RW
+  case class Simple(x: Int) derives RW
 }
 
 object UnionTest {

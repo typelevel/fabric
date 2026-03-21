@@ -393,8 +393,17 @@ object CompileRW extends CompileRW {
   }
 
   def genEnumMacro[T: Type]()(using Quotes): Expr[RW[T]] = {
+    import quotes.reflect._
+
     // Generate valueOf lookup at macro time
     val valueOfExpr = generateValueOfLookup[T]()
+
+    // Extract enum case names for DefType.Enum
+    val tpe = TypeRepr.of[T]
+    val typeSymbol = tpe.typeSymbol
+    val caseNames = typeSymbol.children.filter(c => c.flags.is(Flags.Case)).map(_.name.stripSuffix("$"))
+    val caseNamesExpr = Expr(caseNames)
+    val classNameExpr = Expr(typeSymbol.fullName.replace("$", "."))
 
     '{
       new RW[T] {
@@ -405,7 +414,7 @@ object CompileRW extends CompileRW {
           case _ => throw RWException(s"Expected string for enum, got: $json")
         }
 
-        override def definition: DefType = DefType.Str
+        override def definition: DefType = DefType.Enum($caseNamesExpr.map(fabric.Str(_)), Some($classNameExpr))
       }
     }
   }
