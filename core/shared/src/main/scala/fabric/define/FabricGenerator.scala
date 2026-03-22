@@ -48,11 +48,12 @@ object FabricGenerator {
       val classExtras = extras(rootName)
       val map: Map[String, DefType] = original.filterNot {
         case (_, DefType.Null) => true
-        case (_, DefType.Arr(DefType.Null)) => true
+        case (_, DefType.Arr(DefType.Null, _)) => true
         case _ => false
       }
       def typeFor(name: String, dt: DefType): String = dt match {
-        case DefType.Obj(map, _) =>
+        case DefType.Described(inner, _) => typeFor(name, inner)
+        case DefType.Obj(map, _, _) =>
           val className = resolver(name)
           additional = generate(className, map) :: additional
           if (className.contains('.')) {
@@ -60,15 +61,15 @@ object FabricGenerator {
           } else {
             className
           }
-        case DefType.Arr(DefType.Opt(t)) => s"Vector[${typeFor(name, t)}]"
-        case DefType.Arr(t) => s"Vector[${typeFor(name, t)}]"
-        case DefType.Opt(t) => s"Option[${typeFor(name, t)}]"
+        case DefType.Arr(DefType.Opt(t, _), _) => s"Vector[${typeFor(name, t)}]"
+        case DefType.Arr(t, _) => s"Vector[${typeFor(name, t)}]"
+        case DefType.Opt(t, _) => s"Option[${typeFor(name, t)}]"
         case DefType.Str => "String"
         case DefType.Int => "Long"
         case DefType.Dec => "BigDecimal"
         case DefType.Bool => "Boolean"
-        case DefType.Enum(_, _) => throw new RuntimeException("Unsupported")
-        case DefType.Poly(_, _) => throw new RuntimeException("Unsupported")
+        case DefType.Enum(_, _, _) => throw new RuntimeException("Unsupported")
+        case DefType.Poly(_, _, _) => throw new RuntimeException("Unsupported")
         case DefType.Json => "Json"
         case DefType.Null => throw new RuntimeException(
             "Null type found in definition! Not supported for code generation!"
@@ -120,7 +121,7 @@ object FabricGenerator {
     }
 
     dt match {
-      case DefType.Obj(map, _) => generate(rootName, map)
+      case DefType.Obj(map, _, _) => generate(rootName, map)
       case _ => throw new RuntimeException(
           s"Only DefType.Obj is supported for generation, but received: $dt"
         )

@@ -30,6 +30,10 @@ import scala.util.Try
 sealed trait DefType {
   def className: Option[String]
 
+  def description: Option[String] = None
+
+  def describe(desc: String): DefType = DefType.Described(this, Some(desc))
+
   def isOpt: Boolean = false
 
   def isNull: Boolean = false
@@ -42,8 +46,13 @@ sealed trait DefType {
 
   protected def template(path: JsonPath, config: TemplateConfig): Json
 
-  def merge(that: DefType): DefType =
-    if (this == that) {
+  def merge(that: DefType): DefType = {
+    // Unwrap Described for comparison, descriptions are not preserved through merge
+    val unwrappedThis = this match { case DefType.Described(dt, _) => dt; case _ => this }
+    val unwrappedThat = that match { case DefType.Described(dt, _) => dt; case _ => that }
+    if (unwrappedThis != this || unwrappedThat != that) {
+      unwrappedThis.merge(unwrappedThat)
+    } else if (this == that) {
       this
     } else if (this.isNull) {
       that.opt
@@ -60,35 +69,45 @@ sealed trait DefType {
     } else {
       throw new RuntimeException(s"Incompatible typed:\n$this\n\n$that")
     }
+  }
 }
 
 object DefType {
   implicit def rw: RW[DefType] = RW.from[DefType](r = dt2V, w = v2dt, d = DefType.Json)
 
+  private def withDesc(base: fabric.Obj, desc: Option[String]): fabric.Obj = desc match {
+    case Some(d) => base.merge(fabric.Obj("description" -> str(d))).asObj
+    case None => base
+  }
+
   private def dt2V(dt: DefType): Json = dt match {
-    case Obj(map, cn) => obj(
+    case Described(inner, desc) => withDesc(dt2V(inner).asObj, desc)
+    case Obj(map, cn, desc) => withDesc(obj(
         "type" -> str("object"),
         "values" -> fabric.Obj(map.map { case (key, dt) => key -> dt2V(dt) }),
         "className" -> cn.json
-      )
-    case Arr(t) => obj("type" -> str("array"), "value" -> dt2V(t))
-    case Opt(t) => obj("type" -> str("optional"), "value" -> dt2V(t))
+      ), desc)
+    case Arr(t, desc) => withDesc(obj("type" -> str("array"), "value" -> dt2V(t)), desc)
+    case Opt(t, desc) => withDesc(obj("type" -> str("optional"), "value" -> dt2V(t)), desc)
     case Str => obj("type" -> str("string"))
     case Int => obj("type" -> str("numeric"), "precision" -> str("integer"))
     case Dec => obj("type" -> str("numeric"), "precision" -> str("decimal"))
     case Bool => obj("type" -> str("boolean"))
-    case Enum(values, cn) => obj("type" -> str("enum"), "values" -> values, "className" -> cn.json)
-    case Poly(values, cn) => obj(
+    case Enum(values, cn, desc) => withDesc(obj("type" -> str("enum"), "values" -> values, "className" -> cn.json), desc)
+    case Poly(values, cn, desc) => withDesc(obj(
         "type" -> str("poly"),
         "values" -> values.map { case (key, dt) => key -> dt2V(dt) },
         "className" -> cn.json
-      )
+      ), desc)
     case Json => obj("type" -> str("json"))
     case Null => obj("type" -> str("null"))
   }
 
+  private def readDesc(o: fabric.Obj): Option[String] = o.get("description").map(_.asString)
+
   private def v2dt(v: Json): DefType = {
     val o = v.asObj
+    val desc = readDesc(o)
     o.value("type").asString match {
       case "object" =>
         val map: Map[String, Json] = o.value
@@ -100,30 +119,31 @@ object DefType {
             case fabric.Null => None
             case s: Str => Some(s.value)
             case j => throw new RuntimeException(s"Unsupported className value: $j")
-          }
+          },
+          description = desc
         )
-      case "array" => Arr(
-          t = v2dt(o.value("value"))
-        )
-      case "optional" => Opt(v2dt(o.value("value")))
-      case "string" => Str
+      case "array" => Arr(t = v2dt(o.value("value")), description = desc)
+      case "optional" => Opt(v2dt(o.value("value")), description = desc)
+      case "string" => desc.fold[DefType](Str)(Str.describe)
       case "numeric" => o.value("precision").asString match {
-          case "integer" => Int
-          case "decimal" => Dec
+          case "integer" => desc.fold[DefType](Int)(Int.describe)
+          case "decimal" => desc.fold[DefType](Dec)(Dec.describe)
         }
-      case "boolean" => Bool
-      case "enum" => Enum(o.value("values").asVector.toList, o.get("className").map(_.asString))
+      case "boolean" => desc.fold[DefType](Bool)(Bool.describe)
+      case "enum" => Enum(o.value("values").asVector.toList, o.get("className").map(_.asString), description = desc)
       case "poly" =>
-        Poly(o.value("values").asMap.map { case (key, json) => key -> v2dt(json) }, o.get("className").map(_.asString))
-      case "json" => Json
-      case "null" => Null
+        Poly(o.value("values").asMap.map { case (key, json) => key -> v2dt(json) }, o.get("className").map(_.asString), description = desc)
+      case "json" => desc.fold[DefType](Json)(Json.describe)
+      case "null" => desc.fold[DefType](Null)(Null.describe)
     }
   }
 
-  case class Obj(map: Map[String, DefType], className: Option[String]) extends DefType {
+  case class Obj(map: Map[String, DefType], className: Option[String], override val description: Option[String] = None) extends DefType {
+    override def describe(desc: String): Obj = copy(description = Some(desc))
+
     override def merge(that: DefType): DefType = that match {
-      case Obj(thatMap, cn) => Obj(mergeMap(map, thatMap), cn)
-      case Opt(Obj(thatMap, cn)) => Opt(Obj(mergeMap(map, thatMap), cn))
+      case Obj(thatMap, cn, _) => Obj(mergeMap(map, thatMap), cn)
+      case Opt(Obj(thatMap, cn, _), _) => Opt(Obj(mergeMap(map, thatMap), cn))
       case _ => super.merge(that)
     }
 
@@ -142,11 +162,12 @@ object DefType {
   object Obj {
     def apply(className: Option[String], entries: (String, DefType)*): Obj = Obj(VectorMap(entries*), className)
   }
-  case class Arr(t: DefType) extends DefType {
+  case class Arr(t: DefType, override val description: Option[String] = None) extends DefType {
     override def className: Option[String] = None
+    override def describe(desc: String): Arr = copy(description = Some(desc))
 
     override def merge(that: DefType): DefType = that match {
-      case Arr(thatType) => Arr(t.merge(thatType))
+      case Arr(thatType, _) => Arr(t.merge(thatType))
       case Null => this
       case _ => super.merge(that)
     }
@@ -157,13 +178,14 @@ object DefType {
       t.template(path \ 2, config)
     )
   }
-  case class Opt(t: DefType) extends DefType {
+  case class Opt(t: DefType, override val description: Option[String] = None) extends DefType {
     override def className: Option[String] = Some("scala.Option")
     override def isOpt: Boolean = true
     override def opt: DefType = this
+    override def describe(desc: String): Opt = copy(description = Some(desc))
 
     override def merge(that: DefType): DefType = that match {
-      case Opt(thatOpt) => t.merge(thatOpt) match {
+      case Opt(thatOpt, _) => t.merge(thatOpt) match {
           case o: Opt => o
           case result => Opt(result)
         }
@@ -211,11 +233,22 @@ object DefType {
 
     override protected def template(path: JsonPath, config: TemplateConfig): Json = config.json(path)
   }
-  case class Enum(values: List[Json], className: Option[String]) extends DefType {
+  case class Enum(values: List[Json], className: Option[String], override val description: Option[String] = None) extends DefType {
+    override def describe(desc: String): Enum = copy(description = Some(desc))
     override protected def template(path: JsonPath, config: TemplateConfig): Json = config.`enum`(path, values)
   }
-  case class Poly(values: Map[String, DefType], className: Option[String]) extends DefType {
+  case class Poly(values: Map[String, DefType], className: Option[String], override val description: Option[String] = None) extends DefType {
+    override def describe(desc: String): Poly = copy(description = Some(desc))
     override protected def template(path: JsonPath, config: TemplateConfig): Json = values.head._2.template(path, config)
+  }
+  case class Described(dt: DefType, override val description: Option[String]) extends DefType {
+    override def className: Option[String] = dt.className
+    override def isOpt: Boolean = dt.isOpt
+    override def isNull: Boolean = dt.isNull
+    override def opt: DefType = Described(dt.opt, description)
+    override def describe(desc: String): Described = copy(description = Some(desc))
+    override def merge(that: DefType): DefType = dt.merge(that)
+    override protected def template(path: JsonPath, config: TemplateConfig): Json = dt.template(path, config)
   }
   case object Null extends DefType {
     override def className: Option[String] = None
