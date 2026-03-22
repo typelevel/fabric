@@ -82,11 +82,14 @@ object DefType {
 
   private def dt2V(dt: DefType): Json = dt match {
     case Described(inner, desc) => withDesc(dt2V(inner).asObj, desc)
-    case Obj(map, cn, desc) => withDesc(obj(
-        "type" -> str("object"),
-        "values" -> fabric.Obj(map.map { case (key, dt) => key -> dt2V(dt) }),
-        "className" -> cn.json
-      ), desc)
+    case Obj(map, cn, desc) => withDesc(
+        obj(
+          "type" -> str("object"),
+          "values" -> fabric.Obj(map.map { case (key, dt) => key -> dt2V(dt) }),
+          "className" -> cn.json
+        ),
+        desc
+      )
     case Arr(t, desc) => withDesc(obj("type" -> str("array"), "value" -> dt2V(t)), desc)
     case Opt(t, desc) => withDesc(obj("type" -> str("optional"), "value" -> dt2V(t)), desc)
     case Str => obj("type" -> str("string"))
@@ -94,11 +97,14 @@ object DefType {
     case Dec => obj("type" -> str("numeric"), "precision" -> str("decimal"))
     case Bool => obj("type" -> str("boolean"))
     case Enum(values, cn, desc) => withDesc(obj("type" -> str("enum"), "values" -> values, "className" -> cn.json), desc)
-    case Poly(values, cn, desc) => withDesc(obj(
-        "type" -> str("poly"),
-        "values" -> values.map { case (key, dt) => key -> dt2V(dt) },
-        "className" -> cn.json
-      ), desc)
+    case Poly(values, cn, desc) => withDesc(
+        obj(
+          "type" -> str("poly"),
+          "values" -> values.map { case (key, dt) => key -> dt2V(dt) },
+          "className" -> cn.json
+        ),
+        desc
+      )
     case Json => obj("type" -> str("json"))
     case Null => obj("type" -> str("null"))
   }
@@ -131,14 +137,18 @@ object DefType {
         }
       case "boolean" => desc.fold[DefType](Bool)(Bool.describe)
       case "enum" => Enum(o.value("values").asVector.toList, o.get("className").map(_.asString), description = desc)
-      case "poly" =>
-        Poly(o.value("values").asMap.map { case (key, json) => key -> v2dt(json) }, o.get("className").map(_.asString), description = desc)
+      case "poly" => Poly(
+          o.value("values").asMap.map { case (key, json) => key -> v2dt(json) },
+          o.get("className").map(_.asString),
+          description = desc
+        )
       case "json" => desc.fold[DefType](Json)(Json.describe)
       case "null" => desc.fold[DefType](Null)(Null.describe)
     }
   }
 
-  case class Obj(map: Map[String, DefType], className: Option[String], override val description: Option[String] = None) extends DefType {
+  case class Obj(map: Map[String, DefType], className: Option[String], override val description: Option[String] = None)
+      extends DefType {
     override def describe(desc: String): Obj = copy(description = Some(desc))
 
     override def merge(that: DefType): DefType = that match {
@@ -233,11 +243,16 @@ object DefType {
 
     override protected def template(path: JsonPath, config: TemplateConfig): Json = config.json(path)
   }
-  case class Enum(values: List[Json], className: Option[String], override val description: Option[String] = None) extends DefType {
+  case class Enum(values: List[Json], className: Option[String], override val description: Option[String] = None)
+      extends DefType {
     override def describe(desc: String): Enum = copy(description = Some(desc))
     override protected def template(path: JsonPath, config: TemplateConfig): Json = config.`enum`(path, values)
   }
-  case class Poly(values: Map[String, DefType], className: Option[String], override val description: Option[String] = None) extends DefType {
+  case class Poly(
+    values: Map[String, DefType],
+    className: Option[String],
+    override val description: Option[String] = None
+  ) extends DefType {
     override def describe(desc: String): Poly = copy(description = Some(desc))
     override protected def template(path: JsonPath, config: TemplateConfig): Json = values.head._2.template(path, config)
   }

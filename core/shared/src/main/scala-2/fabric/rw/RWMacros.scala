@@ -45,21 +45,20 @@ object RWMacros {
           val key = name.decodedName.toString
           val returnType = tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
           val descAnn = field.annotations.find(_.tree.tpe =:= typeOf[description])
-          val baseDef = if (defaults.contains(index)) {
-            q"implicitly[RW[$returnType]].definition.opt"
-          } else {
-            q"implicitly[RW[$returnType]].definition"
-          }
+          val baseDef =
+            if (defaults.contains(index)) {
+              q"implicitly[RW[$returnType]].definition.opt"
+            } else {
+              q"implicitly[RW[$returnType]].definition"
+            }
           descAnn match {
-            case Some(ann) =>
-              ann.tree.children.tail.head match {
+            case Some(ann) => ann.tree.children.tail.head match {
                 case l: LiteralApi =>
                   val text = l.value.value.toString
                   q"$key -> $baseDef.describe($text)"
                 case _ => q"$key -> $baseDef"
               }
-            case None =>
-              q"$key -> $baseDef"
+            case None => q"$key -> $baseDef"
           }
         }
         context.Expr[DefType](q"""
