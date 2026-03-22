@@ -44,6 +44,11 @@ private def safeSimpleName(cls: Class[_]): String = {
   name.substring(start)
 }
 
+private def safeTypeName(value: Any): String = value match {
+  case p: Product => p.productPrefix
+  case _ => safeTypeName(value)
+}
+
 @nowarn()
 trait CompileRW {
   inline final def derived[T](using ct: ClassTag[T]): RW[T] = gen[T]
@@ -86,7 +91,7 @@ trait CompileRW {
     private lazy val childRWs = getSealedTraitChildren[T, m.MirroredElemTypes]
 
     override def read(value: T): Json = {
-      val typeName = safeSimpleName(value.getClass)
+      val typeName = safeTypeName(value)
       val (_, rw) = childRWs.find(_._1 == typeName).getOrElse {
         throw RWException(s"Unknown subtype: $typeName")
       }
@@ -273,6 +278,16 @@ trait CompileRW {
 }
 
 object CompileRW extends CompileRW {
+  def applyFieldDescriptions(dt: DefType, descs: Map[String, String]): DefType = {
+    if (descs.isEmpty) dt
+    else dt match {
+      case o: DefType.Obj => o.copy(map = o.map.map { case (k, v) =>
+        descs.get(k).fold(k -> v)(d => k -> v.describe(d))
+      })
+      case other => other
+    }
+  }
+
   /** Write a field value with error context wrapping. Non-inline to ensure try-catch works. */
   def writeField[T](writer: Writer[T], json: Json, className: String, fieldName: String): T = {
     try {
@@ -456,14 +471,20 @@ object CompileRW extends CompileRW {
       else child.typeRef
     }
 
-    val childExprs = childTypes.map { childType =>
+    val childExprs = childSymbols.zip(childTypes).map { case (childSym, childType) =>
       childType.asType match {
         case '[t] =>
           val rw = Expr.summon[RW[t]].getOrElse {
-            // No existing RW — generate one for case class children
-            val childSym = childType.typeSymbol
+            // No existing RW — generate one for case class or case object children
             if (childSym.isClassDef && childSym.flags.is(Flags.Case)) {
               genMacro[t]
+            } else if (childSym.flags.is(Flags.Module)) {
+              val ref = Ref(childSym.termRef.termSymbol).asExprOf[t]
+              '{ RW.static[t]($ref) }
+            } else if (childSym.flags.is(Flags.Enum) && childSym.flags.is(Flags.Case) && !childSym.isClassDef) {
+              // Simple enum case (e.g., `case Point` in a mixed enum) — treated as singleton
+              val ref = Ref(childSym.termRef.termSymbol).asExprOf[t]
+              '{ RW.static[t]($ref) }
             } else {
               report.errorAndAbort(s"No RW found for child type ${childType.show}. Provide an RW instance or make it a case class.")
             }
@@ -504,7 +525,7 @@ object CompileRW extends CompileRW {
         private lazy val childRWs = $childRWsExpr
 
         override def read(value: T): Json = {
-          val typeName = safeSimpleName(value.getClass)
+          val typeName = safeTypeName(value)
           val (_, rw) = childRWs.find(_._1 == typeName).getOrElse {
             throw RWException(s"Unknown subtype: $typeName")
           }
@@ -610,6 +631,10 @@ object CompileRW extends CompileRW {
       report.errorAndAbort(s"No ClassTag found for ${Type.show[T]}")
     }
 
+    // Extract @description annotations from constructor parameters
+    val fieldDescs = extractFieldDescriptions(typeSymbol)
+    val fieldDescsExpr = Expr(fieldDescs)
+
     '{
       new ClassRW[T] {
         override protected def t2Map(t: T): Map[String, Json] = CompileRW.toMap(t)(using $mirror)
@@ -618,9 +643,25 @@ object CompileRW extends CompileRW {
           ${ generateDirectConstructor[T]('{map}) }
         }
 
-        override def definition: DefType = CompileRW.toDefinition[T](using $mirror, $ct)
+        override def definition: DefType = CompileRW.applyFieldDescriptions(
+          CompileRW.toDefinition[T](using $mirror, $ct),
+          $fieldDescsExpr
+        )
       }
     }
+  }
+
+  private def extractFieldDescriptions(typeSymbol: Any)(using Quotes): Map[String, String] = {
+    import quotes.reflect._
+    val sym = typeSymbol.asInstanceOf[Symbol]
+    sym.primaryConstructor.paramSymss.flatten.flatMap { param =>
+      param.annotations.collectFirst {
+        case ann if ann.tpe.typeSymbol.fullName == "fabric.rw.description" =>
+          ann match {
+            case Apply(_, List(Literal(StringConstant(text)))) => param.name -> text
+          }
+      }
+    }.toMap
   }
 
   def genWMacro[T: Type](using Quotes): Expr[Writer[T]] = {

@@ -147,6 +147,33 @@ class Scala3Spec extends AnyWordSpec with Matchers {
       val ambiguousJson = obj("name" -> "Mystery", "age" -> 7)
       an[RWException] should be thrownBy ambiguousJson.as[Cat | Dog]
     }
+    "handle mixed enums with parameterized and simple cases" in {
+      import MixedEnumTest._
+      val circle: Shape = Shape.Circle(5.0)
+      val point: Shape = Shape.Point
+
+      val circleJson = circle.json
+      circleJson should be(obj("type" -> "Circle", "radius" -> 5.0))
+
+      val pointJson = point.json
+      pointJson should be(obj("type" -> "Point"))
+
+      circleJson.as[Shape] should be(Shape.Circle(5.0))
+      pointJson.as[Shape] should be(Shape.Point)
+
+      // Round-trip
+      (Shape.Rectangle(3.0, 4.0): Shape).json.as[Shape] should be(Shape.Rectangle(3.0, 4.0))
+    }
+    "extract @description annotations into DefType definitions" in {
+      import DescriptionTest._
+      val defn = implicitly[RW[Documented]].definition
+      defn match {
+        case DefType.Obj(map, _, _) =>
+          map("name").description should be(Some("The person's full name"))
+          map("age").description should be(Some("Age in years"))
+        case other => fail(s"Expected DefType.Obj, got: $other")
+      }
+    }
   }
 
   enum Color {
@@ -185,6 +212,18 @@ object ErrorTest {
   case class Inner(value: Int) derives RW
   case class Outer(name: String, inner: Inner) derives RW
   case class Simple(x: Int) derives RW
+}
+
+object MixedEnumTest {
+  enum Shape derives RW {
+    case Circle(radius: Double)
+    case Rectangle(width: Double, height: Double)
+    case Point
+  }
+}
+
+object DescriptionTest {
+  case class Documented(@description("The person's full name") name: String, @description("Age in years") age: Int) derives RW
 }
 
 object UnionTest {
