@@ -40,7 +40,7 @@ val collectionCompatVersion: String = "2.14.0"
 
 val reactifyVersion: String = "4.2.0"
 
-val scalaTestVersion: String = "3.2.19"
+val scalaTestVersion: String = "3.2.20"
 
 val scalaCheckVersion: String = "3.2.19.0"
 
