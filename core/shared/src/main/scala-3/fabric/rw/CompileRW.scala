@@ -288,6 +288,22 @@ object CompileRW extends CompileRW {
     }
   }
 
+  def removeTransientFields(dt: DefType, fields: Set[String]): DefType = {
+    if (fields.isEmpty) dt
+    else dt match {
+      case o: DefType.Obj => o.copy(map = o.map -- fields)
+      case other => other
+    }
+  }
+
+  def applySerializedFields(dt: DefType, extraFields: Map[String, DefType]): DefType = {
+    if (extraFields.isEmpty) dt
+    else dt match {
+      case o: DefType.Obj => o.copy(map = o.map ++ extraFields)
+      case other => other
+    }
+  }
+
   /** Write a field value with error context wrapping. Non-inline to ensure try-catch works. */
   def writeField[T](writer: Writer[T], json: Json, className: String, fieldName: String): T = {
     try {
@@ -635,18 +651,51 @@ object CompileRW extends CompileRW {
     val fieldDescs = extractFieldDescriptions(typeSymbol)
     val fieldDescsExpr = Expr(fieldDescs)
 
+    // Extract @serialized members (vals and no-arg defs)
+    val serializedMembers = extractSerializedMembers[T](typeSymbol)
+
+    // Extract @transient constructor params
+    val transientFields = extractTransientFields(typeSymbol)
+    val transientFieldsExpr = Expr(transientFields)
+
+    val hasExtra = serializedMembers.nonEmpty
+    val hasTransient = transientFields.nonEmpty
+
+    val extraMapExpr = if (hasExtra) Some(generateSerializedFieldsMap[T](serializedMembers)) else None
+    val extraDefExpr = if (hasExtra) Some(generateSerializedFieldsDef(serializedMembers)) else None
+
     '{
       new ClassRW[T] {
-        override protected def t2Map(t: T): Map[String, Json] = CompileRW.toMap(t)(using $mirror)
+        override protected def t2Map(t: T): Map[String, Json] = {
+          val base = CompileRW.toMap(t)(using $mirror)
+          val withExtra = ${ extraMapExpr match {
+            case Some(gen) => '{ base ++ ${ gen('{t}) } }
+            case None => '{ base }
+          }}
+          ${ if (hasTransient) '{ withExtra -- $transientFieldsExpr }
+             else '{ withExtra } }
+        }
 
         override protected def map2T(map: Map[String, Json]): T = {
           ${ generateDirectConstructor[T]('{map}) }
         }
 
-        override def definition: DefType = CompileRW.applyFieldDescriptions(
-          CompileRW.toDefinition[T](using $mirror, $ct),
-          $fieldDescsExpr
-        )
+        override def definition: DefType = {
+          val baseDef = CompileRW.applyFieldDescriptions(
+            CompileRW.toDefinition[T](using $mirror, $ct),
+            $fieldDescsExpr
+          )
+          ${ (hasExtra, hasTransient) match {
+            case (true, true) =>
+              '{ CompileRW.removeTransientFields(CompileRW.applySerializedFields(baseDef, ${ extraDefExpr.get }), $transientFieldsExpr) }
+            case (true, false) =>
+              '{ CompileRW.applySerializedFields(baseDef, ${ extraDefExpr.get }) }
+            case (false, true) =>
+              '{ CompileRW.removeTransientFields(baseDef, $transientFieldsExpr) }
+            case (false, false) =>
+              '{ baseDef }
+          }}
+        }
       }
     }
   }
@@ -662,6 +711,80 @@ object CompileRW extends CompileRW {
           }
       }
     }.toMap
+  }
+
+  private def extractTransientFields(typeSymbol: Any)(using Quotes): Set[String] = {
+    import quotes.reflect._
+    val sym = typeSymbol.asInstanceOf[Symbol]
+    sym.primaryConstructor.paramSymss.flatten.flatMap { param =>
+      val isTransient = param.annotations.exists { ann =>
+        ann.tpe.typeSymbol.fullName == "fabric.rw.notSerialized"
+      }
+      if (isTransient) Some(param.name) else None
+    }.toSet
+  }
+
+  private case class SerializedMember(jsonKey: String, memberName: String, memberType: Any)
+
+  private def extractSerializedMembers[T: Type](typeSymbol: Any)(using Quotes): List[SerializedMember] = {
+    import quotes.reflect._
+    val sym = typeSymbol.asInstanceOf[Symbol]
+    sym.declarations.flatMap { member =>
+      member.annotations.collectFirst {
+        case ann if ann.tpe.typeSymbol.fullName == "fabric.rw.serialized" =>
+          val customName = ann match {
+            case Apply(_, List(Literal(StringConstant(name)))) if name.nonEmpty => name
+            case _ => member.name
+          }
+          val returnType = if (member.isDefDef) {
+            val defDef = member.tree.asInstanceOf[DefDef]
+            defDef.returnTpt.tpe
+          } else if (member.isValDef) {
+            val valDef = member.tree.asInstanceOf[ValDef]
+            valDef.tpt.tpe
+          } else {
+            report.errorAndAbort(s"@serialized can only be applied to vals or no-arg defs, but ${member.name} is neither")
+          }
+          SerializedMember(customName, member.name, returnType)
+      }
+    }.toList
+  }
+
+  private def generateSerializedFieldsMap[T: Type](members: List[SerializedMember])(using Quotes): Expr[T] => Expr[Map[String, Json]] = {
+    import quotes.reflect._
+    (tExpr: Expr[T]) => {
+      val entries = members.map { m =>
+        val memberType = m.memberType.asInstanceOf[TypeRepr]
+        memberType.asType match {
+          case '[mt] =>
+            val reader = Expr.summon[Reader[mt]].getOrElse {
+              report.errorAndAbort(s"No Reader found for @serialized member '${m.memberName}' of type ${memberType.show}")
+            }
+            val keyExpr = Expr(m.jsonKey)
+            val valueExpr = Select(tExpr.asTerm, TypeRepr.of[T].typeSymbol.methodMember(m.memberName).head).asExprOf[mt]
+            '{ ($keyExpr, $reader.read($valueExpr)) }
+        }
+      }
+      val entriesList = Expr.ofList(entries)
+      '{ $entriesList.toMap }
+    }
+  }
+
+  private def generateSerializedFieldsDef(members: List[SerializedMember])(using Quotes): Expr[Map[String, DefType]] = {
+    import quotes.reflect._
+    val entries = members.map { m =>
+      val memberType = m.memberType.asInstanceOf[TypeRepr]
+      memberType.asType match {
+        case '[mt] =>
+          val rw = Expr.summon[RW[mt]].getOrElse {
+            report.errorAndAbort(s"No RW found for @serialized member '${m.memberName}' of type ${memberType.show}")
+          }
+          val keyExpr = Expr(m.jsonKey)
+          '{ ($keyExpr, $rw.definition) }
+      }
+    }
+    val entriesList = Expr.ofList(entries)
+    '{ $entriesList.toMap }
   }
 
   def genWMacro[T: Type](using Quotes): Expr[Writer[T]] = {
