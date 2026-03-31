@@ -33,8 +33,8 @@ import scala.annotation.StaticAnnotation
   * Example:
   * {{{
   * case class Person(firstName: String, lastName: String) {
-  *   @serialized def fullName: String = s"$firstName $lastName"
-  *   @serialized("display") val displayName: String = s"$lastName, $firstName"
+  *   @serialized def fullName: String = firstName + " " + lastName
+  *   @serialized("display") val displayName: String = lastName + ", " + firstName
   * }
   * }}}
   */
