@@ -210,6 +210,27 @@ class Scala3Spec extends AnyWordSpec with Matchers {
       val back = str("xyz-789").as[UserId]
       back should be(UserId("xyz-789"))
     }
+    "handle recursive/self-referencing types" in {
+      import RecursiveTest._
+      val tree = TreeNode("root", List(
+        TreeNode("child1", Nil),
+        TreeNode("child2", List(TreeNode("grandchild", Nil)))
+      ))
+      val json = tree.json
+      json("value").asString should be("root")
+      json("children").asArr.value should have size 2
+      json("children").asArr.value(1)("children").asArr.value(0)("value").asString should be("grandchild")
+
+      val back = json.as[TreeNode]
+      back should be(tree)
+
+      // Option-based recursion
+      val linked = LinkedNode(1, Some(LinkedNode(2, Some(LinkedNode(3, None)))))
+      val linkedJson = linked.json
+      linkedJson("value").asInt should be(1)
+      val linkedBack = linkedJson.as[LinkedNode]
+      linkedBack should be(linked)
+    }
     "extract @description annotations into DefType definitions" in {
       import DescriptionTest._
       val defn = implicitly[RW[Documented]].definition
@@ -290,6 +311,13 @@ object AnyValTest {
   object UserId {
     given RW[UserId] = RW.gen
   }
+}
+
+object RecursiveTest {
+  case class TreeNode(value: String, children: List[TreeNode]) derives RW
+  case class LinkedNode(value: Int, next: Option[LinkedNode]) derives RW
+  case class Foo(name: String, bar: Bar) derives RW
+  case class Bar(value: Int, foo: Option[Foo]) derives RW
 }
 
 object UnionTest {
