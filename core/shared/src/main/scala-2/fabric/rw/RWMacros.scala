@@ -40,30 +40,33 @@ object RWMacros {
       case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
     } match {
       case Some(fields) =>
-        val transientNames = fields.filter(_.annotations.exists(_.tree.tpe =:= typeOf[notSerialized])).map(_.asTerm.name.decodedName.toString).toSet
-        val fieldDefs = fields.zipWithIndex.filterNot { case (field, _) =>
-          transientNames.contains(field.asTerm.name.decodedName.toString)
-        }.map { case (field, index) =>
-          val name = field.asTerm.name
-          val key = name.decodedName.toString
-          val returnType = tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
-          val descAnn = field.annotations.find(_.tree.tpe =:= typeOf[description])
-          val baseDef =
-            if (defaults.contains(index)) {
-              q"implicitly[RW[$returnType]].definition.opt"
-            } else {
-              q"implicitly[RW[$returnType]].definition"
-            }
-          descAnn match {
-            case Some(ann) => ann.tree.children.tail.head match {
-                case l: LiteralApi =>
-                  val text = l.value.value.toString
-                  q"$key -> $baseDef.describe($text)"
-                case _ => q"$key -> $baseDef"
+        val transientNames = fields
+          .filter(_.annotations.exists(_.tree.tpe =:= typeOf[notSerialized]))
+          .map(_.asTerm.name.decodedName.toString)
+          .toSet
+        val fieldDefs = fields.zipWithIndex
+          .filterNot { case (field, _) => transientNames.contains(field.asTerm.name.decodedName.toString) }
+          .map { case (field, index) =>
+            val name = field.asTerm.name
+            val key = name.decodedName.toString
+            val returnType = tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
+            val descAnn = field.annotations.find(_.tree.tpe =:= typeOf[description])
+            val baseDef =
+              if (defaults.contains(index)) {
+                q"implicitly[RW[$returnType]].definition.opt"
+              } else {
+                q"implicitly[RW[$returnType]].definition"
               }
-            case None => q"$key -> $baseDef"
+            descAnn match {
+              case Some(ann) => ann.tree.children.tail.head match {
+                  case l: LiteralApi =>
+                    val text = l.value.value.toString
+                    q"$key -> $baseDef.describe($text)"
+                  case _ => q"$key -> $baseDef"
+                }
+              case None => q"$key -> $baseDef"
+            }
           }
-        }
         val serializedDefs = serializedMembers(context)(tpe).map { info =>
           val key = info.jsonKey
           val returnType = info.returnType.asInstanceOf[Type]
@@ -107,14 +110,19 @@ object RWMacros {
       case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
     } match {
       case Some(fields) =>
-        val transientNames = fields.filter(_.annotations.exists(_.tree.tpe =:= typeOf[notSerialized])).map(_.asTerm.name.decodedName.toString).toSet
-        val toMap: List[context.universe.Tree] = fields.filterNot { field =>
-          transientNames.contains(field.asTerm.name.decodedName.toString)
-        }.map { field =>
-          val name = field.asTerm.name
-          val key = name.decodedName.toString
-          q"$key -> t.$name.json"
-        }
+        val transientNames = fields
+          .filter(_.annotations.exists(_.tree.tpe =:= typeOf[notSerialized]))
+          .map(_.asTerm.name.decodedName.toString)
+          .toSet
+        val toMap: List[context.universe.Tree] = fields
+          .filterNot { field =>
+            transientNames.contains(field.asTerm.name.decodedName.toString)
+          }
+          .map { field =>
+            val name = field.asTerm.name
+            val key = name.decodedName.toString
+            q"$key -> t.$name.json"
+          }
         val extraMap: List[context.universe.Tree] = serializedMembers(context)(tpe).map { info =>
           val key = info.jsonKey
           val memberName = TermName(info.memberName)
