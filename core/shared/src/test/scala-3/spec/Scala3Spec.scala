@@ -201,6 +201,15 @@ class Scala3Spec extends AnyWordSpec with Matchers {
       val back = obj("name" -> "otherapp").as[Config]
       back should be(Config("otherapp", "default"))
     }
+    "proxy AnyVal case class to inner type RW" in {
+      import AnyValTest._
+      val id = UserId("abc-123")
+      val json = id.json
+      json should be(str("abc-123"))
+
+      val back = str("xyz-789").as[UserId]
+      back should be(UserId("xyz-789"))
+    }
     "extract @description annotations into DefType definitions" in {
       import DescriptionTest._
       val defn = implicitly[RW[Documented]].definition
@@ -274,6 +283,13 @@ object SerializedTest {
 
 object TransientTest {
   case class Config(name: String, @notSerialized secret: String = "default") derives RW
+}
+
+object AnyValTest {
+  case class UserId(value: String) extends AnyVal
+  object UserId {
+    given RW[UserId] = RW.gen
+  }
 }
 
 object UnionTest {

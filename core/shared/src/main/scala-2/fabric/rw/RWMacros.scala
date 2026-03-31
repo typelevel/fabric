@@ -259,6 +259,32 @@ object RWMacros {
     import context.universe._
 
     val tpe = t.tpe
+
+    // AnyVal case class — proxy to the inner type's RW
+    if (tpe <:< typeOf[AnyVal]) {
+      tpe.decls.collectFirst {
+        case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
+      } match {
+        case Some(field :: Nil) =>
+          val name = field.asTerm.name
+          val innerType = tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
+          val companion = tpe.typeSymbol.companion
+          return context.Expr[RW[T]](q"""
+            import _root_.fabric._
+            import _root_.fabric.rw._
+            import _root_.fabric.define._
+
+            new RW[$tpe] {
+              private val innerRW = implicitly[RW[$innerType]]
+              override def read(t: $tpe): Json = innerRW.read(t.$name)
+              override def write(value: Json): $tpe = $companion(innerRW.write(value))
+              override def definition: DefType = innerRW.definition
+            }
+          """)
+        case _ => // fall through to normal path
+      }
+    }
+
     val reader = caseClassR[T](context)
     val writer = caseClassW[T](context)
     val definition = caseClassD[T](context)
