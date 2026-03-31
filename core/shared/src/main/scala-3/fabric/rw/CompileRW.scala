@@ -422,6 +422,9 @@ object CompileRW extends CompileRW {
           } else {
             genSealedTraitFromChildren[T](children)
           }
+        } else if (typeSymbol.flags.is(Flags.Case) && typeSymbol.isClassDef && tpe <:< TypeRepr.of[AnyVal]) {
+          // Handle AnyVal case classes — proxy to the inner type's RW
+          genAnyValMacro[T]
         } else if (typeSymbol.flags.is(Flags.Case) && typeSymbol.isClassDef) {
           // Handle case classes - call genMacro directly
           genMacro[T]
@@ -627,6 +630,35 @@ object CompileRW extends CompileRW {
     val fullName = symbol.fullName
     val simpleName = fullName.split('.').last
     simpleName.stripSuffix("$")
+  }
+
+  def genAnyValMacro[T: Type](using Quotes): Expr[RW[T]] = {
+    import quotes.reflect._
+
+    val tpe = TypeRepr.of[T]
+    val typeSymbol = tpe.typeSymbol
+    val field = typeSymbol.primaryConstructor.paramSymss.flatten.head
+    val fieldType = tpe.memberType(field)
+
+    fieldType.asType match {
+      case '[inner] =>
+        val innerRW = Expr.summon[RW[inner]].getOrElse {
+          report.errorAndAbort(s"No RW found for AnyVal inner type ${fieldType.show}")
+        }
+        '{
+          new RW[T] {
+            override def read(value: T): Json = {
+              val inner = value.asInstanceOf[Product].productElement(0).asInstanceOf[inner]
+              $innerRW.read(inner)
+            }
+            override def write(json: Json): T = {
+              val inner = $innerRW.write(json)
+              ${ Apply(Select(New(TypeTree.of[T]), typeSymbol.primaryConstructor), List('{ inner }.asTerm)).asExprOf[T] }
+            }
+            override def definition: DefType = $innerRW.definition
+          }
+        }
+    }
   }
 
   def genMacro[T: Type](using Quotes): Expr[RW[T]] = {
