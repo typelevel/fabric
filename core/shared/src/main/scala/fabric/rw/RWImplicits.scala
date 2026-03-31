@@ -28,7 +28,7 @@ import fabric.*
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.matching.Regex
 
-trait RWImplicits {
+trait RWImplicits extends PlatformRWImplicits {
   implicit lazy val unitRW: RW[Unit] = from(_ => Null, _ => (), DefType.Null)
   implicit lazy val valueRW: RW[Json] = from(identity, identity, DefType.Json)
   implicit lazy val objRW: RW[Obj] = from(o => o, v => v.asObj, DefType.Json)
