@@ -40,7 +40,10 @@ object RWMacros {
       case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
     } match {
       case Some(fields) =>
-        val fieldDefs = fields.zipWithIndex.map { case (field, index) =>
+        val transientNames = fields.filter(_.annotations.exists(_.tree.tpe =:= typeOf[notSerialized])).map(_.asTerm.name.decodedName.toString).toSet
+        val fieldDefs = fields.zipWithIndex.filterNot { case (field, _) =>
+          transientNames.contains(field.asTerm.name.decodedName.toString)
+        }.map { case (field, index) =>
           val name = field.asTerm.name
           val key = name.decodedName.toString
           val returnType = tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
@@ -61,11 +64,17 @@ object RWMacros {
             case None => q"$key -> $baseDef"
           }
         }
+        val serializedDefs = serializedMembers(context)(tpe).map { info =>
+          val key = info.jsonKey
+          val returnType = info.returnType.asInstanceOf[Type]
+          q"$key -> implicitly[RW[$returnType]].definition"
+        }
+        val allFieldDefs = fieldDefs ++ serializedDefs
         context.Expr[DefType](q"""
             import _root_.fabric._
             import _root_.fabric.define._
 
-            DefType.Obj(Some($className), ..$fieldDefs)
+            DefType.Obj(Some($className), ..$allFieldDefs)
            """)
       case None =>
         val caseObjects = companion.typeSignature.members.collect {
@@ -98,18 +107,27 @@ object RWMacros {
       case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
     } match {
       case Some(fields) =>
-        val toMap: List[context.universe.Tree] = fields.map { field =>
+        val transientNames = fields.filter(_.annotations.exists(_.tree.tpe =:= typeOf[notSerialized])).map(_.asTerm.name.decodedName.toString).toSet
+        val toMap: List[context.universe.Tree] = fields.filterNot { field =>
+          transientNames.contains(field.asTerm.name.decodedName.toString)
+        }.map { field =>
           val name = field.asTerm.name
           val key = name.decodedName.toString
           q"$key -> t.$name.json"
         }
+        val extraMap: List[context.universe.Tree] = serializedMembers(context)(tpe).map { info =>
+          val key = info.jsonKey
+          val memberName = TermName(info.memberName)
+          q"$key -> t.$memberName.json"
+        }
+        val allMap = toMap ++ extraMap
         context.Expr[Reader[T]](q"""
             import _root_.fabric._
             import _root_.fabric.rw._
             import _root_.scala.collection.immutable.VectorMap
 
             new ClassR[$tpe] {
-              override protected def t2Map(t: $tpe): Map[String, Json] = VectorMap(..$toMap)
+              override protected def t2Map(t: $tpe): Map[String, Json] = VectorMap(..$allMap)
             }
            """)
       case None =>
@@ -152,6 +170,24 @@ object RWMacros {
           case s => throw new UnsupportedOperationException(s"Unable to parse: $s")
         }
     }.toMap
+  }
+
+  private case class SerializedMemberInfo(jsonKey: String, memberName: String, returnType: Any)
+
+  private def serializedMembers(
+    context: blackbox.Context
+  )(tpe: context.universe.Type): List[SerializedMemberInfo] = {
+    import context.universe._
+    tpe.members.collect {
+      case m: MethodSymbol if m.annotations.exists(_.tree.tpe =:= typeOf[serialized]) =>
+        val ann = m.annotations.find(_.tree.tpe =:= typeOf[serialized]).get
+        val customName = ann.tree.children.tail.headOption match {
+          case Some(Literal(Constant(name: String))) if name.nonEmpty => name
+          case _ => m.name.decodedName.toString
+        }
+        val returnType = m.returnType.asSeenFrom(tpe, tpe.typeSymbol.asClass)
+        SerializedMemberInfo(customName, m.name.decodedName.toString, returnType)
+    }.toList
   }
 
   def caseClassW[T](

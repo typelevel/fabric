@@ -164,6 +164,43 @@ class Scala3Spec extends AnyWordSpec with Matchers {
       // Round-trip
       (Shape.Rectangle(3.0, 4.0): Shape).json.as[Shape] should be(Shape.Rectangle(3.0, 4.0))
     }
+    "include @serialized members in JSON output" in {
+      import SerializedTest._
+      val person = NamedPerson("Matt", "Hicks")
+      val json = person.json
+      json should be(obj("firstName" -> "Matt", "lastName" -> "Hicks", "fullName" -> "Matt Hicks"))
+
+      // Deserialization ignores the extra field
+      val back = obj("firstName" -> "Jane", "lastName" -> "Doe").as[NamedPerson]
+      back should be(NamedPerson("Jane", "Doe"))
+      back.fullName should be("Jane Doe")
+    }
+    "support @serialized with custom key name" in {
+      import SerializedTest._
+      val v = WithCustomKey(5)
+      val json = v.json
+      json should be(obj("value" -> 5, "computed_double" -> 10))
+    }
+    "include @serialized fields in DefType definition" in {
+      import SerializedTest._
+      val defn = implicitly[RW[NamedPerson]].definition
+      defn match {
+        case DefType.Obj(map, _, _) =>
+          map.keys should contain("fullName")
+        case other => fail(s"Expected DefType.Obj, got: $other")
+      }
+    }
+    "exclude @transient fields from serialization" in {
+      import TransientTest._
+      val config = Config("myapp", "super-secret")
+      val json = config.json
+      json should be(obj("name" -> "myapp"))
+      json.get("secret") should be(None)
+
+      // Deserialization uses the default value
+      val back = obj("name" -> "otherapp").as[Config]
+      back should be(Config("otherapp", "default"))
+    }
     "extract @description annotations into DefType definitions" in {
       import DescriptionTest._
       val defn = implicitly[RW[Documented]].definition
@@ -224,6 +261,19 @@ object MixedEnumTest {
 
 object DescriptionTest {
   case class Documented(@description("The person's full name") name: String, @description("Age in years") age: Int) derives RW
+}
+
+object SerializedTest {
+  case class NamedPerson(firstName: String, lastName: String) derives RW {
+    @serialized def fullName: String = s"$firstName $lastName"
+  }
+  case class WithCustomKey(value: Int) derives RW {
+    @serialized("computed_double") def doubled: Int = value * 2
+  }
+}
+
+object TransientTest {
+  case class Config(name: String, @notSerialized secret: String = "default") derives RW
 }
 
 object UnionTest {
