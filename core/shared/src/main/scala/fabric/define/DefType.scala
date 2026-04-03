@@ -34,7 +34,10 @@ sealed trait DefType {
 
   def describe(desc: String): DefType = DefType.Described(this, Some(desc))
 
-  def withClassName(cn: String): DefType = DefType.Classed(this, cn)
+  def withClassName(cn: String): DefType = this match {
+    case DefType.Classed(dt, _) => DefType.Classed(dt, cn)
+    case _ => DefType.Classed(this, cn)
+  }
 
   def isOpt: Boolean = false
 
@@ -289,7 +292,7 @@ object DefType {
     override def opt: DefType = Classed(dt.opt, cn)
     override def withClassName(cn: String): DefType = copy(cn = cn)
     override def describe(desc: String): DefType = Classed(dt.describe(desc), cn)
-    override def merge(that: DefType): DefType = dt.merge(that)
+    override def merge(that: DefType): DefType = Classed(dt.merge(that), cn)
     override protected def template(path: JsonPath, config: TemplateConfig): Json = dt.template(path, config)
   }
   case object Null extends DefType {
