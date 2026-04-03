@@ -69,7 +69,7 @@ object RW extends CompileRW {
 
     override def read(t: T): Json = str(asString(t))
 
-    override def definition: DefType = className.fold[DefType](DefType.Str)(DefType.Str(_))
+    override val definition: DefType = className.fold[DefType](DefType.Str)(DefType.Str(_))
   }
 
   def int[T](asInt: T => Int, fromInt: Int => T, className: Option[String] = None): RW[T] = new RW[T] {
@@ -77,7 +77,7 @@ object RW extends CompileRW {
 
     override def read(t: T): Json = asInt(t).json
 
-    override def definition: DefType = className.fold[DefType](DefType.Int)(DefType.Int(_))
+    override val definition: DefType = className.fold[DefType](DefType.Int)(DefType.Int(_))
   }
 
   def long[T](asLong: T => Long, fromLong: Long => T, className: Option[String] = None): RW[T] = new RW[T] {
@@ -85,7 +85,7 @@ object RW extends CompileRW {
 
     override def read(t: T): Json = asLong(t).json
 
-    override def definition: DefType = className.fold[DefType](DefType.Int)(DefType.Int(_))
+    override val definition: DefType = className.fold[DefType](DefType.Int)(DefType.Int(_))
   }
 
   def double[T](asDouble: T => Double, fromDouble: Double => T, className: Option[String] = None): RW[T] = new RW[T] {
@@ -93,7 +93,7 @@ object RW extends CompileRW {
 
     override def read(t: T): Json = num(asDouble(t))
 
-    override def definition: DefType = className.fold[DefType](DefType.Dec)(DefType.Dec(_))
+    override val definition: DefType = className.fold[DefType](DefType.Dec)(DefType.Dec(_))
   }
 
   def dec[T](asDec: T => BigDecimal, fromDec: BigDecimal => T, className: Option[String] = None): RW[T] = new RW[T] {
@@ -101,7 +101,7 @@ object RW extends CompileRW {
 
     override def read(t: T): Json = num(asDec(t))
 
-    override def definition: DefType = className.fold[DefType](DefType.Dec)(DefType.Dec(_))
+    override val definition: DefType = className.fold[DefType](DefType.Dec)(DefType.Dec(_))
   }
 
   def bool[T](asBool: T => Boolean, fromBool: Boolean => T, className: Option[String] = None): RW[T] = new RW[T] {
@@ -109,7 +109,7 @@ object RW extends CompileRW {
 
     override def read(t: T): Json = fabric.Bool(asBool(t))
 
-    override def definition: DefType = className.fold[DefType](DefType.Bool)(DefType.Bool(_))
+    override val definition: DefType = className.fold[DefType](DefType.Bool)(DefType.Bool(_))
   }
 
   def wrapped[T](key: String, asJson: T => Json, fromJson: Json => T, definition: DefType = DefType.Json): RW[T] =
