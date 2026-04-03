@@ -645,6 +645,7 @@ object CompileRW extends CompileRW {
         val innerRW = Expr.summon[RW[inner]].getOrElse {
           report.errorAndAbort(s"No RW found for AnyVal inner type ${fieldType.show}")
         }
+        val classNameExpr = Expr(typeSymbol.fullName)
         '{
           new RW[T] {
             override def read(value: T): Json = {
@@ -655,7 +656,7 @@ object CompileRW extends CompileRW {
               val inner = $innerRW.write(json)
               ${ Apply(Select(New(TypeTree.of[T]), typeSymbol.primaryConstructor), List('{ inner }.asTerm)).asExprOf[T] }
             }
-            override def definition: DefType = $innerRW.definition
+            override val definition: DefType = $innerRW.definition.withClassName($classNameExpr)
           }
         }
     }
