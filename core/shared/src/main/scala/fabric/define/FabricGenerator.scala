@@ -53,6 +53,9 @@ object FabricGenerator {
       }
       def typeFor(name: String, dt: DefType): String = dt match {
         case DefType.Described(inner, _) => typeFor(name, inner)
+        case DefType.Classed(inner, cn) =>
+          val simpleName = if (cn.contains('.')) cn.substring(cn.lastIndexOf('.') + 1) else cn
+          simpleName
         case DefType.Obj(map, _, _) =>
           val className = resolver(name)
           additional = generate(className, map) :: additional

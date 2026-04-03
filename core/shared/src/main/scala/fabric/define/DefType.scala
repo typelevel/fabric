@@ -34,6 +34,8 @@ sealed trait DefType {
 
   def describe(desc: String): DefType = DefType.Described(this, Some(desc))
 
+  def withClassName(cn: String): DefType = DefType.Classed(this, cn)
+
   def isOpt: Boolean = false
 
   def isNull: Boolean = false
@@ -82,6 +84,9 @@ object DefType {
 
   private def dt2V(dt: DefType): Json = dt match {
     case Described(inner, desc) => withDesc(dt2V(inner).asObj, desc)
+    case Classed(inner, cn) =>
+      val base = dt2V(inner).asObj
+      base.merge(fabric.Obj("className" -> str(cn))).asObj
     case Obj(map, cn, desc) => withDesc(
         obj(
           "type" -> str("object"),
@@ -111,6 +116,11 @@ object DefType {
 
   private def readDesc(o: fabric.Obj): Option[String] = o.get("description").map(_.asString)
 
+  private def withClass(dt: DefType, o: fabric.Obj): DefType = o.get("className").map(_.asString) match {
+    case Some(cn) => Classed(dt, cn)
+    case None => dt
+  }
+
   private def v2dt(v: Json): DefType = {
     val o = v.asObj
     val desc = readDesc(o)
@@ -130,20 +140,20 @@ object DefType {
         )
       case "array" => Arr(t = v2dt(o.value("value")), description = desc)
       case "optional" => Opt(v2dt(o.value("value")), description = desc)
-      case "string" => desc.fold[DefType](Str)(Str.describe)
+      case "string" => withClass(desc.fold[DefType](Str)(Str.describe), o)
       case "numeric" => o.value("precision").asString match {
-          case "integer" => desc.fold[DefType](Int)(Int.describe)
-          case "decimal" => desc.fold[DefType](Dec)(Dec.describe)
+          case "integer" => withClass(desc.fold[DefType](Int)(Int.describe), o)
+          case "decimal" => withClass(desc.fold[DefType](Dec)(Dec.describe), o)
         }
-      case "boolean" => desc.fold[DefType](Bool)(Bool.describe)
+      case "boolean" => withClass(desc.fold[DefType](Bool)(Bool.describe), o)
       case "enum" => Enum(o.value("values").asVector.toList, o.get("className").map(_.asString), description = desc)
       case "poly" => Poly(
           o.value("values").asMap.map { case (key, json) => key -> v2dt(json) },
           o.get("className").map(_.asString),
           description = desc
         )
-      case "json" => desc.fold[DefType](Json)(Json.describe)
-      case "null" => desc.fold[DefType](Null)(Null.describe)
+      case "json" => withClass(desc.fold[DefType](Json)(Json.describe), o)
+      case "null" => withClass(desc.fold[DefType](Null)(Null.describe), o)
     }
   }
 
@@ -174,6 +184,7 @@ object DefType {
   }
   case class Arr(t: DefType, override val description: Option[String] = None) extends DefType {
     override def className: Option[String] = None
+    def apply(className: String): DefType = Classed(this, className)
     override def describe(desc: String): Arr = copy(description = Some(desc))
 
     override def merge(that: DefType): DefType = that match {
@@ -210,11 +221,13 @@ object DefType {
   }
   case object Str extends DefType {
     override def className: Option[String] = None
+    def apply(className: String): DefType = Classed(Str, className)
 
     override protected def template(path: JsonPath, config: TemplateConfig): Json = str(config.string(path))
   }
   case object Int extends DefType {
     override def className: Option[String] = None
+    def apply(className: String): DefType = Classed(Int, className)
 
     override def merge(that: DefType): DefType = that match {
       case DefType.Dec => that
@@ -225,6 +238,7 @@ object DefType {
   }
   case object Dec extends DefType {
     override def className: Option[String] = None
+    def apply(className: String): DefType = Classed(Dec, className)
 
     override def merge(that: DefType): DefType = that match {
       case DefType.Int => this
@@ -235,11 +249,13 @@ object DefType {
   }
   case object Bool extends DefType {
     override def className: Option[String] = None
+    def apply(className: String): DefType = Classed(Bool, className)
 
     override protected def template(path: JsonPath, config: TemplateConfig): Json = bool(config.bool(path))
   }
   case object Json extends DefType {
     override def className: Option[String] = None
+    def apply(className: String): DefType = Classed(Json, className)
 
     override protected def template(path: JsonPath, config: TemplateConfig): Json = config.json(path)
   }
@@ -262,6 +278,17 @@ object DefType {
     override def isNull: Boolean = dt.isNull
     override def opt: DefType = Described(dt.opt, description)
     override def describe(desc: String): Described = copy(description = Some(desc))
+    override def merge(that: DefType): DefType = dt.merge(that)
+    override protected def template(path: JsonPath, config: TemplateConfig): Json = dt.template(path, config)
+  }
+  case class Classed(dt: DefType, cn: String) extends DefType {
+    override def className: Option[String] = Some(cn)
+    override def description: Option[String] = dt.description
+    override def isOpt: Boolean = dt.isOpt
+    override def isNull: Boolean = dt.isNull
+    override def opt: DefType = Classed(dt.opt, cn)
+    override def withClassName(cn: String): DefType = copy(cn = cn)
+    override def describe(desc: String): DefType = Classed(dt.describe(desc), cn)
     override def merge(that: DefType): DefType = dt.merge(that)
     override protected def template(path: JsonPath, config: TemplateConfig): Json = dt.template(path, config)
   }
