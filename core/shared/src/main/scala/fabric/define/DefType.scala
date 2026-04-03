@@ -289,7 +289,6 @@ object DefType {
     override def description: Option[String] = dt.description
     override def isOpt: Boolean = dt.isOpt
     override def isNull: Boolean = dt.isNull
-    override def opt: DefType = Classed(dt.opt, cn)
     override def withClassName(cn: String): DefType = copy(cn = cn)
     override def describe(desc: String): DefType = Classed(dt.describe(desc), cn)
     override def merge(that: DefType): DefType = Classed(dt.merge(that), cn)

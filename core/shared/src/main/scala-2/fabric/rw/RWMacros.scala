@@ -277,6 +277,7 @@ object RWMacros {
           val name = field.asTerm.name
           val innerType = tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
           val companion = tpe.typeSymbol.companion
+          val className = tpe.typeSymbol.fullName
           return context.Expr[RW[T]](q"""
             import _root_.fabric._
             import _root_.fabric.rw._
@@ -286,7 +287,7 @@ object RWMacros {
               private val innerRW = implicitly[RW[$innerType]]
               override def read(t: $tpe): Json = innerRW.read(t.$name)
               override def write(value: Json): $tpe = $companion(innerRW.write(value))
-              override def definition: DefType = innerRW.definition
+              override val definition: DefType = innerRW.definition.withClassName($className)
             }
           """)
         case _ => // fall through to normal path
