@@ -667,7 +667,6 @@ object CompileRW extends CompileRW {
   }
 
   private def extractFieldGenericNames(using Quotes)(tpe: quotes.reflect.TypeRepr): Expr[Map[String, String]] = {
-    import quotes.reflect._
     val typeSymbol = tpe.typeSymbol
     val typeParamSymbols = typeSymbol.primaryConstructor.paramSymss.headOption match {
       case Some(params) if params.nonEmpty && params.head.isTypeParam => params

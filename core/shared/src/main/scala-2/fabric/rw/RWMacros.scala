@@ -22,13 +22,12 @@
 package fabric.rw
 
 import fabric.JsonWrapper
-import fabric.define.{Definition, DefType, Format}
+import fabric.define.Definition
 
 import scala.reflect.macros.blackbox
 
 object RWMacros {
   private def fullTypeName(context: blackbox.Context)(tpe: context.universe.Type): String = {
-    import context.universe._
     val base = tpe.typeSymbol.fullName
     val args = tpe.typeArgs
     if (args.isEmpty) base
