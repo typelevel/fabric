@@ -236,7 +236,31 @@ object RWMacros {
           q"$key -> t.$memberName.json"
         }
         val allMap = toMap ++ extraMap
-        context.Expr[Reader[T]](q"""
+        val typeArgs = tpe.typeArgs
+        val typeParams = tpe.typeSymbol.asClass.typeParams
+        val hasTypeArgs = typeArgs.nonEmpty
+        context.Expr[Reader[T]](
+          if (hasTypeArgs) {
+            val genericEntries = typeParams.zip(typeArgs).map { case (param, arg) =>
+              val name = param.name.decodedName.toString
+              q"$name -> implicitly[RW[$arg]].definition.json"
+            }
+            q"""
+              import _root_.fabric._
+              import _root_.fabric.rw._
+              import _root_.fabric.define._
+              import _root_.scala.collection.immutable.VectorMap
+
+              new ClassR[$tpe] {
+                override protected def t2Map(t: $tpe): Map[String, Json] = {
+                  val base = VectorMap(..$allMap)
+                  if (RW.SerializeGenerics) base + ("_generic" -> Obj(..$genericEntries))
+                  else base
+                }
+              }
+            """
+          }
+          else q"""
             import _root_.fabric._
             import _root_.fabric.rw._
             import _root_.scala.collection.immutable.VectorMap
@@ -244,7 +268,8 @@ object RWMacros {
             new ClassR[$tpe] {
               override protected def t2Map(t: $tpe): Map[String, Json] = VectorMap(..$allMap)
             }
-           """)
+           """
+        )
       case None =>
         val caseObjects = companion.typeSignature.members.collect {
           case s: ModuleSymbol if s.moduleClass.asType.toType <:< tpe => s.name

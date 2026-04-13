@@ -64,13 +64,11 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
         Some(Address("Norman", "Oklahoma"))
       )
       val value = w.json
-      value should be(
-        obj(
-          "name" -> "Test1",
-          "value" -> obj("city" -> "San Jose", "state" -> "California"),
-          "other" -> obj("city" -> "Norman", "state" -> "Oklahoma")
-        )
-      )
+      // _generic is included for generic case classes
+      value("name").asString should be("Test1")
+      value("value") should be(obj("city" -> "San Jose", "state" -> "California"))
+      value("other") should be(obj("city" -> "Norman", "state" -> "Oklahoma"))
+      value("_generic").asObj.value.contains("T") should be(true)
       val w2 = value.as[Wrapper[Address]]
       w2 should be(w)
     }
@@ -95,6 +93,19 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       fields("name").genericName should be(None)
       fields("value").genericName should be(Some("T"))
       fields("other").genericName should be(Some("T"))
+    }
+    "exclude _generic when SerializeGenerics is false" in {
+      val prev = RW.SerializeGenerics
+      try {
+        RW.SerializeGenerics = false
+        val w = Wrapper("Test", "hello", None)
+        val value = w.json
+        value.asObj.get("_generic") should be(None)
+        // Round-trip still works without _generic
+        value.as[Wrapper[String]] should be(w)
+      } finally {
+        RW.SerializeGenerics = prev
+      }
     }
     "verify empty genericTypes for non-generic Person" in {
       Person.rw.definition.genericTypes should be(Nil)
@@ -121,12 +132,9 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
         Some(obj("city" -> "Norman"))
       )
       val value = w.json
-      value should be(
-        obj(
-          "name" -> "Test2",
-          "value" -> obj("city" -> "San Jose"),
-          "other" -> obj("city" -> "Norman")
-        )
+      value("name").asString should be("Test2")
+      value("value") should be(obj("city" -> "San Jose"))
+      value("other") should be(obj("city" -> "Norman")
       )
     }
     "verify Person's DefType" in {

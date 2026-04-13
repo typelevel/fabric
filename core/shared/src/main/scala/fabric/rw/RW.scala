@@ -39,6 +39,13 @@ trait RW[T] extends Reader[T] with Writer[T] {
 }
 
 object RW extends CompileRW {
+  /** Controls whether generic type information (`_generic` field) is included in serialized JSON output for generic
+    * case classes. Defaults to `true`. Set to `false` to exclude `_generic` from output, which produces cleaner JSON
+    * but loses the ability to disambiguate erased generic variants during deserialization (e.g. in union types like
+    * `Id[String] | Id[Int]`).
+    */
+  var SerializeGenerics: Boolean = true
+
   def from[T](r: T => Json, w: Json => T, d: => Definition): RW[T] = new RW[T] {
     override def write(value: Json): T = w(value)
 

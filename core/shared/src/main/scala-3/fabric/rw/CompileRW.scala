@@ -595,7 +595,8 @@ object CompileRW extends CompileRW {
   }
 
   /** Generate RW for Scala 3 union types (A | B | C).
-    * Extracts union member types and delegates to genSealedTraitFromChildren. */
+    * Handles the case where multiple union members share the same base class but differ by type parameters
+    * (e.g. `Id[String] | Id[Int]`) by using full parameterized type names as discriminators. */
   def genUnionMacro[T: Type](orType: Any)(using Quotes): Expr[RW[T]] = {
     import quotes.reflect._
 
@@ -607,26 +608,140 @@ object CompileRW extends CompileRW {
 
     val memberTypes = flattenUnion(orType.asInstanceOf[TypeRepr])
 
-    // Generate child RW pairs — same as sealed trait children
-    val childExprs = memberTypes.map { memberType =>
+    // Detect if any members share the same base class (type parameter collision)
+    val simpleNames = memberTypes.map(t => getSimpleTypeNameFromType(t))
+    val hasCollisions = simpleNames.distinct.size != simpleNames.size
+
+    if (hasCollisions) {
+      genCollisionUnionMacro[T](memberTypes)
+    } else {
+      // No collisions — use standard poly generation
+      val childExprs = memberTypes.map { memberType =>
+        memberType.asType match {
+          case '[t] =>
+            val rw = Expr.summon[RW[t]].getOrElse {
+              val childSym = memberType.typeSymbol
+              if (childSym.isClassDef && childSym.flags.is(Flags.Case)) {
+                genMacro[t]
+              } else {
+                report.errorAndAbort(s"No RW found for union member type ${memberType.show}. Ensure all union member types have an RW instance.")
+              }
+            }
+            val name = getSimpleTypeNameFromType(memberType)
+            '{ (${ Expr(name) }, $rw.asInstanceOf[RW[_]]) }
+        }
+      }
+      val childRWsExpr = Expr.ofList(childExprs)
+      genPolyRW[T](childRWsExpr)
+    }
+  }
+
+  /** Generate RW for union types where multiple members share the same base class (e.g. `Id[String] | Id[Int]`).
+    * Uses full parameterized type names as discriminators and compile-time type matching for the write path
+    * since runtime class inspection can't distinguish erased generic variants. */
+  private def genCollisionUnionMacro[T: Type](memberTypes: List[Any])(using Quotes): Expr[RW[T]] = {
+    import quotes.reflect._
+
+    val members = memberTypes.asInstanceOf[List[TypeRepr]]
+
+    // Build child RW pairs — always generate fresh RWs (not summoned) so each gets concrete _generic info
+    val childExprs = members.map { memberType =>
       memberType.asType match {
         case '[t] =>
-          val rw = Expr.summon[RW[t]].getOrElse {
-            val childSym = memberType.typeSymbol
-            if (childSym.isClassDef && childSym.flags.is(Flags.Case)) {
-              genMacro[t]
-            } else {
-              report.errorAndAbort(s"No RW found for union member type ${memberType.show}. Ensure all union member types have an RW instance.")
+          val childSym = memberType.typeSymbol
+          // Always generate fresh to ensure _generic reflects the concrete type args
+          val rw = if (childSym.isClassDef && childSym.flags.is(Flags.Case)) {
+            genMacro[t]
+          } else {
+            Expr.summon[RW[t]].getOrElse {
+              report.errorAndAbort(s"No RW found for union member type ${memberType.show}.")
             }
           }
-          val name = getSimpleTypeNameFromType(memberType)
-          '{ (${ Expr(name) }, $rw.asInstanceOf[RW[_]]) }
+          val simpleName = getSimpleTypeNameFromType(memberType)
+          val fullName = fullTypeName(memberType)
+          '{ (${ Expr(simpleName) }, ${ Expr(fullName) }, $rw.asInstanceOf[RW[_]]) }
       }
     }
-    val childRWsExpr = Expr.ofList(childExprs)
+    val childListExpr = Expr.ofList(childExprs)
 
-    // Reuse the same polymorphic RW generation as sealed traits
-    genPolyRW[T](childRWsExpr)
+    val fullTypeNameStr = members.map(fullTypeName(_)).mkString(" | ")
+    val fullTypeNameExpr = Expr(fullTypeNameStr)
+
+    '{
+      new RW[T] {
+        private val typeField = "type"
+        private lazy val childRWs: List[(String, String, RW[_])] = $childListExpr
+
+        private def matchGeneric(json: Json, candidates: List[(String, String, RW[_])]): Option[(String, RW[_])] = {
+          json match {
+            case Obj(map) =>
+              map.get("_generic") match {
+                case Some(genericJson) =>
+                  // Match by comparing _generic content against each candidate's definition.genericTypes
+                  candidates.find { case (_, _, rw) =>
+                    val expected = Obj(rw.definition.genericTypes.map(gt => gt.name -> gt.definition.json): _*)
+                    expected == genericJson
+                  }.map(c => (c._2, c._3))
+                case None =>
+                  // No _generic field — take first candidate
+                  candidates.headOption.map(c => (c._2, c._3))
+              }
+            case _ => candidates.headOption.map(c => (c._2, c._3))
+          }
+        }
+
+        override def read(value: T): Json = {
+          val simpleName = safeTypeName(value)
+          val candidates = childRWs.filter(_._1 == simpleName)
+          // Use first candidate for read — the child RW will embed _generic in its output
+          candidates.headOption match {
+            case Some((_, _, rw)) =>
+              rw.asInstanceOf[RW[T]].read(value) match {
+                case obj: Obj => obj.merge(Obj(typeField -> Str(simpleName)))
+                case other => Obj(typeField -> Str(simpleName), "value" -> other)
+              }
+            case None => throw RWException(s"Unknown subtype: $simpleName")
+          }
+        }
+
+        override def write(json: Json): T = json match {
+          case obj @ Obj(map) =>
+            map.get(typeField) match {
+              case Some(Str(typeName, _)) =>
+                val candidates = childRWs.filter(_._1 == typeName)
+                val (_, rw) = if (candidates.size > 1) {
+                  // Collision — use _generic to disambiguate
+                  val cleanedJson = Obj(map - typeField)
+                  matchGeneric(cleanedJson, candidates).getOrElse(
+                    throw RWException(s"Cannot disambiguate type '$typeName' — no matching _generic found. Available: ${candidates.map(_._2).mkString(", ")}")
+                  )
+                } else {
+                  candidates.headOption.map(c => (c._2, c._3)).getOrElse(
+                    throw RWException(s"Unknown type discriminator: $typeName")
+                  )
+                }
+                val cleanedMap = map - typeField
+                val cleanedJson = if (cleanedMap.isEmpty && map.size == 2 && map.contains("value")) {
+                  map("value")
+                } else {
+                  Obj(cleanedMap)
+                }
+                rw.asInstanceOf[RW[T]].write(cleanedJson)
+              case _ =>
+                throw RWException(s"Missing or invalid '$typeField' field in JSON for union type")
+            }
+          case _ =>
+            throw RWException(s"Expected JSON object for union type, got: $json")
+        }
+
+        override def definition: FabricDefinition = {
+          val childDefs = childRWs.map { case (_, fullName, rw) =>
+            fullName -> rw.definition
+          }.toMap.to(VectorMap)
+          FabricDefinition(DefType.Poly(childDefs), className = Some($fullTypeNameExpr))
+        }
+      }
+    }
   }
 
   private def cleanFullName(name: String): String =
@@ -799,6 +914,36 @@ object CompileRW extends CompileRW {
     val genericTypesExpr = generateGenericTypes(tpe)
     val fieldGenericNamesExpr = extractFieldGenericNames(tpe)
 
+    // Check if this type has type arguments (is a generic instantiation)
+    val typeParamSyms = typeSymbol.primaryConstructor.paramSymss.headOption match {
+      case Some(params) if params.nonEmpty && params.head.isTypeParam => params
+      case _ => Nil
+    }
+    val hasTypeArgs = tpe match {
+      case AppliedType(_, _) if typeParamSyms.nonEmpty => true
+      case _ => false
+    }
+
+    // Generate _generic JSON value at macro time
+    val genericJsonExpr: Option[Expr[Json]] = if (hasTypeArgs) {
+      tpe match {
+        case AppliedType(_, args) =>
+          val entries = typeParamSyms.zip(args).map { case (param, arg) =>
+            val nameExpr = Expr(param.name)
+            arg.asType match {
+              case '[t] =>
+                val rw = Expr.summon[RW[t]].getOrElse {
+                  report.errorAndAbort(s"No RW found for type parameter ${param.name} (${arg.show})")
+                }
+                '{ ($nameExpr, $rw.definition.json) }
+            }
+          }
+          val list = Expr.ofList(entries)
+          Some('{ Obj($list: _*) })
+        case _ => None
+      }
+    } else None
+
     '{
       new ClassRW[T] {
         override protected def t2Map(t: T): Map[String, Json] = {
@@ -807,8 +952,12 @@ object CompileRW extends CompileRW {
             case Some(gen) => '{ base ++ ${ gen('{t}) } }
             case None => '{ base }
           }}
-          ${ if (hasTransient) '{ withExtra -- $transientFieldsExpr }
+          val withTransient = ${ if (hasTransient) '{ withExtra -- $transientFieldsExpr }
              else '{ withExtra } }
+          ${ genericJsonExpr match {
+            case Some(gj) => '{ if (RW.SerializeGenerics) withTransient + ("_generic" -> $gj) else withTransient }
+            case None => '{ withTransient }
+          }}
         }
 
         override protected def map2T(map: Map[String, Json]): T = {

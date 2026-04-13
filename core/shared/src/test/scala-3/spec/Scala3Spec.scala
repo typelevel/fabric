@@ -103,6 +103,39 @@ class Scala3Spec extends AnyWordSpec with Matchers {
       dog.json.as[Cat | Dog | Fish] should be(Dog("Buddy", "Poodle"))
       fishJson.as[Cat | Dog | Fish] should be(Fish("Nemo", saltwater = true))
     }
+    "handle union types with generic collision — deserialization distinguishes by _generic" in {
+      import GenericCollisionTest._
+      type T = Box[String] | Box[Int]
+      given RW[T] = RW.gen
+
+      // Box[String] serializes with value as a string, Box[Int] with value as a number
+      val strBox = Box[String]("hello")
+      val intBox = Box[Int](42)
+
+      // Serialize via concrete RWs (not the union) to get correct _generic
+      val strJson = Box.rw[String].read(strBox)
+      val intJson = Box.rw[Int].read(intBox)
+
+      // Verify _generic is present and different
+      strJson("_generic")("T")("type").asString should be("string")
+      intJson("_generic")("T")("type").asString should be("numeric")
+
+      // Wrap with type field as the union would
+      val unionStr = strJson.asObj.merge(Obj("type" -> Str("Box"))).asObj
+      val unionInt = intJson.asObj.merge(Obj("type" -> Str("Box"))).asObj
+
+      // Deserialize through union RW — _generic disambiguates
+      val restored1 = unionStr.as[T]
+      restored1 should be(Box("hello"))
+
+      val restored2 = unionInt.as[T]
+      restored2 should be(Box(42))
+
+      // Prove disambiguation worked: Box[Int] deserialized the value as Int, not String
+      // If it used the wrong child RW, value would be "42" (String) instead of 42 (Int)
+      restored2.asInstanceOf[Box[Int]].value should be(42)
+      restored1.asInstanceOf[Box[String]].value should be("hello")
+    }
     "handle enums with parameters (ADT enums)" in {
       import ParameterizedEnumTest._
       val rgb: Shape = Shape.Circle(5.0)
@@ -452,5 +485,14 @@ object DefaultTest {
   )
   object Config {
     given rw: RW[Config] = RW.gen
+  }
+}
+
+case class Id[T](value: String) derives RW
+
+object GenericCollisionTest {
+  case class Box[T](value: T)
+  object Box {
+    def rw[T: RW]: RW[Box[T]] = RW.gen
   }
 }
