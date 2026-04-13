@@ -23,6 +23,7 @@ package spec
 
 import fabric.dsl.*
 import fabric.define._
+import fabric.define.Definition
 import fabric.rw._
 import fabric.{define, _}
 import org.scalatest.matchers.should.Matchers
@@ -31,33 +32,33 @@ import org.scalatest.wordspec.AnyWordSpec
 class FabricDefinitionSpec extends AnyWordSpec with Matchers {
   "FabricDefinition" should {
     "represent an Int properly" in {
-      FabricDefinition(num(5)) should be(DefType.Int)
+      FabricDefinition(num(5)) should be(Definition(DefType.Int))
     }
     "represent a Null properly" in {
-      define.FabricDefinition(Null) should be(DefType.Null)
+      define.FabricDefinition(Null) should be(Definition(DefType.Null))
     }
     "represent an optional Int properly" in {
-      FabricDefinition(List(num(5), Null)) should be(DefType.Opt(DefType.Int))
+      FabricDefinition(List(num(5), Null)) should be(Definition(DefType.Opt(Definition(DefType.Int))))
     }
     "represent an optional Int properly starting with Null" in {
-      FabricDefinition(List(Null, num(5))) should be(DefType.Opt(DefType.Int))
+      FabricDefinition(List(Null, num(5))) should be(Definition(DefType.Opt(Definition(DefType.Int))))
     }
     "represent a simple obj" in {
       define.FabricDefinition(obj("name" -> "John Doe", "age" -> 50)) should be(
-        DefType.Obj(None, "name" -> DefType.Str, "age" -> DefType.Int)
+        Definition(DefType.Obj("name" -> Definition(DefType.Str), "age" -> Definition(DefType.Int)))
       )
     }
     "represent a simple obj with optional value" in {
       FabricDefinition(
         List(obj("name" -> "John Doe", "age" -> 50), obj("name" -> "Jane Doe"))
       ) should be(
-        DefType.Obj(None, "name" -> DefType.Str, "age" -> DefType.Opt(DefType.Int))
+        Definition(DefType.Obj("name" -> Definition(DefType.Str), "age" -> Definition(DefType.Opt(Definition(DefType.Int)))))
       )
     }
     "represent a simple optional obj" in {
       val d = FabricDefinition(List(Null, obj("name" -> "Jane Doe", "age" -> 50)))
       d should be(
-        DefType.Opt(DefType.Obj(None, "name" -> DefType.Str, "age" -> DefType.Int))
+        Definition(DefType.Opt(Definition(DefType.Obj("name" -> Definition(DefType.Str), "age" -> Definition(DefType.Int)))))
       )
     }
     "represent null lists" in {
@@ -69,29 +70,36 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
         )
       )
       d should be(
-        DefType.Obj(None, "list" -> DefType.Arr(DefType.Obj(None, "name" -> DefType.Str)))
+        Definition(
+          DefType.Obj(
+            "list" -> Definition(
+              DefType.Opt(Definition(DefType.Arr(Definition(DefType.Obj("name" -> Definition(DefType.Str))))))
+            )
+          )
+        )
       )
     }
     "represent multiple numeric types" in {
-      DefType.Dec.merge(DefType.Int) should be(DefType.Dec)
-      DefType.Int.merge(DefType.Dec) should be(DefType.Dec)
+      Definition(DefType.Dec).merge(Definition(DefType.Int)) should be(Definition(DefType.Dec))
+      Definition(DefType.Int).merge(Definition(DefType.Dec)) should be(Definition(DefType.Dec))
     }
     "fail with conflicting types" in
       assertThrows[RuntimeException](
         FabricDefinition(List(obj("name" -> "Bad"), num(5)))
       )
     "validate a definition" in {
-      val definition = DefType.Obj(None, "name" -> DefType.Str, "age" -> DefType.Opt(DefType.Int))
+      val definition =
+        Definition(DefType.Obj("name" -> Definition(DefType.Str), "age" -> Definition(DefType.Opt(Definition(DefType.Int)))))
       val value = obj("name" -> "Jane Doe", "age" -> 50)
       definition.validate(value) should be(true)
     }
     "fail to validate a definition" in {
-      val definition = DefType.Obj(None, "name" -> DefType.Str, "age" -> DefType.Int)
+      val definition = Definition(DefType.Obj("name" -> Definition(DefType.Str), "age" -> Definition(DefType.Int)))
       val value = obj("name" -> "Jane Doe")
       definition.validate(value) should be(false)
     }
     "generate a case class based on a definition" in {
-      val definition = DefType.Obj(None, "name" -> DefType.Str, "age" -> DefType.Int)
+      val definition = Definition(DefType.Obj("name" -> Definition(DefType.Str), "age" -> Definition(DefType.Int)))
       val generated = FabricGenerator.withMappings(definition, "com.example.Person")
       generated.packageName should be(Some("com.example"))
       generated.className should be("Person")
@@ -108,11 +116,12 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       generated.additional should be(Nil)
     }
     "generate two case classes based on a definition" in {
-      val definition = DefType.Obj(
-        None,
-        "name" -> DefType.Str,
-        "age" -> DefType.Int,
-        "location" -> DefType.Obj(None, "city" -> DefType.Str, "state" -> DefType.Str)
+      val definition = Definition(
+        DefType.Obj(
+          "name" -> Definition(DefType.Str),
+          "age" -> Definition(DefType.Int),
+          "location" -> Definition(DefType.Obj("city" -> Definition(DefType.Str), "state" -> Definition(DefType.Str)))
+        )
       )
       val generated = FabricGenerator.withMappings(
         definition,
@@ -148,16 +157,19 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
                                 |}""".stripMargin)
     }
     "generate two case classes based on a definition with an array" in {
-      val definition = DefType.Obj(
-        None,
-        "name" -> DefType.Str,
-        "age" -> DefType.Int,
-        "locations" -> DefType.Arr(
-          DefType.Obj(None, "city" -> DefType.Str, "state" -> DefType.Str)
+      val definition = Definition(
+        DefType.Obj(
+          "name" -> Definition(DefType.Str),
+          "age" -> Definition(DefType.Int),
+          "locations" -> Definition(
+            DefType.Arr(
+              Definition(DefType.Obj("city" -> Definition(DefType.Str), "state" -> Definition(DefType.Str)))
+            )
+          )
         )
       )
       val generated = FabricGenerator(
-        dt = definition,
+        definition = definition,
         rootName = "com.example.Person",
         resolver = (key: String) => {
           val name =
@@ -257,7 +269,8 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
           "values" -> obj(
             "name" -> obj(
               "type" -> "optional",
-              "value" -> obj("type" -> "string")
+              "value" -> obj("type" -> "string"),
+              "default" -> "Unknown"
             ),
             "age" -> obj(
               "type" -> "numeric",
@@ -276,10 +289,86 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
             "[key]" -> obj(
               "type" -> "string"
             )
-          ),
-          "className" -> Null
+          )
         )
       )
+    }
+    "round-trip Definition for every DefType variant through JSON" in {
+      val cases: List[Definition] = List(
+        Definition(DefType.Str),
+        Definition(DefType.Int),
+        Definition(DefType.Dec),
+        Definition(DefType.Bool),
+        Definition(DefType.Json),
+        Definition(DefType.Null),
+        Definition(DefType.Arr(Definition(DefType.Str))),
+        Definition(DefType.Opt(Definition(DefType.Int))),
+        Definition(DefType.Obj("name" -> Definition(DefType.Str), "age" -> Definition(DefType.Int))),
+        Definition(
+          DefType.Poly(
+            Map(
+              "Red" -> Definition(DefType.Null),
+              "Green" -> Definition(DefType.Null)
+            )
+          )
+        )
+      )
+      cases.foreach { original =>
+        val json = original.json
+        val restored = json.as[Definition]
+        restored should be(original)
+      }
+    }
+    "round-trip Definition with all metadata through JSON" in {
+      val original = Definition(
+        DefType.Obj("value" -> Definition(DefType.Str, genericName = Some("T"))),
+        className = Some("com.example.Wrapper"),
+        description = Some("A wrapper type"),
+        genericTypes = List(GenericType("T", Definition(DefType.Str)))
+      )
+      val json = original.json
+      val restored = json.as[Definition]
+      restored.defType should be(original.defType)
+      restored.className should be(Some("com.example.Wrapper"))
+      restored.description should be(Some("A wrapper type"))
+      restored.genericTypes.length should be(1)
+      restored.genericTypes.head.name should be("T")
+      restored.genericTypes.head.definition.defType should be(DefType.Str)
+      restored.defType.asInstanceOf[DefType.Obj].map("value").genericName should be(Some("T"))
+    }
+    "deserialize old enum JSON format as Poly" in {
+      val oldEnumJson = obj(
+        "type" -> "enum",
+        "values" -> fabric.Arr(Vector(str("Car"), str("SUV"), str("Truck"))),
+        "className" -> "spec.VehicleType"
+      )
+      val definition = oldEnumJson.as[Definition]
+      definition.className should be(Some("spec.VehicleType"))
+      definition.defType match {
+        case DefType.Poly(values) =>
+          values.keySet should be(Set("Car", "SUV", "Truck"))
+          values.values.foreach(_.defType should be(DefType.Null))
+        case other => fail(s"Expected DefType.Poly, got: $other")
+      }
+    }
+    "apply genericNames to Definition fields" in {
+      val d = Definition(
+        DefType.Obj(
+          "name" -> Definition(DefType.Str),
+          "value" -> Definition(DefType.Str),
+          "other" -> Definition(DefType.Opt(Definition(DefType.Str)))
+        )
+      )
+      val result = Definition.applyGenericNames(d, Map("value" -> "T", "other" -> "T"))
+      val fields = result.defType.asInstanceOf[DefType.Obj].map
+      fields("name").genericName should be(None)
+      fields("value").genericName should be(Some("T"))
+      fields("other").genericName should be(Some("T"))
+    }
+    "not modify non-Obj Definition in applyGenericNames" in {
+      val d = Definition(DefType.Str)
+      val result = Definition.applyGenericNames(d, Map("value" -> "T"))
+      result should be(d)
     }
   }
 }

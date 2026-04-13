@@ -22,7 +22,7 @@
 package fabric.search
 
 import fabric._
-import fabric.define.DefType
+import fabric.define.{Definition, DefType}
 import fabric.rw._
 
 import scala.util.Try
@@ -50,10 +50,12 @@ object ByOffset {
   implicit val rw: RW[ByOffset] = RW.from(
     r = t => obj("offset" -> num(t.offset), "direction" -> t.direction.json),
     w = j => ByOffset(j("offset").asInt, j("direction").as[OffsetDirection]),
-    d = DefType.Obj(
-      Some("fabric.search.ByOffset"),
-      "offset" -> fabric.rw.intRW.definition,
-      "direction" -> OffsetDirection.rw.definition
+    d = Definition(
+      DefType.Obj(
+        "offset" -> fabric.rw.intRW.definition,
+        "direction" -> OffsetDirection.rw.definition
+      ),
+      className = Some("fabric.search.ByOffset")
     )
   )
 }

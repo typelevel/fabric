@@ -23,7 +23,7 @@ package spec
 
 import fabric._
 import fabric.dsl.*
-import fabric.define.DefType
+import fabric.define.{Definition, DefType}
 import fabric.rw._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -38,7 +38,10 @@ class RWSpecManual extends AnyWordSpec with Matchers {
     override protected def map2T(map: Map[String, Json]): Address =
       Address(city = map("city").as[String], state = map("state").as[String])
 
-    override def definition: DefType = DefType.Obj(Some("spec.Address"), "city" -> DefType.Str, "state" -> DefType.Str)
+    override def definition: Definition = Definition(
+      DefType.Obj("city" -> Definition(DefType.Str), "state" -> Definition(DefType.Str)),
+      className = Some("spec.Address")
+    )
   }
   implicit val personRW: RW[Person] = new ClassRW[Person] {
     override protected def t2Map(t: Person): Map[String, Json] = VectorMap(
@@ -53,11 +56,13 @@ class RWSpecManual extends AnyWordSpec with Matchers {
       address = map("address").as[Address]
     )
 
-    override def definition: DefType = DefType.Obj(
-      Some("spec.Person"),
-      "name" -> DefType.Str,
-      "age" -> DefType.Int,
-      "address" -> addressRW.definition
+    override def definition: Definition = Definition(
+      DefType.Obj(
+        "name" -> Definition(DefType.Str),
+        "age" -> Definition(DefType.Int),
+        "address" -> addressRW.definition
+      ),
+      className = Some("spec.Person")
     )
   }
 

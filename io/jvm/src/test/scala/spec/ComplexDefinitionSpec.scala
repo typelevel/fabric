@@ -40,7 +40,7 @@ class ComplexDefinitionSpec extends AnyWordSpec with Matchers {
       ).asVector.toList
       val dt = FabricDefinition(json)
       val generated = FabricGenerator(
-        dt = dt,
+        definition = dt,
         rootName = "bench.event.Event",
         (key: String) => {
           val name = "_(.)".r

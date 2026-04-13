@@ -22,8 +22,9 @@
 package fabric.rw
 
 import fabric.*
-import fabric.define.DefType
+import fabric.define.{Definition, DefType}
 
+import scala.collection.immutable.VectorMap
 import scala.reflect.ClassTag
 
 /**
@@ -31,19 +32,19 @@ import scala.reflect.ClassTag
   * same type
   */
 trait RW[T] extends Reader[T] with Writer[T] {
-  def definition: DefType
+  def definition: Definition
 
   def withPreWrite(f: Json => Json): RW[T] = EnhancedRW[T](this, preWrite = List(f))
   def withPostRead(f: (T, Json) => Json): RW[T] = EnhancedRW[T](this, postRead = List(f))
 }
 
 object RW extends CompileRW {
-  def from[T](r: T => Json, w: Json => T, d: => DefType): RW[T] = new RW[T] {
+  def from[T](r: T => Json, w: Json => T, d: => Definition): RW[T] = new RW[T] {
     override def write(value: Json): T = w(value)
 
     override def read(t: T): Json = r(t)
 
-    override def definition: DefType = d
+    override def definition: Definition = d
   }
 
   def enumeration[T: ClassTag](
@@ -61,7 +62,10 @@ object RW extends CompileRW {
 
     override def read(t: T): Json = str(asString(t))
 
-    override val definition: DefType = DefType.Enum(list.map(t => Str(asString(t))), Some(className))
+    override val definition: Definition = Definition(
+      DefType.Poly(VectorMap(list.map(t => asString(t) -> Definition(DefType.Null))*)),
+      className = Some(className)
+    )
   }
 
   def string[T](asString: T => String, fromString: String => T, className: Option[String] = None): RW[T] = new RW[T] {
@@ -69,7 +73,7 @@ object RW extends CompileRW {
 
     override def read(t: T): Json = str(asString(t))
 
-    override val definition: DefType = className.fold[DefType](DefType.Str)(DefType.Str(_))
+    override val definition: Definition = Definition(DefType.Str, className = className)
   }
 
   def int[T](asInt: T => Int, fromInt: Int => T, className: Option[String] = None): RW[T] = new RW[T] {
@@ -77,7 +81,7 @@ object RW extends CompileRW {
 
     override def read(t: T): Json = asInt(t).json
 
-    override val definition: DefType = className.fold[DefType](DefType.Int)(DefType.Int(_))
+    override val definition: Definition = Definition(DefType.Int, className = className)
   }
 
   def long[T](asLong: T => Long, fromLong: Long => T, className: Option[String] = None): RW[T] = new RW[T] {
@@ -85,7 +89,7 @@ object RW extends CompileRW {
 
     override def read(t: T): Json = asLong(t).json
 
-    override val definition: DefType = className.fold[DefType](DefType.Int)(DefType.Int(_))
+    override val definition: Definition = Definition(DefType.Int, className = className)
   }
 
   def double[T](asDouble: T => Double, fromDouble: Double => T, className: Option[String] = None): RW[T] = new RW[T] {
@@ -93,7 +97,7 @@ object RW extends CompileRW {
 
     override def read(t: T): Json = num(asDouble(t))
 
-    override val definition: DefType = className.fold[DefType](DefType.Dec)(DefType.Dec(_))
+    override val definition: Definition = Definition(DefType.Dec, className = className)
   }
 
   def dec[T](asDec: T => BigDecimal, fromDec: BigDecimal => T, className: Option[String] = None): RW[T] = new RW[T] {
@@ -101,7 +105,7 @@ object RW extends CompileRW {
 
     override def read(t: T): Json = num(asDec(t))
 
-    override val definition: DefType = className.fold[DefType](DefType.Dec)(DefType.Dec(_))
+    override val definition: Definition = Definition(DefType.Dec, className = className)
   }
 
   def bool[T](asBool: T => Boolean, fromBool: Boolean => T, className: Option[String] = None): RW[T] = new RW[T] {
@@ -109,15 +113,19 @@ object RW extends CompileRW {
 
     override def read(t: T): Json = fabric.Bool(asBool(t))
 
-    override val definition: DefType = className.fold[DefType](DefType.Bool)(DefType.Bool(_))
+    override val definition: Definition = Definition(DefType.Bool, className = className)
   }
 
-  def wrapped[T](key: String, asJson: T => Json, fromJson: Json => T, definition: DefType = DefType.Json): RW[T] =
-    RW.from(
-      r = t => obj(key -> asJson(t)),
-      w = j => fromJson(j(key)),
-      d = DefType.Obj(Some(key), key -> definition)
-    )
+  def wrapped[T](
+    key: String,
+    asJson: T => Json,
+    fromJson: Json => T,
+    definition: Definition = Definition(DefType.Json)
+  ): RW[T] = RW.from(
+    r = t => obj(key -> asJson(t)),
+    w = j => fromJson(j(key)),
+    d = Definition(DefType.Obj(key -> definition), className = Some(key))
+  )
 
   /**
     * Convenience functionality to provide a static / singleton value that
@@ -126,7 +134,11 @@ object RW extends CompileRW {
     * @param value
     *   the singleton value to use
     */
-  def static[T](value: T): RW[T] = from(_ => obj(), _ => value, DefType.Obj(Some(cleanClassName(value.getClass.getName))))
+  def static[T](value: T): RW[T] = from(
+    _ => obj(),
+    _ => value,
+    Definition(DefType.Obj(VectorMap.empty[String, Definition]), className = Some(cleanClassName(value.getClass.getName)))
+  )
 
   /**
     * Convenience functionality for working with polymorphic types
@@ -180,13 +192,14 @@ object RW extends CompileRW {
             )
         }
       },
-      d = DefType.Poly(
-        types.map { rw =>
-          val obj = rw.definition.asInstanceOf[DefType.Obj]
-          val key = typeName(rw)
-          key -> obj
-        }.toMap,
-        Some(className)
+      d = Definition(
+        DefType.Poly(
+          VectorMap(types.map { rw =>
+            val key = typeName(rw)
+            key -> rw.definition
+          }*)
+        ),
+        className = Some(className)
       )
     )
   }

@@ -24,9 +24,9 @@ package fabric.define
 import fabric.{Arr, Bool, Json, Null, NumDec, NumInt, Obj, Str}
 
 object FabricDefinition {
-  def apply(json: List[Json]): DefType =
+  def apply(json: List[Json]): Definition =
     if (json.isEmpty) {
-      DefType.Null
+      Definition(DefType.Null)
     } else {
       var gt = apply(json.head)
       json.tail.foreach { t =>
@@ -36,13 +36,13 @@ object FabricDefinition {
       gt
     }
 
-  def apply(json: Json): DefType = json match {
-    case Obj(value) => DefType.Obj(value.map { case (k, v) => k -> apply(v) }, value.get("className").map(_.asString))
-    case Arr(value, _) => DefType.Arr(apply(value.toList))
-    case Str(_, _) => DefType.Str
-    case NumInt(_, _) => DefType.Int
-    case NumDec(_, _) => DefType.Dec
-    case Bool(_, _) => DefType.Bool
-    case Null => DefType.Null
+  def apply(json: Json): Definition = json match {
+    case Obj(value) => Definition(DefType.Obj(value.map { case (k, v) => k -> apply(v) }))
+    case Arr(value, _) => Definition(DefType.Arr(apply(value.toList)))
+    case Str(_, _) => Definition(DefType.Str)
+    case NumInt(_, _) => Definition(DefType.Int)
+    case NumDec(_, _) => Definition(DefType.Dec)
+    case Bool(_, _) => Definition(DefType.Bool)
+    case Null => Definition(DefType.Null)
   }
 }

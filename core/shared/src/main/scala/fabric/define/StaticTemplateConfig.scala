@@ -40,5 +40,5 @@ case class StaticTemplateConfig(
 
   override def json(path: JsonPath): Json = json
 
-  override def `enum`(path: JsonPath, values: List[Json]): Json = values.head
+  override def poly(path: JsonPath, values: Map[String, Definition]): Json = values.head._2.template(path, this)
 }

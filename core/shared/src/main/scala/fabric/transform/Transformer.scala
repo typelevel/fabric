@@ -22,7 +22,7 @@
 package fabric.transform
 
 import fabric._
-import fabric.define.DefType
+import fabric.define.{Definition, DefType}
 import fabric.rw._
 
 import scala.util.matching.Regex
@@ -80,7 +80,9 @@ object Transformer {
   implicit val rw: RW[Transformer] = RW.from(
     r = t => obj("json" -> t.json, "paths" -> t.paths.json),
     w = j => new Transformer(j("json"), j("paths").as[List[JsonPath]]),
-    d = DefType
-      .Obj(Some("fabric.transform.Transformer"), "json" -> DefType.Json, "paths" -> DefType.Arr(JsonPath.rw.definition))
+    d = Definition(
+      DefType.Obj("json" -> Definition(DefType.Json), "paths" -> Definition(DefType.Arr(JsonPath.rw.definition))),
+      className = Some("fabric.transform.Transformer")
+    )
   )
 }

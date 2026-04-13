@@ -23,7 +23,7 @@ package spec
 
 import fabric._
 import fabric.dsl.*
-import fabric.define.DefType
+import fabric.define.{DefType, Definition, Format, GenericType}
 import fabric.rw._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -184,8 +184,8 @@ class Scala3Spec extends AnyWordSpec with Matchers {
     "include @serialized fields in DefType definition" in {
       import SerializedTest._
       val defn = implicitly[RW[NamedPerson]].definition
-      defn match {
-        case DefType.Obj(map, _, _) =>
+      defn.defType match {
+        case DefType.Obj(map) =>
           map.keys should contain("fullName")
         case other => fail(s"Expected DefType.Obj, got: $other")
       }
@@ -209,6 +209,89 @@ class Scala3Spec extends AnyWordSpec with Matchers {
 
       val back = str("xyz-789").as[UserId]
       back should be(UserId("xyz-789"))
+    }
+    "populate genericTypes for generic case classes" in {
+      import GenericTypeTest._
+      val wrapperDef = Wrapper.rw[String].definition
+      wrapperDef.genericTypes.length should be(1)
+      wrapperDef.genericTypes.head.name should be("T")
+      wrapperDef.genericTypes.head.definition.defType should be(DefType.Str)
+
+      val wrapperIntDef = Wrapper.rw[Int].definition
+      wrapperIntDef.genericTypes.length should be(1)
+      wrapperIntDef.genericTypes.head.name should be("T")
+      wrapperIntDef.genericTypes.head.definition.defType should be(DefType.Int)
+
+      val pairDef = Pair.rw[String, Int].definition
+      pairDef.genericTypes.length should be(2)
+      pairDef.genericTypes(0).name should be("A")
+      pairDef.genericTypes(0).definition.defType should be(DefType.Str)
+      pairDef.genericTypes(1).name should be("B")
+      pairDef.genericTypes(1).definition.defType should be(DefType.Int)
+    }
+    "verify genericName on fields for Pair[String, Int]" in {
+      import GenericTypeTest._
+      val pairDef = Pair.rw[String, Int].definition
+      val fields = pairDef.defType.asInstanceOf[DefType.Obj].map
+      fields("first").genericName should be(Some("A"))
+      fields("second").genericName should be(Some("B"))
+    }
+    "populate genericTypes for AnyVal wrapper" in {
+      import AnyValTest._
+      val idDef = UserId.given_RW_UserId.definition
+      idDef.className should be(Some("spec.AnyValTest.UserId"))
+      idDef.genericTypes should be(Nil)
+    }
+    "have empty genericTypes for non-generic case classes" in {
+      spec.Person.rw.definition.genericTypes should be(Nil)
+    }
+    "populate format from @format annotation" in {
+      import FormatTest._
+      val d = Contact.rw.definition
+      val fields = d.defType.asInstanceOf[DefType.Obj].map
+      fields("email").format should be(Format.Email)
+      fields("website").format should be(Format.Uri)
+      fields("name").format should be(Format.Raw)
+    }
+    "populate deprecated from @fieldDeprecated annotation" in {
+      import DeprecatedTest._
+      val d = ApiResponse.rw.definition
+      val fields = d.defType.asInstanceOf[DefType.Obj].map
+      fields("oldField").deprecated should be(true)
+      fields("newField").deprecated should be(false)
+    }
+    "populate defaultValue for fields with defaults" in {
+      import DefaultTest._
+      val d = Config.rw.definition
+      val fields = d.defType.asInstanceOf[DefType.Obj].map
+      fields("host").defaultValue should be(Some(str("localhost")))
+      fields("port").defaultValue should be(Some(num(8080)))
+      fields("name").defaultValue should be(None)
+    }
+    "round-trip Definition with format, defaultValue, and deprecated" in {
+      val original = Definition(
+        DefType.Str,
+        format = Format.Email,
+        defaultValue = Some(str("user@example.com")),
+        deprecated = true
+      )
+      val json = original.json
+      val restored = json.as[Definition]
+      restored.format should be(Format.Email)
+      restored.defaultValue should be(Some(str("user@example.com")))
+      restored.deprecated should be(true)
+    }
+    "serialize Format.Raw as absent (not included in JSON)" in {
+      val d = Definition(DefType.Str)
+      val json = d.json
+      json.asObj.get("format") should be(None)
+    }
+    "handle RW[GenericType] round-trip" in {
+      val gt = GenericType("T", Definition(DefType.Str))
+      val json = gt.json
+      val restored = json.as[GenericType]
+      restored.name should be("T")
+      restored.definition.defType should be(DefType.Str)
     }
     "handle recursive/self-referencing types" in {
       import RecursiveTest._
@@ -234,8 +317,8 @@ class Scala3Spec extends AnyWordSpec with Matchers {
     "extract @description annotations into DefType definitions" in {
       import DescriptionTest._
       val defn = implicitly[RW[Documented]].definition
-      defn match {
-        case DefType.Obj(map, _, _) =>
+      defn.defType match {
+        case DefType.Obj(map) =>
           map("name").description should be(Some("The person's full name"))
           map("age").description should be(Some("Age in years"))
         case other => fail(s"Expected DefType.Obj, got: $other")
@@ -326,4 +409,48 @@ object UnionTest {
   case class Fish(name: String, saltwater: Boolean) derives RW
   given catOrDogRW: RW[Cat | Dog] = RW.gen[Cat | Dog]
   given catOrDogOrFishRW: RW[Cat | Dog | Fish] = RW.gen[Cat | Dog | Fish]
+}
+
+object GenericTypeTest {
+  case class Wrapper[T](value: T)
+  object Wrapper {
+    def rw[T: RW]: RW[Wrapper[T]] = RW.gen
+  }
+
+  case class Pair[A, B](first: A, second: B)
+  object Pair {
+    def rw[A: RW, B: RW]: RW[Pair[A, B]] = RW.gen
+  }
+}
+
+object FormatTest {
+  case class Contact(
+    name: String,
+    @format(Format.Email) email: String,
+    @format(Format.Uri) website: String
+  )
+  object Contact {
+    given rw: RW[Contact] = RW.gen
+  }
+}
+
+object DeprecatedTest {
+  case class ApiResponse(
+    newField: String,
+    @fieldDeprecated oldField: String
+  )
+  object ApiResponse {
+    given rw: RW[ApiResponse] = RW.gen
+  }
+}
+
+object DefaultTest {
+  case class Config(
+    name: String,
+    host: String = "localhost",
+    port: Int = 8080
+  )
+  object Config {
+    given rw: RW[Config] = RW.gen
+  }
 }

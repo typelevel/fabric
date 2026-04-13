@@ -23,7 +23,7 @@ package spec
 
 import fabric.*
 import fabric.dsl.*
-import fabric.define.DefType
+import fabric.define.{Definition, DefType}
 import fabric.rw.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -74,6 +74,46 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       val w2 = value.as[Wrapper[Address]]
       w2 should be(w)
     }
+    "verify genericTypes for Wrapper[Address]" in {
+      val wrapperDef = implicitly[RW[Wrapper[Address]]].definition
+      wrapperDef.genericTypes.length should be(1)
+      wrapperDef.genericTypes.head.name should be("T")
+      wrapperDef.genericTypes.head.definition.defType should be(
+        DefType.Obj("city" -> Definition(DefType.Str), "state" -> Definition(DefType.Str))
+      )
+      wrapperDef.genericTypes.head.definition.className should be(Some("spec.Address"))
+    }
+    "verify genericTypes for Wrapper[String]" in {
+      val wrapperDef = implicitly[RW[Wrapper[String]]].definition
+      wrapperDef.genericTypes.length should be(1)
+      wrapperDef.genericTypes.head.name should be("T")
+      wrapperDef.genericTypes.head.definition.defType should be(DefType.Str)
+    }
+    "verify genericName on fields for Wrapper[String]" in {
+      val wrapperDef = implicitly[RW[Wrapper[String]]].definition
+      val fields = wrapperDef.defType.asInstanceOf[DefType.Obj].map
+      fields("name").genericName should be(None)
+      fields("value").genericName should be(Some("T"))
+      fields("other").genericName should be(Some("T"))
+    }
+    "verify empty genericTypes for non-generic Person" in {
+      Person.rw.definition.genericTypes should be(Nil)
+    }
+    "round-trip Definition with genericTypes through JSON" in {
+      val original = implicitly[RW[Wrapper[String]]].definition
+      val json = original.json
+      val restored = json.as[Definition]
+      restored.className should be(original.className)
+      restored.genericTypes.length should be(1)
+      restored.genericTypes.head.name should be("T")
+      restored.genericTypes.head.definition.defType should be(DefType.Str)
+      restored.defType match {
+        case DefType.Obj(map) =>
+          map("value").genericName should be(Some("T"))
+          map("name").genericName should be(None)
+        case other => fail(s"Expected DefType.Obj, got: $other")
+      }
+    }
     "supporting Values in conversions" in {
       val w = Wrapper(
         "Test2",
@@ -91,11 +131,16 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
     }
     "verify Person's DefType" in {
       Person.rw.definition should be(
-        DefType.Obj(
-          Some("spec.Person"),
-          "name" -> DefType.Str,
-          "age" -> DefType.Int,
-          "address" -> DefType.Obj(Some("spec.Address"), "city" -> DefType.Str, "state" -> DefType.Str)
+        Definition(
+          DefType.Obj(
+            "name" -> Definition(DefType.Str),
+            "age" -> Definition(DefType.Int),
+            "address" -> Definition(
+              DefType.Obj("city" -> Definition(DefType.Str), "state" -> Definition(DefType.Str)),
+              className = Some("spec.Address")
+            )
+          ),
+          className = Some("spec.Person")
         )
       )
     }
@@ -145,8 +190,8 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       val car: VehicleType = VehicleType.Car
       car.json should be(Str("Car"))
       "SUV".json.as[VehicleType] should be(VehicleType.SUV)
-      VehicleType.rw.definition.asInstanceOf[DefType.Enum].values.toSet should be(
-        Set[Json](
+      VehicleType.rw.definition.defType.asInstanceOf[DefType.Poly].values.keySet should be(
+        Set(
           "Car",
           "SUV",
           "Truck",
