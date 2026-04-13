@@ -76,7 +76,6 @@ Deep-merging is trivial:
 
 ```scala mdoc
 import fabric._
-import fabric.dsl._
 
 val v2 = obj(
   "age" -> 23,
@@ -97,7 +96,6 @@ Conversion to other types is very easy with the built-in compile-time conversion
 
 ```scala mdoc
 import fabric._
-import fabric.dsl._
 import fabric.rw._
 
 val person = obj(
@@ -119,8 +117,6 @@ object Person {
 Parsing from existing JSON:
 
 ```scala mdoc
-import fabric._
-import fabric.dsl._
 import fabric.io._
 
 val value = JsonParser("""{"name": "John Doe", "age": 21}""", Format.Json)
