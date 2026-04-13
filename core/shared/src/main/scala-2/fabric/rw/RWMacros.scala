@@ -22,18 +22,106 @@
 package fabric.rw
 
 import fabric.JsonWrapper
-import fabric.define.DefType
+import fabric.define.{Definition, DefType, Format}
 
 import scala.reflect.macros.blackbox
 
 object RWMacros {
+  private def fullTypeName(context: blackbox.Context)(tpe: context.universe.Type): String = {
+    import context.universe._
+    val base = tpe.typeSymbol.fullName
+    val args = tpe.typeArgs
+    if (args.isEmpty) base
+    else s"$base[${args.map(fullTypeName(context)(_)).mkString(", ")}]"
+  }
+
+  private def generateGenericTypes(context: blackbox.Context)(tpe: context.universe.Type): List[context.universe.Tree] = {
+    import context.universe._
+    val typeArgs = tpe.typeArgs
+    val typeParams = tpe.typeSymbol.asClass.typeParams
+    if (typeArgs.isEmpty) Nil
+    else typeParams.zip(typeArgs).map { case (param, arg) =>
+      val name = param.name.decodedName.toString
+      q"GenericType($name, implicitly[RW[$arg]].definition)"
+    }
+  }
+
+  private def extractFieldGenericNames(context: blackbox.Context)(tpe: context.universe.Type): Map[String, String] = {
+    import context.universe._
+    val typeParams = tpe.typeSymbol.asClass.typeParams.map(_.name.decodedName.toString).toSet
+    if (typeParams.isEmpty) Map.empty
+    else {
+      tpe.decls
+        .collectFirst {
+          case m: MethodSymbol if m.isPrimaryConstructor => m.paramLists.head
+        }
+        .getOrElse(Nil)
+        .flatMap { field =>
+          val fieldName = field.asTerm.name.decodedName.toString
+          val fieldType = field.typeSignature
+          findTypeParamName(context)(fieldType, typeParams).map(fieldName -> _)
+        }
+        .toMap
+    }
+  }
+
+  private def findTypeParamName(
+    context: blackbox.Context
+  )(tpe: context.universe.Type, typeParamNames: Set[String]): Option[String] = {
+    val name = tpe.typeSymbol.name.decodedName.toString
+    if (typeParamNames.contains(name)) Some(name)
+    else tpe.typeArgs.flatMap(findTypeParamName(context)(_, typeParamNames)).headOption
+  }
+
+  private def extractFieldFormats(
+    context: blackbox.Context
+  )(fields: List[context.universe.Symbol]): Map[String, context.universe.Tree] = {
+    import context.universe._
+    fields.flatMap { field =>
+      val key = field.asTerm.name.decodedName.toString
+      field.annotations
+        .collectFirst {
+          case ann if ann.tree.tpe =:= typeOf[format] =>
+            ann.tree.children.tail.headOption match {
+              case Some(arg) => Some(key -> arg)
+              case None => None
+            }
+        }
+        .getOrElse(None)
+    }.toMap
+  }
+
+  private def extractDeprecatedFields(context: blackbox.Context)(fields: List[context.universe.Symbol]): Set[String] = {
+    import context.universe._
+    fields.flatMap { field =>
+      val isDeprecated = field.annotations.exists(_.tree.tpe =:= typeOf[fieldDeprecated])
+      if (isDeprecated) Some(field.asTerm.name.decodedName.toString) else None
+    }.toSet
+  }
+
+  private def generateFieldDefaults(context: blackbox.Context)(
+    fields: List[context.universe.Symbol],
+    defaults: Map[Int, context.universe.MethodSymbol],
+    companion: context.universe.Symbol,
+    tpe: context.universe.Type
+  ): List[context.universe.Tree] = {
+    import context.universe._
+    fields.zipWithIndex.flatMap { case (field, index) =>
+      defaults.get(index).map { m =>
+        val key = field.asTerm.name.decodedName.toString
+        val returnType = tpe.decl(field.asTerm.name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
+        q"$key -> implicitly[Reader[$returnType]].read($companion.$m)"
+      }
+    }
+  }
+
   def caseClassD[T](
     context: blackbox.Context
-  )(implicit t: context.WeakTypeTag[T]): context.Expr[DefType] = {
+  )(implicit t: context.WeakTypeTag[T]): context.Expr[Definition] = {
     import context.universe._
 
     val tpe = t.tpe
-    val className = tpe.typeSymbol.asClass.fullName
+    val className = fullTypeName(context)(tpe)
     val companion: Symbol = tpe.typeSymbol.companion
     val defaults = defaultsFor(context)(companion)
     tpe.decls.collectFirst {
@@ -73,11 +161,32 @@ object RWMacros {
           q"$key -> implicitly[RW[$returnType]].definition"
         }
         val allFieldDefs = fieldDefs ++ serializedDefs
-        context.Expr[DefType](q"""
+        val genericTypes = generateGenericTypes(context)(tpe)
+        val fieldGenericNames = extractFieldGenericNames(context)(tpe)
+        val fieldGenericNamesEntries = fieldGenericNames.map { case (k, v) => q"$k -> $v" }.toList
+        val fieldFormats = extractFieldFormats(context)(fields)
+        val fieldFormatsEntries = fieldFormats.map { case (k, v) => q"$k -> $v" }.toList
+        val deprecatedFields = extractDeprecatedFields(context)(fields)
+        val deprecatedFieldsList = deprecatedFields.toList
+        val fieldDefaultEntries = generateFieldDefaults(context)(fields, defaults, companion, tpe)
+        context.Expr[Definition](q"""
             import _root_.fabric._
             import _root_.fabric.define._
+            import _root_.scala.collection.immutable.VectorMap
 
-            DefType.Obj(Some($className), ..$allFieldDefs)
+            Definition.applyFieldDefaults(
+              Definition.applyFieldDeprecations(
+                Definition.applyFieldFormats(
+                  Definition.applyGenericNames(
+                    Definition(DefType.Obj(VectorMap(..$allFieldDefs)), className = Some($className), genericTypes = List(..$genericTypes)),
+                    Map(..$fieldGenericNamesEntries)
+                  ),
+                  Map(..$fieldFormatsEntries)
+                ),
+                Set(..$deprecatedFieldsList)
+              ),
+              Map(..$fieldDefaultEntries)
+            )
            """)
       case None =>
         val caseObjects = companion.typeSignature.members.collect {
@@ -87,8 +196,7 @@ object RWMacros {
         if (caseObjects.isEmpty) {
           context.abort(context.enclosingPosition, "Not a valid case class or sealed trait with case objects")
         } else {
-          // Generate a DefType for an enumeration by delegating to RW.enumeration
-          context.Expr[DefType](q"""
+          context.Expr[Definition](q"""
             import _root_.fabric._
             import _root_.fabric.define._
             import _root_.fabric.rw._
@@ -278,6 +386,7 @@ object RWMacros {
           val innerType = tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
           val companion = tpe.typeSymbol.companion
           val className = tpe.typeSymbol.fullName
+          val genericTypes = generateGenericTypes(context)(tpe)
           return context.Expr[RW[T]](q"""
             import _root_.fabric._
             import _root_.fabric.rw._
@@ -287,7 +396,7 @@ object RWMacros {
               private val innerRW = implicitly[RW[$innerType]]
               override def read(t: $tpe): Json = innerRW.read(t.$name)
               override def write(value: Json): $tpe = $companion(innerRW.write(value))
-              override val definition: DefType = innerRW.definition.withClassName($className)
+              override val definition: Definition = innerRW.definition.withClassName($className).copy(genericTypes = List(..$genericTypes))
             }
           """)
         case _ => // fall through to normal path
@@ -308,7 +417,7 @@ object RWMacros {
 
             override def read(t: $tpe): Json = r.read(t)
             override def write(value: Json): $tpe = w.write(value)
-            override def definition: DefType = $definition
+            override def definition: Definition = $definition
          }
        """)
   }

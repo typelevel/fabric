@@ -20,24 +20,22 @@
  */
 
 package fabric.rw
-import fabric.Json
-import fabric.define.Definition
 
-case class EnhancedRW[T](rw: RW[T], preWrite: List[Json => Json] = Nil, postRead: List[(T, Json) => Json] = Nil)
-    extends RW[T] {
-  override def definition: Definition = rw.definition
+import fabric.define.Format
 
-  override def write(value: Json): T = {
-    val json = preWrite.foldLeft(value)((j, f) => f(j))
-    rw.write(json)
-  }
+import scala.annotation.StaticAnnotation
 
-  override def read(t: T): Json = {
-    val json = rw.read(t)
-    postRead.foldLeft(json)((j, f) => f(t, j))
-  }
-
-  override def withPreWrite(f: Json => Json): RW[T] = copy(preWrite = preWrite ::: List(f))
-
-  override def withPostRead(f: (T, Json) => Json): RW[T] = copy(postRead = postRead ::: List(f))
-}
+/**
+  * Annotation to specify the format of a case class field in the Definition.
+  *
+  * Example:
+  * {{{
+  * case class User(
+  *   @format(Format.Email) email: String,
+  *   @format(Format.DateTime) createdAt: String
+  * )
+  * }}}
+  *
+  * @see [[fabric.define.Format]] for available format values
+  */
+class format(val value: Format) extends StaticAnnotation

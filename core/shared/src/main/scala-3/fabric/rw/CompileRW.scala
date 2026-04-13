@@ -25,7 +25,7 @@ import scala.annotation.nowarn
 
 import fabric.*
 import fabric.rw.*
-import fabric.define.*
+import fabric.define.{DefType, Definition as FabricDefinition, Format, GenericType as FabricGenericType}
 
 import scala.deriving.*
 import scala.compiletime.*
@@ -71,7 +71,7 @@ trait CompileRW {
       case _ => throw RWException(s"Expected string for enum, got: $json")
     }
 
-    override def definition: DefType = DefType.Str
+    override def definition: FabricDefinition = FabricDefinition(DefType.Str)
   }
 
   inline def genEnumR[T](using m: Mirror.SumOf[T]): Reader[T] = new Reader[T] {
@@ -125,11 +125,11 @@ trait CompileRW {
         throw RWException(s"Expected JSON object for sealed trait, got: $json")
     }
 
-    override def definition: DefType = {
+    override def definition: FabricDefinition = {
       val childDefs = childRWs.map { case (name, rw) =>
         name -> rw.definition
-      }.toMap
-      DefType.Poly(childDefs, Some(getSimpleTypeName[T]))
+      }.toMap.to(VectorMap)
+      FabricDefinition(DefType.Poly(childDefs), className = Some(getSimpleTypeName[T]))
     }
   }
 
@@ -155,7 +155,7 @@ trait CompileRW {
   inline def singleton[T](instance: T): RW[T] = new RW[T] {
     override def read(value: T): Json = Obj()
     override def write(json: Json): T = instance
-    override def definition: DefType = DefType.Obj(Map.empty, Some(getFullTypeName[T]))
+    override def definition: FabricDefinition = FabricDefinition(DefType.Obj(Map.empty), className = Some(getFullTypeName[T]))
   }
 
   // Enumeration support for sealed traits with only case objects
@@ -172,7 +172,10 @@ trait CompileRW {
         throw RWException(s"Expected string for enumeration, got: $json")
     }
 
-    override def definition: DefType = DefType.Enum(instanceToName.values.toList.map(str), className = Some(getFullTypeName[T]))
+    override def definition: FabricDefinition = FabricDefinition(
+      DefType.Poly(instanceToName.values.toList.map(n => n -> FabricDefinition(DefType.Null)).toMap.to(VectorMap)),
+      className = Some(getFullTypeName[T])
+    )
   }
 
   inline def enumName[T](value: T)(using m: Mirror.SumOf[T]): String =
@@ -184,11 +187,11 @@ trait CompileRW {
   inline def toClassName[T](using ct: ClassTag[T]): Option[String] =
     Some(ct.runtimeClass.getName.replace("$", "."))
 
-  inline def toDefinition[T](using p: Mirror.ProductOf[T], ct: ClassTag[T]): DefType = {
-    DefType.Obj(toDefinitionElems[T, p.MirroredElemTypes, p.MirroredElemLabels](0), toClassName[T])
+  inline def toDefinition[T](using p: Mirror.ProductOf[T], ct: ClassTag[T]): FabricDefinition = {
+    FabricDefinition(DefType.Obj(toDefinitionElems[T, p.MirroredElemTypes, p.MirroredElemLabels](0)), className = toClassName[T])
   }
 
-  inline def toDefinitionElems[A, T <: Tuple, L <: Tuple](index: Int): Map[String, DefType] = {
+  inline def toDefinitionElems[A, T <: Tuple, L <: Tuple](index: Int): Map[String, FabricDefinition] = {
     inline erasedValue[T] match {
       case _: (hd *: tl) => {
         inline erasedValue[L] match {
@@ -278,29 +281,29 @@ trait CompileRW {
 }
 
 object CompileRW extends CompileRW {
-  def applyFieldDescriptions(dt: DefType, descs: Map[String, String]): DefType = {
-    if (descs.isEmpty) dt
-    else dt match {
-      case o: DefType.Obj => o.copy(map = o.map.map { case (k, v) =>
-        descs.get(k).fold(k -> v)(d => k -> v.describe(d))
-      })
-      case other => other
+  def applyFieldDescriptions(d: FabricDefinition, descs: Map[String, String]): FabricDefinition = {
+    if (descs.isEmpty) d
+    else d.defType match {
+      case o: DefType.Obj => d.copy(defType = o.copy(map = o.map.map { case (k, v) =>
+        descs.get(k).fold(k -> v)(desc => k -> v.describe(desc))
+      }))
+      case _ => d
     }
   }
 
-  def removeTransientFields(dt: DefType, fields: Set[String]): DefType = {
-    if (fields.isEmpty) dt
-    else dt match {
-      case o: DefType.Obj => o.copy(map = o.map -- fields)
-      case other => other
+  def removeTransientFields(d: FabricDefinition, fields: Set[String]): FabricDefinition = {
+    if (fields.isEmpty) d
+    else d.defType match {
+      case o: DefType.Obj => d.copy(defType = o.copy(map = o.map -- fields))
+      case _ => d
     }
   }
 
-  def applySerializedFields(dt: DefType, extraFields: Map[String, DefType]): DefType = {
-    if (extraFields.isEmpty) dt
-    else dt match {
-      case o: DefType.Obj => o.copy(map = o.map ++ extraFields)
-      case other => other
+  def applySerializedFields(d: FabricDefinition, extraFields: Map[String, FabricDefinition]): FabricDefinition = {
+    if (extraFields.isEmpty) d
+    else d.defType match {
+      case o: DefType.Obj => d.copy(defType = o.copy(map = o.map ++ extraFields))
+      case _ => d
     }
   }
 
@@ -440,7 +443,7 @@ object CompileRW extends CompileRW {
     // Generate valueOf lookup at macro time
     val valueOfExpr = generateValueOfLookup[T]()
 
-    // Extract enum case names for DefType.Enum
+    // Extract enum case names for DefType.Poly
     val tpe = TypeRepr.of[T]
     val typeSymbol = tpe.typeSymbol
     val caseNames = typeSymbol.children.filter(c => c.flags.is(Flags.Case)).map(_.name.stripSuffix("$"))
@@ -456,7 +459,10 @@ object CompileRW extends CompileRW {
           case _ => throw RWException(s"Expected string for enum, got: $json")
         }
 
-        override def definition: DefType = DefType.Enum($caseNamesExpr.map(fabric.Str(_)), Some($classNameExpr))
+        override val definition: FabricDefinition = FabricDefinition(
+          DefType.Poly($caseNamesExpr.map(n => n -> FabricDefinition(DefType.Null)).toMap.to(VectorMap)),
+          className = Some($classNameExpr)
+        )
       }
     }
   }
@@ -578,11 +584,11 @@ object CompileRW extends CompileRW {
             throw RWException(s"Expected JSON object for polymorphic type, got: $json")
         }
 
-        override def definition: DefType = {
+        override def definition: FabricDefinition = {
           val childDefs = childRWs.map { case (name, rw) =>
             name -> rw.definition
           }.toMap
-          DefType.Poly(childDefs, Some($fullTypeNameExpr))
+          FabricDefinition(DefType.Poly(childDefs), className = Some($fullTypeNameExpr))
         }
       }
     }
@@ -623,6 +629,78 @@ object CompileRW extends CompileRW {
     genPolyRW[T](childRWsExpr)
   }
 
+  private def cleanFullName(name: String): String =
+    name.replace("$.", ".").replace("$", ".")
+
+  private def fullTypeName(using Quotes)(tpe: quotes.reflect.TypeRepr): String = {
+    import quotes.reflect._
+    val base = cleanFullName(tpe.typeSymbol.fullName)
+    tpe match {
+      case AppliedType(_, args) =>
+        s"$base[${args.map(fullTypeName(_)).mkString(", ")}]"
+      case _ => base
+    }
+  }
+
+  private def generateGenericTypes(using Quotes)(tpe: quotes.reflect.TypeRepr): Expr[List[FabricGenericType]] = {
+    import quotes.reflect._
+    val typeSymbol = tpe.typeSymbol
+    val typeParamNames = typeSymbol.primaryConstructor.paramSymss.headOption match {
+      case Some(params) if params.nonEmpty && params.head.isTypeParam => params.map(_.name)
+      case _ => Nil
+    }
+    tpe match {
+      case AppliedType(_, args) if typeParamNames.nonEmpty =>
+        val entries = typeParamNames.zip(args).flatMap { case (name, arg) =>
+          val nameExpr = Expr(name)
+          arg.asType match {
+            case '[t] =>
+              Expr.summon[RW[t]].map { rw =>
+                '{ FabricGenericType($nameExpr, $rw.definition) }
+              }
+          }
+        }
+        Expr.ofList(entries)
+      case _ =>
+        '{ Nil }
+    }
+  }
+
+  private def extractFieldGenericNames(using Quotes)(tpe: quotes.reflect.TypeRepr): Expr[Map[String, String]] = {
+    import quotes.reflect._
+    val typeSymbol = tpe.typeSymbol
+    val typeParamSymbols = typeSymbol.primaryConstructor.paramSymss.headOption match {
+      case Some(params) if params.nonEmpty && params.head.isTypeParam => params
+      case _ => Nil
+    }
+    if (typeParamSymbols.isEmpty) {
+      '{ Map.empty }
+    } else {
+      val typeParamNames = typeParamSymbols.map(_.name).toSet
+      val fields = typeSymbol.caseFields
+      val entries = fields.flatMap { field =>
+        val fieldType = tpe.memberType(field)
+        findTypeParamName(fieldType, typeParamNames).map { paramName =>
+          val fieldName = Expr(field.name)
+          val paramNameExpr = Expr(paramName)
+          '{ ($fieldName, $paramNameExpr) }
+        }
+      }
+      val entriesList = Expr.ofList(entries)
+      '{ $entriesList.toMap }
+    }
+  }
+
+  private def findTypeParamName(using Quotes)(tpe: quotes.reflect.TypeRepr, typeParamNames: Set[String]): Option[String] = {
+    import quotes.reflect._
+    val name = tpe.typeSymbol.name
+    if (typeParamNames.contains(name)) Some(name)
+    else tpe match {
+      case AppliedType(_, args) => args.flatMap(findTypeParamName(_, typeParamNames)).headOption
+      case _ => None
+    }
+  }
+
   private def getSimpleTypeNameFromType(tpe: Any)(using Quotes): String = {
     import quotes.reflect._
     val typeRepr = tpe.asInstanceOf[TypeRepr]
@@ -645,7 +723,8 @@ object CompileRW extends CompileRW {
         val innerRW = Expr.summon[RW[inner]].getOrElse {
           report.errorAndAbort(s"No RW found for AnyVal inner type ${fieldType.show}")
         }
-        val classNameExpr = Expr(typeSymbol.fullName)
+        val classNameExpr = Expr(cleanFullName(typeSymbol.fullName))
+        val genericTypesExpr = generateGenericTypes(tpe)
         '{
           new RW[T] {
             override def read(value: T): Json = {
@@ -656,7 +735,7 @@ object CompileRW extends CompileRW {
               val inner = $innerRW.write(json)
               ${ Apply(Select(New(TypeTree.of[T]), typeSymbol.primaryConstructor), List('{ inner }.asTerm)).asExprOf[T] }
             }
-            override val definition: DefType = $innerRW.definition.withClassName($classNameExpr)
+            override val definition: FabricDefinition = $innerRW.definition.withClassName($classNameExpr).copy(genericTypes = $genericTypesExpr)
           }
         }
     }
@@ -697,6 +776,30 @@ object CompileRW extends CompileRW {
     val extraMapExpr = if (hasExtra) Some(generateSerializedFieldsMap[T](serializedMembers)) else None
     val extraDefExpr = if (hasExtra) Some(generateSerializedFieldsDef(serializedMembers)) else None
 
+    // Extract @format annotations
+    val fieldFormats = extractFieldFormats(typeSymbol)
+    val fieldFormatsExpr = if (fieldFormats.isEmpty) '{ Map.empty[String, Format] }
+    else {
+      val entries = fieldFormats.map { case (k, v) =>
+        val keyExpr = Expr(k)
+        val valExpr = Expr(v)
+        '{ ($keyExpr, Format.values.find(_.name == $valExpr).getOrElse(Format.Raw)) }
+      }.toList
+      val list = Expr.ofList(entries)
+      '{ $list.toMap }
+    }
+
+    // Extract @fieldDeprecated annotations
+    val deprecatedFields = extractDeprecatedFields(typeSymbol)
+    val deprecatedFieldsExpr = Expr(deprecatedFields)
+
+    // Extract default values
+    val fieldDefaultsExpr = generateFieldDefaults[T](typeSymbol)
+
+    val classNameExpr = Expr(fullTypeName(tpe))
+    val genericTypesExpr = generateGenericTypes(tpe)
+    val fieldGenericNamesExpr = extractFieldGenericNames(tpe)
+
     '{
       new ClassRW[T] {
         override protected def t2Map(t: T): Map[String, Json] = {
@@ -713,11 +816,23 @@ object CompileRW extends CompileRW {
           ${ generateDirectConstructor[T]('{map}) }
         }
 
-        override def definition: DefType = {
-          val baseDef = CompileRW.applyFieldDescriptions(
-            CompileRW.toDefinition[T](using $mirror, $ct),
-            $fieldDescsExpr
-          )
+        override def definition: FabricDefinition = {
+          val baseDef = FabricDefinition.applyFieldDefaults(
+            FabricDefinition.applyFieldDeprecations(
+              FabricDefinition.applyFieldFormats(
+                FabricDefinition.applyGenericNames(
+                  CompileRW.applyFieldDescriptions(
+                    CompileRW.toDefinition[T](using $mirror, $ct),
+                    $fieldDescsExpr
+                  ),
+                  $fieldGenericNamesExpr
+                ),
+                $fieldFormatsExpr
+              ),
+              $deprecatedFieldsExpr
+            ),
+            $fieldDefaultsExpr
+          ).withClassName($classNameExpr).copy(genericTypes = $genericTypesExpr)
           ${ (hasExtra, hasTransient) match {
             case (true, true) =>
               '{ CompileRW.removeTransientFields(CompileRW.applySerializedFields(baseDef, ${ extraDefExpr.get }), $transientFieldsExpr) }
@@ -755,6 +870,72 @@ object CompileRW extends CompileRW {
       }
       if (isTransient) Some(param.name) else None
     }.toSet
+  }
+
+  private def extractFieldFormats(typeSymbol: Any)(using Quotes): Map[String, String] = {
+    import quotes.reflect._
+    val sym = typeSymbol.asInstanceOf[Symbol]
+    sym.primaryConstructor.paramSymss.flatten.flatMap { param =>
+      param.annotations.collectFirst {
+        case ann if ann.tpe.typeSymbol.fullName == "fabric.rw.format" =>
+          ann match {
+            case Apply(_, List(Select(_, name))) => param.name -> name.toLowerCase
+            case Apply(_, List(arg)) =>
+              // Try to extract the Format object's name field
+              arg.tpe.termSymbol.name.stripSuffix("$").toLowerCase match {
+                case name => param.name -> name
+              }
+          }
+      }
+    }.toMap
+  }
+
+  private def extractDeprecatedFields(typeSymbol: Any)(using Quotes): Set[String] = {
+    import quotes.reflect._
+    val sym = typeSymbol.asInstanceOf[Symbol]
+    sym.primaryConstructor.paramSymss.flatten.flatMap { param =>
+      val isDeprecated = param.annotations.exists { ann =>
+        ann.tpe.typeSymbol.fullName == "fabric.rw.fieldDeprecated"
+      }
+      if (isDeprecated) Some(param.name) else None
+    }.toSet
+  }
+
+  private def generateFieldDefaults[T: Type](typeSymbol: Any)(using Quotes): Expr[Map[String, Json]] = {
+    import quotes.reflect._
+    val sym = typeSymbol.asInstanceOf[Symbol]
+    val comp = sym.companionClass
+    val body = comp.tree.asInstanceOf[ClassDef].body
+
+    val defaultDefs = (for {
+      case deff @ DefDef(name, _, _, _) <- body
+      if name.startsWith("$lessinit$greater$default")
+    } yield deff).toList
+
+    if (defaultDefs.isEmpty) '{ Map.empty }
+    else {
+      val fields = sym.caseFields
+      val entries = defaultDefs.flatMap { deff =>
+        val index = deff.name.stripPrefix("$lessinit$greater$default$").toInt - 1
+        if (index < fields.length) {
+          val fieldName = Expr(fields(index).name)
+          val fieldType = TypeRepr.of[T].memberType(fields(index))
+          fieldType.asType match {
+            case '[ft] =>
+              val reader = Expr.summon[Reader[ft]]
+              reader.map { r =>
+                val ref = Ref(deff.symbol).asExprOf[ft]
+                '{ ($fieldName, $r.read($ref)) }
+              }
+          }
+        } else None
+      }
+      if (entries.isEmpty) '{ Map.empty }
+      else {
+        val list = Expr.ofList(entries)
+        '{ $list.toMap }
+      }
+    }
   }
 
   private case class SerializedMember(jsonKey: String, memberName: String, memberType: Any)
@@ -803,7 +984,7 @@ object CompileRW extends CompileRW {
     }
   }
 
-  private def generateSerializedFieldsDef(members: List[SerializedMember])(using Quotes): Expr[Map[String, DefType]] = {
+  private def generateSerializedFieldsDef(members: List[SerializedMember])(using Quotes): Expr[Map[String, FabricDefinition]] = {
     import quotes.reflect._
     val entries = members.map { m =>
       val memberType = m.memberType.asInstanceOf[TypeRepr]

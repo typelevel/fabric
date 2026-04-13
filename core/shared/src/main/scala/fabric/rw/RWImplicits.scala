@@ -21,7 +21,7 @@
 
 package fabric.rw
 
-import fabric.define.DefType
+import fabric.define.{Definition, DefType}
 import fabric.rw.RW.{from, string}
 import fabric.*
 
@@ -29,23 +29,24 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.matching.Regex
 
 trait RWImplicits extends PlatformRWImplicits {
-  implicit lazy val unitRW: RW[Unit] = from(_ => Null, _ => (), DefType.Null)
-  implicit lazy val valueRW: RW[Json] = from(identity, identity, DefType.Json)
-  implicit lazy val objRW: RW[Obj] = from(o => o, v => v.asObj, DefType.Json)
+  implicit lazy val unitRW: RW[Unit] = from(_ => Null, _ => (), Definition(DefType.Null))
+  implicit lazy val valueRW: RW[Json] = from(identity, identity, Definition(DefType.Json))
+  implicit lazy val objRW: RW[Obj] = from(o => o, v => v.asObj, Definition(DefType.Json))
 
-  implicit lazy val boolRW: RW[Boolean] = from[Boolean](bool, _.asBool.value, DefType.Bool)
+  implicit lazy val boolRW: RW[Boolean] = from[Boolean](bool, _.asBool.value, Definition(DefType.Bool))
 
-  implicit lazy val byteRW: RW[Byte] = from[Byte](s => NumInt(s.toLong), _.asNum.asByte, DefType.Int)
-  implicit lazy val shortRW: RW[Short] = from[Short](s => num(s.toInt), _.asNum.asShort, DefType.Int)
-  implicit lazy val charRW: RW[Char] = from[Char](c => str(c.toString), _.asString.charAt(0), DefType.Str)
-  implicit lazy val intRW: RW[Int] = from[Int](i => num(i), _.asNum.asInt, DefType.Int)
-  implicit lazy val longRW: RW[Long] = from[Long](l => num(l), _.asNum.asLong, DefType.Int)
-  implicit lazy val floatRW: RW[Float] = from[Float](f => num(f.toDouble), _.asNum.asFloat, DefType.Dec)
-  implicit lazy val doubleRW: RW[Double] = from[Double](num, _.asNum.asDouble, DefType.Dec)
-  implicit lazy val bigIntRW: RW[BigInt] = from[BigInt](i => num(BigDecimal(i)), _.asNum.asBigInt, DefType.Dec)
-  implicit lazy val bigDecimalRW: RW[BigDecimal] = from[BigDecimal](num, _.asNum.asBigDecimal, DefType.Dec)
+  implicit lazy val byteRW: RW[Byte] = from[Byte](s => NumInt(s.toLong), _.asNum.asByte, Definition(DefType.Int))
+  implicit lazy val shortRW: RW[Short] = from[Short](s => num(s.toInt), _.asNum.asShort, Definition(DefType.Int))
+  implicit lazy val charRW: RW[Char] = from[Char](c => str(c.toString), _.asString.charAt(0), Definition(DefType.Str))
+  implicit lazy val intRW: RW[Int] = from[Int](i => num(i), _.asNum.asInt, Definition(DefType.Int))
+  implicit lazy val longRW: RW[Long] = from[Long](l => num(l), _.asNum.asLong, Definition(DefType.Int))
+  implicit lazy val floatRW: RW[Float] = from[Float](f => num(f.toDouble), _.asNum.asFloat, Definition(DefType.Dec))
+  implicit lazy val doubleRW: RW[Double] = from[Double](num, _.asNum.asDouble, Definition(DefType.Dec))
+  implicit lazy val bigIntRW: RW[BigInt] =
+    from[BigInt](i => num(BigDecimal(i)), _.asNum.asBigInt, Definition(DefType.Dec))
+  implicit lazy val bigDecimalRW: RW[BigDecimal] = from[BigDecimal](num, _.asNum.asBigDecimal, Definition(DefType.Dec))
 
-  implicit lazy val stringRW: RW[String] = from[String](str, _.asStr.value, DefType.Str)
+  implicit lazy val stringRW: RW[String] = from[String](str, _.asStr.value, Definition(DefType.Str))
 
   implicit lazy val regexRW: RW[Regex] = string[Regex](_.toString(), _.r)
 
@@ -59,11 +60,11 @@ trait RWImplicits extends PlatformRWImplicits {
   )
 
   implicit def mapRW[K, V](implicit keyRW: RW[K], valueRW: RW[V]): RW[Map[K, V]] =
-    if (keyRW.definition == DefType.Str) {
+    if (keyRW.definition.defType == DefType.Str) {
       from[Map[K, V]](
         _.map { case (key, value) => key.json.asString -> value.json },
         _.asObj.value.map { case (key, value) => str(key).as[K] -> value.as[V] },
-        DefType.Obj(None, "[key]" -> valueRW.definition)
+        Definition(DefType.Obj("[key]" -> valueRW.definition))
       )
     } else {
       RW.from[Map[K, V]](
@@ -79,11 +80,14 @@ trait RWImplicits extends PlatformRWImplicits {
             val map = j.asMap
             map("key").as[K] -> map("value").as[V]
           }.toMap,
-        d = DefType.Arr(
-          DefType.Obj(
-            None,
-            "key" -> implicitly[RW[K]].definition,
-            "value" -> implicitly[RW[V]].definition
+        d = Definition(
+          DefType.Arr(
+            Definition(
+              DefType.Obj(
+                "key" -> implicitly[RW[K]].definition,
+                "value" -> implicitly[RW[V]].definition
+              )
+            )
           )
         )
       )
@@ -102,10 +106,12 @@ trait RWImplicits extends PlatformRWImplicits {
         Right(obj.value("right").as[R])
       }
     },
-    d = DefType.Obj(
-      Some("scala.util.Either"),
-      "left" -> DefType.Opt(implicitly[RW[L]].definition),
-      "right" -> DefType.Opt(implicitly[RW[R]].definition)
+    d = Definition(
+      DefType.Obj(
+        "left" -> implicitly[RW[L]].definition.opt,
+        "right" -> implicitly[RW[R]].definition.opt
+      ),
+      className = Some("scala.util.Either")
     )
   )
 
@@ -116,7 +122,7 @@ trait RWImplicits extends PlatformRWImplicits {
         case Vector(k, v) => (k.as[K], v.as[V])
         case v => throw new RuntimeException(s"Invalid shape for tuple2: $v")
       },
-    d = DefType.Arr(DefType.Json)
+    d = Definition(DefType.Arr(Definition(DefType.Json)))
   )
 
   implicit def tuple3RW[T1: RW, T2: RW, T3: RW]: RW[(T1, T2, T3)] = from[(T1, T2, T3)](
@@ -126,7 +132,7 @@ trait RWImplicits extends PlatformRWImplicits {
         case Vector(t1, t2, t3) => (t1.as[T1], t2.as[T2], t3.as[T3])
         case v => throw new RuntimeException(s"Invalid shape for tuple3: $v")
       },
-    d = DefType.Arr(DefType.Json)
+    d = Definition(DefType.Arr(Definition(DefType.Json)))
   )
 
   implicit def tuple4RW[T1: RW, T2: RW, T3: RW, T4: RW]: RW[(T1, T2, T3, T4)] = from[(T1, T2, T3, T4)](
@@ -136,19 +142,19 @@ trait RWImplicits extends PlatformRWImplicits {
         case Vector(t1, t2, t3, t4) => (t1.as[T1], t2.as[T2], t3.as[T3], t4.as[T4])
         case v => throw new RuntimeException(s"Invalid shape for tuple4: $v")
       },
-    d = DefType.Arr(DefType.Json)
+    d = Definition(DefType.Arr(Definition(DefType.Json)))
   )
 
   implicit def listRW[V: RW]: RW[List[V]] = from[List[V]](
     v => Arr(v.map(_.json).toVector),
     v => v.asVector.map(_.as[V]).toList,
-    DefType.Arr(implicitly[RW[V]].definition)
+    Definition(DefType.Arr(implicitly[RW[V]].definition))
   )
 
   implicit def vectorRW[V: RW]: RW[Vector[V]] = from[Vector[V]](
     v => Arr(v.map(_.json)),
     v => v.asVector.map(_.as[V]),
-    DefType.Arr(implicitly[RW[V]].definition)
+    Definition(DefType.Arr(implicitly[RW[V]].definition))
   )
 
   implicit def setRW[V: RW]: RW[Set[V]] = from[Set[V]](
@@ -157,12 +163,12 @@ trait RWImplicits extends PlatformRWImplicits {
       case Arr(vector, _) => vector.map(_.as[V]).toSet
       case v => throw new RuntimeException(s"Unsupported set: $v")
     },
-    DefType.Arr(implicitly[RW[V]].definition)
+    Definition(DefType.Arr(implicitly[RW[V]].definition))
   )
 
   implicit def optionRW[V: RW]: RW[Option[V]] = from[Option[V]](
     v => v.map(_.json).getOrElse(Null),
     v => if (v.isNull) None else Some(v.as[V]),
-    DefType.Opt(implicitly[RW[V]].definition)
+    Definition(DefType.Opt(implicitly[RW[V]].definition))
   )
 }

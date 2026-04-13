@@ -22,7 +22,7 @@
 package fabric.rw
 
 import fabric._
-import fabric.define.DefType
+import fabric.define.{Definition, DefType}
 
 import java.io.File
 import java.nio.file.{Path, Paths}
@@ -31,12 +31,12 @@ trait PlatformRWImplicits {
   implicit lazy val pathRW: RW[Path] = RW.from[Path](
     r = p => str(p.toString),
     w = j => Paths.get(j.asString),
-    d = DefType.Str
+    d = Definition(DefType.Str)
   )
 
   implicit lazy val fileRW: RW[File] = RW.from[File](
     r = f => str(f.getPath),
     w = j => new File(j.asString),
-    d = DefType.Str
+    d = Definition(DefType.Str)
   )
 }

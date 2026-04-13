@@ -21,7 +21,7 @@
 
 package fabric
 
-import fabric.define.DefType
+import fabric.define.{Definition, DefType}
 import fabric.rw.RW
 
 /**
@@ -68,9 +68,9 @@ object JsonPath {
         }
       ),
     w = json => JsonPath(json("entries").asVector.toList.map(JsonPathEntry.rw.write)),
-    d = DefType.Obj(
-      Some("fabric.JsonPath"),
-      "entries" -> DefType.Arr(JsonPathEntry.rw.definition)
+    d = Definition(
+      DefType.Obj("entries" -> Definition(DefType.Arr(JsonPathEntry.rw.definition))),
+      className = Some("fabric.JsonPath")
     )
   )
 

@@ -29,7 +29,7 @@ trait TemplateConfig {
   def dec(path: JsonPath): BigDecimal
   def bool(path: JsonPath): Boolean
   def json(path: JsonPath): Json
-  def `enum`(path: JsonPath, values: List[Json]): Json
+  def poly(path: JsonPath, values: Map[String, Definition]): Json
 }
 
 object TemplateConfig {

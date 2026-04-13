@@ -21,7 +21,7 @@
 
 package fabric.search
 
-import fabric.define.DefType
+import fabric.define.{Definition, DefType}
 import fabric.rw.RW
 import fabric._
 
@@ -44,6 +44,6 @@ object ByName {
     key = "name",
     asJson = bn => str(bn.name),
     fromJson = j => ByName(j.asString),
-    definition = DefType.Str
+    definition = Definition(DefType.Str)
   )
 }

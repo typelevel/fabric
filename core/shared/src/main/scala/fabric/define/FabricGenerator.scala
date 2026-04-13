@@ -25,16 +25,16 @@ import scala.collection.mutable
 
 object FabricGenerator {
   def withMappings(
-    dt: DefType,
+    definition: Definition,
     rootName: String,
     mappings: (String, String)*
   ): GeneratedClass = {
     val map = mappings.toMap
-    apply(dt, rootName, map.apply)
+    apply(definition, rootName, map.apply)
   }
 
   def apply(
-    dt: DefType,
+    definition: Definition,
     rootName: String,
     resolver: String => String,
     extras: String => ClassExtras = _ => ClassExtras.Empty
@@ -43,36 +43,42 @@ object FabricGenerator {
 
     def generate(
       rootName: String,
-      original: Map[String, DefType]
+      original: Map[String, Definition]
     ): GeneratedClass = {
       val classExtras = extras(rootName)
-      val map: Map[String, DefType] = original.filterNot {
-        case (_, DefType.Null) => true
-        case (_, DefType.Arr(DefType.Null, _)) => true
+      val map: Map[String, Definition] = original.filterNot {
+        case (_, d) if d.defType == DefType.Null => true
+        case (_, d)
+            if d.defType.isInstanceOf[DefType.Arr] && d.defType.asInstanceOf[DefType.Arr].t.defType == DefType.Null =>
+          true
         case _ => false
       }
-      def typeFor(name: String, dt: DefType): String = dt match {
-        case DefType.Described(inner, _) => typeFor(name, inner)
-        case DefType.Classed(_, cn) =>
-          val simpleName = if (cn.contains('.')) cn.substring(cn.lastIndexOf('.') + 1) else cn
-          simpleName
-        case DefType.Obj(map, _, _) =>
-          val className = resolver(name)
-          additional = generate(className, map) :: additional
-          if (className.contains('.')) {
-            className.substring(className.lastIndexOf('.') + 1)
-          } else {
-            className
+      def typeFor(name: String, d: Definition): String = d.defType match {
+        case DefType.Obj(innerMap) => d.className match {
+            case Some(cn) =>
+              val simpleName = if (cn.contains('.')) cn.substring(cn.lastIndexOf('.') + 1) else cn
+              simpleName
+            case None =>
+              val className = resolver(name)
+              additional = generate(className, innerMap) :: additional
+              if (className.contains('.')) {
+                className.substring(className.lastIndexOf('.') + 1)
+              } else {
+                className
+              }
           }
-        case DefType.Arr(DefType.Opt(t, _), _) => s"Vector[${typeFor(name, t)}]"
-        case DefType.Arr(t, _) => s"Vector[${typeFor(name, t)}]"
-        case DefType.Opt(t, _) => s"Option[${typeFor(name, t)}]"
+        case DefType.Arr(inner) if inner.defType.isOpt =>
+          inner.defType match {
+            case DefType.Opt(t) => s"Vector[${typeFor(name, t)}]"
+            case _ => s"Vector[${typeFor(name, inner)}]"
+          }
+        case DefType.Arr(t) => s"Vector[${typeFor(name, t)}]"
+        case DefType.Opt(t) => s"Option[${typeFor(name, t)}]"
         case DefType.Str => "String"
         case DefType.Int => "Long"
         case DefType.Dec => "BigDecimal"
         case DefType.Bool => "Boolean"
-        case DefType.Enum(_, _, _) => throw new RuntimeException("Unsupported")
-        case DefType.Poly(_, _, _) => throw new RuntimeException("Unsupported")
+        case DefType.Poly(_) => throw new RuntimeException("Unsupported")
         case DefType.Json => "Json"
         case DefType.Null => throw new RuntimeException(
             "Null type found in definition! Not supported for code generation!"
@@ -123,10 +129,10 @@ object FabricGenerator {
       GeneratedClass(packageName, className, b.toString(), additional.reverse)
     }
 
-    dt match {
-      case DefType.Obj(map, _, _) => generate(rootName, map)
+    definition.defType match {
+      case DefType.Obj(map) => generate(rootName, map)
       case _ => throw new RuntimeException(
-          s"Only DefType.Obj is supported for generation, but received: $dt"
+          s"Only DefType.Obj is supported for generation, but received: ${definition.defType}"
         )
     }
   }

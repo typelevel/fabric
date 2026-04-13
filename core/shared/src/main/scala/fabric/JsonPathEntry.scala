@@ -21,7 +21,7 @@
 
 package fabric
 
-import fabric.define.DefType
+import fabric.define.{Definition, DefType}
 import fabric.rw.RW
 
 sealed trait JsonPathEntry extends Any
@@ -38,7 +38,7 @@ object JsonPathEntry {
       key = "name",
       asJson = n => str(n.name),
       fromJson = j => Named(j.asString),
-      definition = DefType.Str
+      definition = Definition(DefType.Str)
     )
   }
   case class Indexed(index: Int) extends AnyVal with JsonPathEntry
@@ -47,7 +47,7 @@ object JsonPathEntry {
       key = "index",
       asJson = i => num(i.index),
       fromJson = j => Indexed(j.asInt),
-      definition = DefType.Int
+      definition = Definition(DefType.Int)
     )
   }
 }
