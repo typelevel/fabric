@@ -259,8 +259,7 @@ object RWMacros {
                 }
               }
             """
-          }
-          else q"""
+          } else q"""
             import _root_.fabric._
             import _root_.fabric.rw._
             import _root_.scala.collection.immutable.VectorMap
