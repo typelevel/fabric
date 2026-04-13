@@ -46,10 +46,10 @@ The focus of this project is minimalism and flexibility. To that end, the featur
 ### Setup
 
 For SBT simply include:
-`libraryDependencies += "org.typelevel" %%% "fabric-core" % "1.23.0"`
+`libraryDependencies += "org.typelevel" %%% "fabric-core" % "1.24.0"`
 
 For parsing support include:
-`libraryDependencies += "org.typelevel" %%% "fabric-io" % "1.23.0"`
+`libraryDependencies += "org.typelevel" %%% "fabric-io" % "1.24.0"`
 
 ### Create
 
@@ -77,7 +77,6 @@ Deep-merging is trivial:
 
 ```scala
 import fabric._
-import fabric.dsl._
 
 val v2 = obj(
   "age" -> 23,
@@ -100,7 +99,6 @@ Conversion to other types is very easy with the built-in compile-time conversion
 
 ```scala
 import fabric._
-import fabric.dsl._
 import fabric.rw._
 
 val person = obj(
@@ -124,8 +122,6 @@ object Person {
 Parsing from existing JSON:
 
 ```scala
-import fabric._
-import fabric.dsl._
 import fabric.io._
 
 val value = JsonParser("""{"name": "John Doe", "age": 21}""", Format.Json)

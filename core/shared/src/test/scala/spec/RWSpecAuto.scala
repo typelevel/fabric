@@ -103,9 +103,7 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
         value.asObj.get("_generic") should be(None)
         // Round-trip still works without _generic
         value.as[Wrapper[String]] should be(w)
-      } finally {
-        RW.SerializeGenerics = prev
-      }
+      } finally RW.SerializeGenerics = prev
     }
     "verify empty genericTypes for non-generic Person" in {
       Person.rw.definition.genericTypes should be(Nil)
@@ -134,8 +132,7 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
       val value = w.json
       value("name").asString should be("Test2")
       value("value") should be(obj("city" -> "San Jose"))
-      value("other") should be(obj("city" -> "Norman")
-      )
+      value("other") should be(obj("city" -> "Norman"))
     }
     "verify Person's DefType" in {
       Person.rw.definition should be(
