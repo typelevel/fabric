@@ -99,36 +99,48 @@ case class Definition(
   deprecated: Boolean = false
 ) {
 
-  /** Returns true if the underlying type is optional (`DefType.Opt`). */
+  /**
+    * Returns true if the underlying type is optional (`DefType.Opt`).
+    */
   def isOpt: Boolean = defType.isOpt
 
-  /** Returns true if the underlying type is null (`DefType.Null`). */
+  /**
+    * Returns true if the underlying type is null (`DefType.Null`).
+    */
   def isNull: Boolean = defType.isNull
 
-  /** Wraps this Definition in `DefType.Opt` if not already optional. */
+  /**
+    * Wraps this Definition in `DefType.Opt` if not already optional.
+    */
   def opt: Definition = if (isOpt) this else Definition(DefType.Opt(this))
 
-  /** Returns a copy with the given description. */
+  /**
+    * Returns a copy with the given description.
+    */
   def describe(desc: String): Definition = copy(description = Some(desc))
 
-  /** Returns a copy with the given class name. */
+  /**
+    * Returns a copy with the given class name.
+    */
   def withClassName(cn: String): Definition = copy(className = Some(cn))
 
-  /** Validates that a JSON value conforms to this Definition's type structure. */
+  /**
+    * Validates that a JSON value conforms to this Definition's type structure.
+    */
   def validate(value: Json): Boolean = Try(FabricDefinition(value).merge(this)).toOption.contains(this)
 
-  /** Generates a template JSON value from this Definition's type structure using the given config. */
+  /**
+    * Generates a template JSON value from this Definition's type structure using the given config.
+    */
   final def template(config: TemplateConfig): Json = template(JsonPath.empty, config)
 
   protected[define] def template(path: JsonPath, config: TemplateConfig): Json = defType match {
-    case DefType.Obj(map) => obj(map.toList.map { case (key, d) =>
-      key -> d.template(path \ key, config)
-    }*)
+    case DefType.Obj(map) => obj(map.toList.map { case (key, d) => key -> d.template(path \ key, config) }*)
     case DefType.Arr(t) => arr(
-      t.template(path \ 0, config),
-      t.template(path \ 1, config),
-      t.template(path \ 2, config)
-    )
+        t.template(path \ 0, config),
+        t.template(path \ 1, config),
+        t.template(path \ 2, config)
+      )
     case DefType.Opt(t) => t.template(path, config)
     case DefType.Str => str(config.string(path))
     case DefType.Int => num(config.int(path))
@@ -139,7 +151,8 @@ case class Definition(
     case DefType.Poly(values) => config.poly(path, values)
   }
 
-  /** Merges this Definition with another, combining their type structures. Used by [[FabricDefinition]] when inferring
+  /**
+    * Merges this Definition with another, combining their type structures. Used by [[FabricDefinition]] when inferring
     * types from multiple JSON values.
     */
   def merge(that: Definition): Definition = {
@@ -164,8 +177,7 @@ case class Definition(
       case (DefType.Arr(t1), DefType.Arr(t2)) => Definition(DefType.Arr(t1.merge(t2)))
       case (DefType.Int, DefType.Dec) => that
       case (DefType.Dec, DefType.Int) => this
-      case (DefType.Opt(inner1), DefType.Opt(inner2)) =>
-        inner1.merge(inner2) match {
+      case (DefType.Opt(inner1), DefType.Opt(inner2)) => inner1.merge(inner2) match {
           case d if d.isOpt => d
           case d => d.opt
         }
@@ -188,51 +200,54 @@ case class Definition(
 
 object Definition {
 
-  /** Annotates fields of an Obj-typed Definition with format values from `@format` annotations. */
-  def applyFieldFormats(d: Definition, formats: Map[String, Format]): Definition = {
+  /**
+    * Annotates fields of an Obj-typed Definition with format values from `@format` annotations.
+    */
+  def applyFieldFormats(d: Definition, formats: Map[String, Format]): Definition =
     if (formats.isEmpty) d
     else d.defType match {
       case o: DefType.Obj => d.copy(defType = o.copy(map = o.map.map { case (k, v) =>
-        formats.get(k).fold(k -> v)(fmt => k -> v.copy(format = fmt))
-      }))
+          formats.get(k).fold(k -> v)(fmt => k -> v.copy(format = fmt))
+        }))
       case _ => d
     }
-  }
 
-  /** Marks fields as deprecated based on `@fieldDeprecated` annotations. */
-  def applyFieldDeprecations(d: Definition, fields: Set[String]): Definition = {
+  /**
+    * Marks fields as deprecated based on `@fieldDeprecated` annotations.
+    */
+  def applyFieldDeprecations(d: Definition, fields: Set[String]): Definition =
     if (fields.isEmpty) d
     else d.defType match {
       case o: DefType.Obj => d.copy(defType = o.copy(map = o.map.map { case (k, v) =>
-        if (fields.contains(k)) k -> v.copy(deprecated = true) else k -> v
-      }))
+          if (fields.contains(k)) k -> v.copy(deprecated = true) else k -> v
+        }))
       case _ => d
     }
-  }
 
-  /** Applies default values to fields. Default values are captured at compile time from case class defaults. */
-  def applyFieldDefaults(d: Definition, defaults: Map[String, Json]): Definition = {
+  /**
+    * Applies default values to fields. Default values are captured at compile time from case class defaults.
+    */
+  def applyFieldDefaults(d: Definition, defaults: Map[String, Json]): Definition =
     if (defaults.isEmpty) d
     else d.defType match {
       case o: DefType.Obj => d.copy(defType = o.copy(map = o.map.map { case (k, v) =>
-        defaults.get(k).fold(k -> v)(dv => k -> v.copy(defaultValue = Some(dv)))
-      }))
+          defaults.get(k).fold(k -> v)(dv => k -> v.copy(defaultValue = Some(dv)))
+        }))
       case _ => d
     }
-  }
 
-  /** Annotates fields of an Obj-typed Definition with their generic type parameter names. Used by macro-generated RW
+  /**
+    * Annotates fields of an Obj-typed Definition with their generic type parameter names. Used by macro-generated RW
     * instances to connect fields like `value: T` back to the type parameter `"T"`.
     */
-  def applyGenericNames(d: Definition, fieldGenericNames: Map[String, String]): Definition = {
+  def applyGenericNames(d: Definition, fieldGenericNames: Map[String, String]): Definition =
     if (fieldGenericNames.isEmpty) d
     else d.defType match {
       case o: DefType.Obj => d.copy(defType = o.copy(map = o.map.map { case (k, v) =>
-        fieldGenericNames.get(k).fold(k -> v)(gn => k -> v.copy(genericName = Some(gn)))
-      }))
+          fieldGenericNames.get(k).fold(k -> v)(gn => k -> v.copy(genericName = Some(gn)))
+        }))
       case _ => d
     }
-  }
 
   implicit def rw: RW[Definition] = RW.from[Definition](r = toJson, w = fromJson, d = Definition(DefType.Json))
 
@@ -244,9 +259,9 @@ object Definition {
   private def toJson(d: Definition): Json = {
     val base = d.defType match {
       case DefType.Obj(map) => obj(
-        "type" -> str("object"),
-        "values" -> fabric.Obj(map.map { case (key, inner) => key -> toJson(inner) })
-      )
+          "type" -> str("object"),
+          "values" -> fabric.Obj(map.map { case (key, inner) => key -> toJson(inner) })
+        )
       case DefType.Arr(t) => obj("type" -> str("array"), "value" -> toJson(t))
       case DefType.Opt(t) => obj("type" -> str("optional"), "value" -> toJson(t))
       case DefType.Str => obj("type" -> str("string"))
@@ -256,22 +271,29 @@ object Definition {
       case DefType.Json => obj("type" -> str("json"))
       case DefType.Null => obj("type" -> str("null"))
       case DefType.Poly(values) => obj(
-        "type" -> str("poly"),
-        "values" -> fabric.Obj(values.map { case (key, inner) => key -> toJson(inner) })
-      )
+          "type" -> str("poly"),
+          "values" -> fabric.Obj(values.map { case (key, inner) => key -> toJson(inner) })
+        )
     }
-    var result = withOptional(withOptional(withOptional(base, "className", d.className), "description", d.description), "genericName", d.genericName)
-    if (d.genericTypes.nonEmpty)
-      result = result.merge(fabric.Obj("genericTypes" -> Arr(d.genericTypes.map(gt =>
-        obj("name" -> str(gt.name), "definition" -> toJson(gt.definition))
-      ).toVector))).asObj
-    if (d.format != Format.Raw)
-      result = result.merge(fabric.Obj("format" -> str(d.format.name))).asObj
+    var result = withOptional(
+      withOptional(withOptional(base, "className", d.className), "description", d.description),
+      "genericName",
+      d.genericName
+    )
+    if (d.genericTypes.nonEmpty) result = result
+      .merge(
+        fabric.Obj(
+          "genericTypes" -> Arr(
+            d.genericTypes.map(gt => obj("name" -> str(gt.name), "definition" -> toJson(gt.definition))).toVector
+          )
+        )
+      )
+      .asObj
+    if (d.format != Format.Raw) result = result.merge(fabric.Obj("format" -> str(d.format.name))).asObj
     d.defaultValue.foreach { dv =>
       result = result.merge(fabric.Obj("default" -> dv)).asObj
     }
-    if (d.deprecated)
-      result = result.merge(fabric.Obj("deprecated" -> bool(true))).asObj
+    if (d.deprecated) result = result.merge(fabric.Obj("deprecated" -> bool(true))).asObj
     result
   }
 
@@ -280,15 +302,14 @@ object Definition {
     val cn = o.get("className").map(_.asString)
     val desc = o.get("description").map(_.asString)
     val dt = o.value("type").asString match {
-      case "object" =>
-        DefType.Obj(o.value("values").asMap.map { case (key, value) => key -> fromJson(value) })
+      case "object" => DefType.Obj(o.value("values").asMap.map { case (key, value) => key -> fromJson(value) })
       case "array" => DefType.Arr(fromJson(o.value("value")))
       case "optional" => DefType.Opt(fromJson(o.value("value")))
       case "string" => DefType.Str
       case "numeric" => o.value("precision").asString match {
-        case "integer" => DefType.Int
-        case "decimal" => DefType.Dec
-      }
+          case "integer" => DefType.Int
+          case "decimal" => DefType.Dec
+        }
       case "boolean" => DefType.Bool
       case "json" => DefType.Json
       case "null" => DefType.Null
@@ -296,15 +317,18 @@ object Definition {
         val values = o.value("values").asVector.toList
         DefType.Poly(VectorMap(values.map(v => v.asString -> Definition(DefType.Null))*))
 
-      case "poly" =>
-        DefType.Poly(o.value("values").asMap.map { case (key, json) => key -> fromJson(json) })
+      case "poly" => DefType.Poly(o.value("values").asMap.map { case (key, json) => key -> fromJson(json) })
     }
     val gn = o.get("genericName").map(_.asString)
-    val gt = o.get("genericTypes").map(_.asVector.toList.map { gtJson =>
-      val gtObj = gtJson.asObj
-      GenericType(gtObj.value("name").asString, fromJson(gtObj.value("definition")))
-    }).getOrElse(Nil)
-    val fmt = o.get("format").map(f => Format.values.find(_.name == f.asString).getOrElse(Format.Raw)).getOrElse(Format.Raw)
+    val gt = o
+      .get("genericTypes")
+      .map(_.asVector.toList.map { gtJson =>
+        val gtObj = gtJson.asObj
+        GenericType(gtObj.value("name").asString, fromJson(gtObj.value("definition")))
+      })
+      .getOrElse(Nil)
+    val fmt =
+      o.get("format").map(f => Format.values.find(_.name == f.asString).getOrElse(Format.Raw)).getOrElse(Format.Raw)
     val dv = o.get("default")
     val dep = o.get("deprecated").exists(_.asBool.value)
     Definition(dt, cn, desc, gt, gn, fmt, dv, dep)
@@ -332,7 +356,9 @@ object GenericType {
   implicit lazy val rw: RW[GenericType] = RW.from[GenericType](
     r = gt => obj("name" -> str(gt.name), "definition" -> gt.definition.json),
     w = j => GenericType(j("name").asString, j("definition").as[Definition]),
-    d = Definition(DefType.Obj("name" -> Definition(DefType.Str), "definition" -> Definition(DefType.Json)),
-      className = Some("fabric.define.GenericType"))
+    d = Definition(
+      DefType.Obj("name" -> Definition(DefType.Str), "definition" -> Definition(DefType.Json)),
+      className = Some("fabric.define.GenericType")
+    )
   )
 }
