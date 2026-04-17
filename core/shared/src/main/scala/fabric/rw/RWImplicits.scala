@@ -21,11 +21,12 @@
 
 package fabric.rw
 
-import fabric.define.{Definition, DefType}
+import fabric.define.{DefType, Definition}
 import fabric.rw.RW.{from, string}
 import fabric.*
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.reflect.ClassTag
 import scala.util.matching.Regex
 
 trait RWImplicits extends PlatformRWImplicits {
@@ -143,6 +144,12 @@ trait RWImplicits extends PlatformRWImplicits {
         case v => throw new RuntimeException(s"Invalid shape for tuple4: $v")
       },
     d = Definition(DefType.Arr(Definition(DefType.Json)))
+  )
+
+  implicit def arrayRW[V: RW: ClassTag]: RW[Array[V]] = from[Array[V]](
+    v => Arr(v.map(_.json).toVector),
+    v => v.asVector.map(_.as[V]).toArray,
+    Definition(DefType.Arr(implicitly[RW[V]].definition))
   )
 
   implicit def listRW[V: RW]: RW[List[V]] = from[List[V]](
