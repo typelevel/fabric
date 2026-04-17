@@ -21,7 +21,7 @@
 
 package fabric.rw
 
-import fabric.define.{DefType, Definition}
+import fabric.define.{Definition, DefType}
 import fabric.rw.RW.{from, string}
 import fabric.*
 
