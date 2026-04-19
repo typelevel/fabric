@@ -33,32 +33,52 @@ import scala.annotation.StaticAnnotation
   */
 class pattern(val value: String) extends StaticAnnotation
 
-/** Minimum length of a string field. Mirrors JSON Schema `minLength`. */
+/**
+  * Minimum length of a string field. Mirrors JSON Schema `minLength`.
+  */
 class minLength(val value: Int) extends StaticAnnotation
 
-/** Maximum length of a string field. Mirrors JSON Schema `maxLength`. */
+/**
+  * Maximum length of a string field. Mirrors JSON Schema `maxLength`.
+  */
 class maxLength(val value: Int) extends StaticAnnotation
 
-/** Minimum (inclusive) numeric value. Mirrors JSON Schema `minimum`. */
+/**
+  * Minimum (inclusive) numeric value. Mirrors JSON Schema `minimum`.
+  */
 class minimum(val value: Double) extends StaticAnnotation
 
-/** Maximum (inclusive) numeric value. Mirrors JSON Schema `maximum`. */
+/**
+  * Maximum (inclusive) numeric value. Mirrors JSON Schema `maximum`.
+  */
 class maximum(val value: Double) extends StaticAnnotation
 
-/** Minimum (exclusive) numeric value. Mirrors JSON Schema `exclusiveMinimum`. */
+/**
+  * Minimum (exclusive) numeric value. Mirrors JSON Schema `exclusiveMinimum`.
+  */
 class exclusiveMinimum(val value: Double) extends StaticAnnotation
 
-/** Maximum (exclusive) numeric value. Mirrors JSON Schema `exclusiveMaximum`. */
+/**
+  * Maximum (exclusive) numeric value. Mirrors JSON Schema `exclusiveMaximum`.
+  */
 class exclusiveMaximum(val value: Double) extends StaticAnnotation
 
-/** Numeric value must be a multiple of this. Mirrors JSON Schema `multipleOf`. */
+/**
+  * Numeric value must be a multiple of this. Mirrors JSON Schema `multipleOf`.
+  */
 class multipleOf(val value: Double) extends StaticAnnotation
 
-/** Minimum number of array items. Mirrors JSON Schema `minItems`. */
+/**
+  * Minimum number of array items. Mirrors JSON Schema `minItems`.
+  */
 class minItems(val value: Int) extends StaticAnnotation
 
-/** Maximum number of array items. Mirrors JSON Schema `maxItems`. */
+/**
+  * Maximum number of array items. Mirrors JSON Schema `maxItems`.
+  */
 class maxItems(val value: Int) extends StaticAnnotation
 
-/** All array items must be unique. Mirrors JSON Schema `uniqueItems`. */
+/**
+  * All array items must be unique. Mirrors JSON Schema `uniqueItems`.
+  */
 class uniqueItems(val value: Boolean = true) extends StaticAnnotation
