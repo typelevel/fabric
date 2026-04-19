@@ -98,6 +98,84 @@ object RWMacros {
     }.toSet
   }
 
+  private def extractFieldConstraints(
+    context: blackbox.Context
+  )(fields: List[context.universe.Symbol]): List[context.universe.Tree] = {
+    import context.universe._
+    fields.flatMap { field =>
+      val key = field.asTerm.name.decodedName.toString
+
+      def stringArg(ann: Annotation): Option[String] = ann.tree.children.tail.headOption.flatMap {
+        case Literal(Constant(s: String)) => Some(s)
+        case _ => None
+      }
+      def intArg(ann: Annotation): Option[Int] = ann.tree.children.tail.headOption.flatMap {
+        case Literal(Constant(v: Int)) => Some(v)
+        case Literal(Constant(v: Long)) => Some(v.toInt)
+        case _ => None
+      }
+      def doubleArg(ann: Annotation): Option[Double] = ann.tree.children.tail.headOption.flatMap {
+        case Literal(Constant(v: Double)) => Some(v)
+        case Literal(Constant(v: Float)) => Some(v.toDouble)
+        case Literal(Constant(v: Int)) => Some(v.toDouble)
+        case Literal(Constant(v: Long)) => Some(v.toDouble)
+        case _ => None
+      }
+      def boolArg(ann: Annotation, default: Boolean): Boolean = ann.tree.children.tail.headOption match {
+        case Some(Literal(Constant(b: Boolean))) => b
+        case _ => default
+      }
+
+      def opt[T: Liftable](o: Option[T]): Tree = o match {
+        case Some(v) => q"_root_.scala.Some($v)"
+        case None => q"_root_.scala.None"
+      }
+
+      var pattern: Option[String] = None
+      var minLength: Option[Int] = None
+      var maxLength: Option[Int] = None
+      var minimum: Option[Double] = None
+      var maximum: Option[Double] = None
+      var exclusiveMinimum: Option[Double] = None
+      var exclusiveMaximum: Option[Double] = None
+      var multipleOf: Option[Double] = None
+      var minItems: Option[Int] = None
+      var maxItems: Option[Int] = None
+      var uniqueItems: Option[Boolean] = None
+      var any = false
+
+      field.annotations.foreach { ann =>
+        val tpe = ann.tree.tpe
+        if (tpe =:= typeOf[pattern]) { pattern = stringArg(ann); if (pattern.nonEmpty) any = true }
+        else if (tpe =:= typeOf[minLength]) { minLength = intArg(ann); if (minLength.nonEmpty) any = true }
+        else if (tpe =:= typeOf[maxLength]) { maxLength = intArg(ann); if (maxLength.nonEmpty) any = true }
+        else if (tpe =:= typeOf[minimum]) { minimum = doubleArg(ann); if (minimum.nonEmpty) any = true }
+        else if (tpe =:= typeOf[maximum]) { maximum = doubleArg(ann); if (maximum.nonEmpty) any = true }
+        else if (tpe =:= typeOf[exclusiveMinimum]) { exclusiveMinimum = doubleArg(ann); if (exclusiveMinimum.nonEmpty) any = true }
+        else if (tpe =:= typeOf[exclusiveMaximum]) { exclusiveMaximum = doubleArg(ann); if (exclusiveMaximum.nonEmpty) any = true }
+        else if (tpe =:= typeOf[multipleOf]) { multipleOf = doubleArg(ann); if (multipleOf.nonEmpty) any = true }
+        else if (tpe =:= typeOf[minItems]) { minItems = intArg(ann); if (minItems.nonEmpty) any = true }
+        else if (tpe =:= typeOf[maxItems]) { maxItems = intArg(ann); if (maxItems.nonEmpty) any = true }
+        else if (tpe =:= typeOf[uniqueItems]) { uniqueItems = Some(boolArg(ann, default = true)); any = true }
+      }
+
+      if (any) Some(q"""$key -> Constraints(
+        pattern = ${opt(pattern)},
+        minLength = ${opt(minLength)},
+        maxLength = ${opt(maxLength)},
+        minimum = ${opt(minimum)},
+        maximum = ${opt(maximum)},
+        exclusiveMinimum = ${opt(exclusiveMinimum)},
+        exclusiveMaximum = ${opt(exclusiveMaximum)},
+        multipleOf = ${opt(multipleOf)},
+        minItems = ${opt(minItems)},
+        maxItems = ${opt(maxItems)},
+        uniqueItems = ${opt(uniqueItems)}
+      )""")
+      else None
+    }
+  }
+
   private def generateFieldDefaults(context: blackbox.Context)(
     fields: List[context.universe.Symbol],
     defaults: Map[Int, context.universe.MethodSymbol],
@@ -168,23 +246,27 @@ object RWMacros {
         val deprecatedFields = extractDeprecatedFields(context)(fields)
         val deprecatedFieldsList = deprecatedFields.toList
         val fieldDefaultEntries = generateFieldDefaults(context)(fields, defaults, companion, tpe)
+        val fieldConstraintEntries = extractFieldConstraints(context)(fields)
         context.Expr[Definition](q"""
             import _root_.fabric._
             import _root_.fabric.define._
             import _root_.scala.collection.immutable.VectorMap
 
-            Definition.applyFieldDefaults(
-              Definition.applyFieldDeprecations(
-                Definition.applyFieldFormats(
-                  Definition.applyGenericNames(
-                    Definition(DefType.Obj(VectorMap(..$allFieldDefs)), className = Some($className), genericTypes = List(..$genericTypes)),
-                    Map(..$fieldGenericNamesEntries)
+            Definition.applyFieldConstraints(
+              Definition.applyFieldDefaults(
+                Definition.applyFieldDeprecations(
+                  Definition.applyFieldFormats(
+                    Definition.applyGenericNames(
+                      Definition(DefType.Obj(VectorMap(..$allFieldDefs)), className = Some($className), genericTypes = List(..$genericTypes)),
+                      Map(..$fieldGenericNamesEntries)
+                    ),
+                    Map(..$fieldFormatsEntries)
                   ),
-                  Map(..$fieldFormatsEntries)
+                  Set(..$deprecatedFieldsList)
                 ),
-                Set(..$deprecatedFieldsList)
+                Map(..$fieldDefaultEntries)
               ),
-              Map(..$fieldDefaultEntries)
+              Map(..$fieldConstraintEntries)
             )
            """)
       case None =>
