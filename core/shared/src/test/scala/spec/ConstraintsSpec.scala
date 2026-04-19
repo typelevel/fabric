@@ -35,14 +35,21 @@ class ConstraintsSpec extends AnyWordSpec with Matchers {
       Constraints(pattern = Some("^x")).isEmpty should be(false)
     }
     "attach via Definition.applyFieldConstraints" in {
-      val base = Definition(DefType.Obj(scala.collection.immutable.VectorMap(
-        "name" -> Definition(DefType.Str),
-        "age" -> Definition(DefType.Int)
-      )))
-      val constrained = Definition.applyFieldConstraints(base, Map(
-        "name" -> Constraints(pattern = Some("^[A-Z]"), minLength = Some(1)),
-        "age" -> Constraints(minimum = Some(0.0), maximum = Some(120.0))
-      ))
+      val base = Definition(
+        DefType.Obj(
+          scala.collection.immutable.VectorMap(
+            "name" -> Definition(DefType.Str),
+            "age" -> Definition(DefType.Int)
+          )
+        )
+      )
+      val constrained = Definition.applyFieldConstraints(
+        base,
+        Map(
+          "name" -> Constraints(pattern = Some("^[A-Z]"), minLength = Some(1)),
+          "age" -> Constraints(minimum = Some(0.0), maximum = Some(120.0))
+        )
+      )
       val fields = constrained.defType.asInstanceOf[DefType.Obj].map
       fields("name").constraints.pattern should be(Some("^[A-Z]"))
       fields("name").constraints.minLength should be(Some(1))

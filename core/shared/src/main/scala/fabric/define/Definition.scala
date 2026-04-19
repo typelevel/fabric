@@ -216,7 +216,17 @@ object Definition {
     format: Format,
     defaultValue: Option[Json],
     deprecated: Boolean
-  ): Definition = new Definition(defType, className, description, genericTypes, genericName, format, defaultValue, deprecated, Constraints.Empty)
+  ): Definition = new Definition(
+    defType,
+    className,
+    description,
+    genericTypes,
+    genericName,
+    format,
+    defaultValue,
+    deprecated,
+    Constraints.Empty
+  )
 
   /**
     * Annotates fields of an Obj-typed Definition with format values from `@format` annotations.

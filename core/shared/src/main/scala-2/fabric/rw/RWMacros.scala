@@ -151,9 +151,11 @@ object RWMacros {
         else if (tpe =:= typeOf[maxLength]) { maxLength = intArg(ann); if (maxLength.nonEmpty) any = true }
         else if (tpe =:= typeOf[minimum]) { minimum = doubleArg(ann); if (minimum.nonEmpty) any = true }
         else if (tpe =:= typeOf[maximum]) { maximum = doubleArg(ann); if (maximum.nonEmpty) any = true }
-        else if (tpe =:= typeOf[exclusiveMinimum]) { exclusiveMinimum = doubleArg(ann); if (exclusiveMinimum.nonEmpty) any = true }
-        else if (tpe =:= typeOf[exclusiveMaximum]) { exclusiveMaximum = doubleArg(ann); if (exclusiveMaximum.nonEmpty) any = true }
-        else if (tpe =:= typeOf[multipleOf]) { multipleOf = doubleArg(ann); if (multipleOf.nonEmpty) any = true }
+        else if (tpe =:= typeOf[exclusiveMinimum]) {
+          exclusiveMinimum = doubleArg(ann); if (exclusiveMinimum.nonEmpty) any = true
+        } else if (tpe =:= typeOf[exclusiveMaximum]) {
+          exclusiveMaximum = doubleArg(ann); if (exclusiveMaximum.nonEmpty) any = true
+        } else if (tpe =:= typeOf[multipleOf]) { multipleOf = doubleArg(ann); if (multipleOf.nonEmpty) any = true }
         else if (tpe =:= typeOf[minItems]) { minItems = intArg(ann); if (minItems.nonEmpty) any = true }
         else if (tpe =:= typeOf[maxItems]) { maxItems = intArg(ann); if (maxItems.nonEmpty) any = true }
         else if (tpe =:= typeOf[uniqueItems]) { uniqueItems = Some(boolArg(ann, default = true)); any = true }

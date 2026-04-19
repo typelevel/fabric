@@ -65,6 +65,8 @@ case class Constraints(
 
 object Constraints {
 
-  /** The absence of any constraints. */
+  /**
+    * The absence of any constraints.
+    */
   val Empty: Constraints = Constraints()
 }
