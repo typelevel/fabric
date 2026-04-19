@@ -96,7 +96,8 @@ case class Definition(
   genericName: Option[String] = None,
   format: Format = Format.Raw,
   defaultValue: Option[Json] = None,
-  deprecated: Boolean = false
+  deprecated: Boolean = false,
+  constraints: Constraints = Constraints.Empty
 ) {
 
   /**
@@ -168,7 +169,7 @@ case class Definition(
           key -> m1.getOrElse(key, Definition(DefType.Null)).merge(m2.getOrElse(key, Definition(DefType.Null)))
         }*)
         that.copy(defType = DefType.Obj(merged))
-      case (DefType.Obj(m1), DefType.Opt(inner @ Definition(DefType.Obj(m2), _, _, _, _, _, _, _))) =>
+      case (DefType.Obj(m1), DefType.Opt(inner @ Definition(DefType.Obj(m2), _, _, _, _, _, _, _, _))) =>
         val keys = m1.keySet ++ m2.keySet
         val merged = VectorMap(keys.toList.map { key =>
           key -> m1.getOrElse(key, Definition(DefType.Null)).merge(m2.getOrElse(key, Definition(DefType.Null)))
@@ -199,6 +200,23 @@ case class Definition(
 }
 
 object Definition {
+
+  /**
+    * Binary-compatibility shim for callers compiled against the pre-constraints
+    * 8-argument `Definition.apply`. Forwards to the full constructor with
+    * `constraints = Constraints.Empty`. Can be removed when all downstream
+    * consumers have been recompiled against this version.
+    */
+  def apply(
+    defType: DefType,
+    className: Option[String],
+    description: Option[String],
+    genericTypes: List[GenericType],
+    genericName: Option[String],
+    format: Format,
+    defaultValue: Option[Json],
+    deprecated: Boolean
+  ): Definition = new Definition(defType, className, description, genericTypes, genericName, format, defaultValue, deprecated, Constraints.Empty)
 
   /**
     * Annotates fields of an Obj-typed Definition with format values from `@format` annotations.
@@ -232,6 +250,19 @@ object Definition {
     else d.defType match {
       case o: DefType.Obj => d.copy(defType = o.copy(map = o.map.map { case (k, v) =>
           defaults.get(k).fold(k -> v)(dv => k -> v.copy(defaultValue = Some(dv)))
+        }))
+      case _ => d
+    }
+
+  /**
+    * Annotates fields of an Obj-typed Definition with validation constraints from per-field annotations
+    * (`@pattern`, `@minLength`, `@maximum`, etc.).
+    */
+  def applyFieldConstraints(d: Definition, constraints: Map[String, Constraints]): Definition =
+    if (constraints.isEmpty) d
+    else d.defType match {
+      case o: DefType.Obj => d.copy(defType = o.copy(map = o.map.map { case (k, v) =>
+          constraints.get(k).fold(k -> v)(c => k -> v.copy(constraints = c))
         }))
       case _ => d
     }
@@ -294,6 +325,23 @@ object Definition {
       result = result.merge(fabric.Obj("default" -> dv)).asObj
     }
     if (d.deprecated) result = result.merge(fabric.Obj("deprecated" -> bool(true))).asObj
+    if (d.constraints.nonEmpty) {
+      val c = d.constraints
+      val pairs: List[(String, Json)] = List(
+        c.pattern.map("pattern" -> str(_)),
+        c.minLength.map("minLength" -> num(_)),
+        c.maxLength.map("maxLength" -> num(_)),
+        c.minimum.map("minimum" -> num(_)),
+        c.maximum.map("maximum" -> num(_)),
+        c.exclusiveMinimum.map("exclusiveMinimum" -> num(_)),
+        c.exclusiveMaximum.map("exclusiveMaximum" -> num(_)),
+        c.multipleOf.map("multipleOf" -> num(_)),
+        c.minItems.map("minItems" -> num(_)),
+        c.maxItems.map("maxItems" -> num(_)),
+        c.uniqueItems.map("uniqueItems" -> bool(_))
+      ).flatten
+      if (pairs.nonEmpty) result = result.merge(fabric.Obj(pairs*)).asObj
+    }
     result
   }
 
@@ -331,7 +379,20 @@ object Definition {
       o.get("format").map(f => Format.values.find(_.name == f.asString).getOrElse(Format.Raw)).getOrElse(Format.Raw)
     val dv = o.get("default")
     val dep = o.get("deprecated").exists(_.asBool.value)
-    Definition(dt, cn, desc, gt, gn, fmt, dv, dep)
+    val cs = Constraints(
+      pattern = o.get("pattern").map(_.asString),
+      minLength = o.get("minLength").map(_.asInt),
+      maxLength = o.get("maxLength").map(_.asInt),
+      minimum = o.get("minimum").map(_.asDouble),
+      maximum = o.get("maximum").map(_.asDouble),
+      exclusiveMinimum = o.get("exclusiveMinimum").map(_.asDouble),
+      exclusiveMaximum = o.get("exclusiveMaximum").map(_.asDouble),
+      multipleOf = o.get("multipleOf").map(_.asDouble),
+      minItems = o.get("minItems").map(_.asInt),
+      maxItems = o.get("maxItems").map(_.asInt),
+      uniqueItems = o.get("uniqueItems").map(_.asBool.value)
+    )
+    Definition(dt, cn, desc, gt, gn, fmt, dv, dep, cs)
   }
 }
 

@@ -25,7 +25,7 @@ import scala.annotation.nowarn
 
 import fabric.*
 import fabric.rw.*
-import fabric.define.{DefType, Definition as FabricDefinition, Format, GenericType as FabricGenericType}
+import fabric.define.{Constraints, DefType, Definition as FabricDefinition, Format, GenericType as FabricGenericType}
 
 import scala.deriving.*
 import scala.compiletime.*
@@ -907,6 +907,9 @@ object CompileRW extends CompileRW {
     val deprecatedFields = extractDeprecatedFields(typeSymbol)
     val deprecatedFieldsExpr = Expr(deprecatedFields)
 
+    // Extract per-field validation constraint annotations (@pattern, @minLength, etc.)
+    val fieldConstraintsExpr = extractFieldConstraints(typeSymbol)
+
     // Extract default values
     val fieldDefaultsExpr = generateFieldDefaults[T](typeSymbol)
 
@@ -965,21 +968,24 @@ object CompileRW extends CompileRW {
         }
 
         override def definition: FabricDefinition = {
-          val baseDef = FabricDefinition.applyFieldDefaults(
-            FabricDefinition.applyFieldDeprecations(
-              FabricDefinition.applyFieldFormats(
-                FabricDefinition.applyGenericNames(
-                  CompileRW.applyFieldDescriptions(
-                    CompileRW.toDefinition[T](using $mirror, $ct),
-                    $fieldDescsExpr
+          val baseDef = FabricDefinition.applyFieldConstraints(
+            FabricDefinition.applyFieldDefaults(
+              FabricDefinition.applyFieldDeprecations(
+                FabricDefinition.applyFieldFormats(
+                  FabricDefinition.applyGenericNames(
+                    CompileRW.applyFieldDescriptions(
+                      CompileRW.toDefinition[T](using $mirror, $ct),
+                      $fieldDescsExpr
+                    ),
+                    $fieldGenericNamesExpr
                   ),
-                  $fieldGenericNamesExpr
+                  $fieldFormatsExpr
                 ),
-                $fieldFormatsExpr
+                $deprecatedFieldsExpr
               ),
-              $deprecatedFieldsExpr
+              $fieldDefaultsExpr
             ),
-            $fieldDefaultsExpr
+            $fieldConstraintsExpr
           ).withClassName($classNameExpr).copy(genericTypes = $genericTypesExpr)
           ${ (hasExtra, hasTransient) match {
             case (true, true) =>
@@ -1047,6 +1053,92 @@ object CompileRW extends CompileRW {
       }
       if (isDeprecated) Some(param.name) else None
     }.toSet
+  }
+
+  /** Collect validation-constraint annotations per constructor parameter and emit a
+    * `Map[String, Constraints]` expression for macro substitution. */
+  private def extractFieldConstraints(typeSymbol: Any)(using Quotes): Expr[Map[String, Constraints]] = {
+    import quotes.reflect._
+    val sym = typeSymbol.asInstanceOf[Symbol]
+
+    def stringArg(ann: Term): Option[Expr[String]] = ann match {
+      case Apply(_, List(Literal(StringConstant(s)))) => Some(Expr(s))
+      case _ => None
+    }
+    def intArg(ann: Term): Option[Expr[Int]] = ann match {
+      case Apply(_, List(Literal(IntConstant(n)))) => Some(Expr(n))
+      case _ => None
+    }
+    def doubleArg(ann: Term): Option[Expr[Double]] = ann match {
+      case Apply(_, List(Literal(DoubleConstant(d)))) => Some(Expr(d))
+      case Apply(_, List(Literal(IntConstant(n)))) => Some(Expr(n.toDouble))
+      case Apply(_, List(Literal(LongConstant(l)))) => Some(Expr(l.toDouble))
+      case _ => None
+    }
+    def boolArg(ann: Term, default: Boolean = true): Expr[Boolean] = ann match {
+      case Apply(_, List(Literal(BooleanConstant(b)))) => Expr(b)
+      case _ => Expr(default)
+    }
+
+    val entries = sym.primaryConstructor.paramSymss.flatten.flatMap { param =>
+      val nameExpr = Expr(param.name)
+      var pattern: Expr[Option[String]] = '{ None }
+      var minLength: Expr[Option[Int]] = '{ None }
+      var maxLength: Expr[Option[Int]] = '{ None }
+      var minimum: Expr[Option[Double]] = '{ None }
+      var maximum: Expr[Option[Double]] = '{ None }
+      var exclusiveMinimum: Expr[Option[Double]] = '{ None }
+      var exclusiveMaximum: Expr[Option[Double]] = '{ None }
+      var multipleOf: Expr[Option[Double]] = '{ None }
+      var minItems: Expr[Option[Int]] = '{ None }
+      var maxItems: Expr[Option[Int]] = '{ None }
+      var uniqueItems: Expr[Option[Boolean]] = '{ None }
+      var any = false
+
+      param.annotations.foreach { ann =>
+        val name = ann.tpe.typeSymbol.fullName
+        name match {
+          case "fabric.rw.pattern" => stringArg(ann).foreach { v => pattern = '{ Some($v) }; any = true }
+          case "fabric.rw.minLength" => intArg(ann).foreach { v => minLength = '{ Some($v) }; any = true }
+          case "fabric.rw.maxLength" => intArg(ann).foreach { v => maxLength = '{ Some($v) }; any = true }
+          case "fabric.rw.minimum" => doubleArg(ann).foreach { v => minimum = '{ Some($v) }; any = true }
+          case "fabric.rw.maximum" => doubleArg(ann).foreach { v => maximum = '{ Some($v) }; any = true }
+          case "fabric.rw.exclusiveMinimum" => doubleArg(ann).foreach { v => exclusiveMinimum = '{ Some($v) }; any = true }
+          case "fabric.rw.exclusiveMaximum" => doubleArg(ann).foreach { v => exclusiveMaximum = '{ Some($v) }; any = true }
+          case "fabric.rw.multipleOf" => doubleArg(ann).foreach { v => multipleOf = '{ Some($v) }; any = true }
+          case "fabric.rw.minItems" => intArg(ann).foreach { v => minItems = '{ Some($v) }; any = true }
+          case "fabric.rw.maxItems" => intArg(ann).foreach { v => maxItems = '{ Some($v) }; any = true }
+          case "fabric.rw.uniqueItems" =>
+            val v = boolArg(ann)
+            uniqueItems = '{ Some($v) }
+            any = true
+          case _ => ()
+        }
+      }
+
+      if (any) Some('{
+        ($nameExpr, Constraints(
+          pattern = $pattern,
+          minLength = $minLength,
+          maxLength = $maxLength,
+          minimum = $minimum,
+          maximum = $maximum,
+          exclusiveMinimum = $exclusiveMinimum,
+          exclusiveMaximum = $exclusiveMaximum,
+          multipleOf = $multipleOf,
+          minItems = $minItems,
+          maxItems = $maxItems,
+          uniqueItems = $uniqueItems
+        ))
+      })
+      else None
+    }
+
+    if (entries.isEmpty) '{ Map.empty[String, Constraints] }
+    else {
+      val list = Expr.ofList(entries)
+      '{ $list.toMap }
+    }
   }
 
   private def generateFieldDefaults[T: Type](typeSymbol: Any)(using Quotes): Expr[Map[String, Json]] = {
