@@ -95,10 +95,17 @@ case class Definition(
   genericTypes: List[GenericType] = Nil,
   genericName: Option[String] = None,
   format: Format = Format.Raw,
-  defaultValue: Option[Json] = None,
+  defaultValueThunk: () => Option[Json] = Definition.NoDefault,
   deprecated: Boolean = false,
   constraints: Constraints = Constraints.Empty
 ) {
+
+  /**
+    * The default value for this field as JSON, if one exists. Evaluated lazily on first access so that
+    * stateful case-class defaults (e.g. id generators) are not invoked unless a consumer actually reads
+    * them. The computed result is memoized per `Definition` instance.
+    */
+  lazy val defaultValue: Option[Json] = defaultValueThunk()
 
   /**
     * Returns true if the underlying type is optional (`DefType.Opt`).
@@ -201,21 +208,30 @@ case class Definition(
 
 object Definition {
 
+  /** Sentinel empty-default thunk — shared to avoid per-instance lambda allocation when a field has no default. */
+  val NoDefault: () => Option[Json] = () => None
+
+  /** Wrap an eager `Option[Json]` as a thunk for `defaultValueThunk`. Cheaply memoizes. */
+  def eagerDefault(value: Option[Json]): () => Option[Json] = value match {
+    case None => NoDefault
+    case some => () => some
+  }
+
   /**
-    * Binary-compatibility shim for callers compiled against the pre-constraints
-    * 8-argument `Definition.apply`. Forwards to the full constructor with
-    * `constraints = Constraints.Empty`. Can be removed when all downstream
-    * consumers have been recompiled against this version.
+    * Construct a Definition with an eagerly-evaluated default. Convenience for callers that have the
+    * JSON default value in hand; simply wraps it as a (memoized) thunk. For callers who want truly
+    * lazy default evaluation, construct `Definition` directly and supply a `defaultValueThunk`.
     */
-  def apply(
+  def withEagerDefault(
     defType: DefType,
-    className: Option[String],
-    description: Option[String],
-    genericTypes: List[GenericType],
-    genericName: Option[String],
-    format: Format,
-    defaultValue: Option[Json],
-    deprecated: Boolean
+    className: Option[String] = None,
+    description: Option[String] = None,
+    genericTypes: List[GenericType] = Nil,
+    genericName: Option[String] = None,
+    format: Format = Format.Raw,
+    defaultValue: Option[Json] = None,
+    deprecated: Boolean = false,
+    constraints: Constraints = Constraints.Empty
   ): Definition = new Definition(
     defType,
     className,
@@ -223,10 +239,11 @@ object Definition {
     genericTypes,
     genericName,
     format,
-    defaultValue,
+    eagerDefault(defaultValue),
     deprecated,
-    Constraints.Empty
+    constraints
   )
+
 
   /**
     * Annotates fields of an Obj-typed Definition with format values from `@format` annotations.
@@ -254,12 +271,31 @@ object Definition {
 
   /**
     * Applies default values to fields. Default values are captured at compile time from case class defaults.
+    * Prefer [[applyFieldDefaultsLazy]] when the defaults map may contain stateful/expensive generators —
+    * this variant evaluates every default eagerly to store in the field.
     */
   def applyFieldDefaults(d: Definition, defaults: Map[String, Json]): Definition =
     if (defaults.isEmpty) d
     else d.defType match {
       case o: DefType.Obj => d.copy(defType = o.copy(map = o.map.map { case (k, v) =>
-          defaults.get(k).fold(k -> v)(dv => k -> v.copy(defaultValue = Some(dv)))
+          defaults.get(k).fold(k -> v)(dv => k -> v.copy(defaultValueThunk = eagerDefault(Some(dv))))
+        }))
+      case _ => d
+    }
+
+  /**
+    * Applies default-value thunks to fields. The thunks are invoked lazily — only when a downstream
+    * consumer reads `field.defaultValue`. This is the variant used by macro-generated `RW.definition`
+    * so stateful defaults (e.g. id generators) are only evaluated on demand.
+    */
+  def applyFieldDefaultsLazy(d: Definition, lazyDefaults: Map[String, () => Json]): Definition =
+    if (lazyDefaults.isEmpty) d
+    else d.defType match {
+      case o: DefType.Obj => d.copy(defType = o.copy(map = o.map.map { case (k, v) =>
+          lazyDefaults.get(k) match {
+            case Some(thunk) => k -> v.copy(defaultValueThunk = () => Some(thunk()))
+            case None => k -> v
+          }
         }))
       case _ => d
     }
@@ -402,7 +438,7 @@ object Definition {
       maxItems = o.get("maxItems").map(_.asInt),
       uniqueItems = o.get("uniqueItems").map(_.asBool.value)
     )
-    Definition(dt, cn, desc, gt, gn, fmt, dv, dep, cs)
+    Definition(dt, cn, desc, gt, gn, fmt, eagerDefault(dv), dep, cs)
   }
 }
 

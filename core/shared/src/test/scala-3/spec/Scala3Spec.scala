@@ -302,7 +302,7 @@ class Scala3Spec extends AnyWordSpec with Matchers {
       fields("name").defaultValue should be(None)
     }
     "round-trip Definition with format, defaultValue, and deprecated" in {
-      val original = Definition(
+      val original = Definition.withEagerDefault(
         DefType.Str,
         format = Format.Email,
         defaultValue = Some(str("user@example.com")),
