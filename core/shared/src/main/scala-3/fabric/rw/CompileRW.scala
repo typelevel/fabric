@@ -192,15 +192,22 @@ trait CompileRW {
   }
 
   inline def toDefinitionElems[A, T <: Tuple, L <: Tuple](index: Int): Map[String, FabricDefinition] = {
+    // Use the name-only variant here — we only need to know WHICH fields have defaults to mark their
+    // definitions as optional. Building the full value map per-field would eagerly invoke every default
+    // method (including stateful ones like id generators) multiple times per `definition` access.
+    val defaultNames = getDefaultParamNames[A]
+    toDefinitionElemsImpl[A, T, L](index, defaultNames)
+  }
+
+  inline def toDefinitionElemsImpl[A, T <: Tuple, L <: Tuple](index: Int, defaultNames: Set[String]): Map[String, FabricDefinition] = {
     inline erasedValue[T] match {
       case _: (hd *: tl) => {
         inline erasedValue[L] match {
           case _: (hdLabel *: tlLabels) =>
             val hdLabelValue = constValue[hdLabel].asInstanceOf[String]
-            val defaults = getDefaultParams[A]
             val rw = summonInline[RW[hd]]
-            val d = if (defaults.contains(hdLabelValue)) rw.definition.opt else rw.definition
-            VectorMap(hdLabelValue -> d) ++ toDefinitionElems[A, tl, tlLabels](index + 1)
+            val d = if (defaultNames.contains(hdLabelValue)) rw.definition.opt else rw.definition
+            VectorMap(hdLabelValue -> d) ++ toDefinitionElemsImpl[A, tl, tlLabels](index + 1, defaultNames)
           case EmptyTuple => sys.error("Not possible")
         }
       }
@@ -277,6 +284,11 @@ trait CompileRW {
 
   inline def getDefaultParams[T]: Map[String, AnyRef] = ${ CompileRW.getDefaultParmasImpl[T] }
 
+  /** Returns only the NAMES of fields that have default values, without invoking the default methods.
+    * Use this when you only need to check which fields have defaults (e.g. to mark field definitions as
+    * optional in schema metadata) — avoids evaluating stateful defaults unnecessarily. */
+  inline def getDefaultParamNames[T]: Set[String] = ${ CompileRW.getDefaultParamNamesImpl[T] }
+
   inline def getClassName[T]: String = ${ CompileRW.getClassNameImpl[T] }
 }
 
@@ -342,6 +354,18 @@ object CompileRW extends CompileRW {
       '{ $namesExpr.zip($identsExpr.map(_.asInstanceOf[AnyRef])).toMap }
     } else {
       '{ Map.empty }
+    }
+  }
+
+  def getDefaultParamNamesImpl[T](using Quotes, Type[T]): Expr[Set[String]] = {
+    import quotes.reflect._
+    val sym = TypeTree.of[T].symbol
+    if (sym.isClassDef) {
+      val names = for p <- sym.caseFields if p.flags.is(Flags.HasDefault) yield p.name
+      val namesExpr: Expr[List[String]] = Expr.ofList(names.map(Expr(_)))
+      '{ $namesExpr.toSet }
+    } else {
+      '{ Set.empty }
     }
   }
 
@@ -584,7 +608,7 @@ object CompileRW extends CompileRW {
             throw RWException(s"Expected JSON object for polymorphic type, got: $json")
         }
 
-        override def definition: FabricDefinition = {
+        override lazy val definition: FabricDefinition = {
           val childDefs = childRWs.map { case (name, rw) =>
             name -> rw.definition
           }.toMap
@@ -734,7 +758,7 @@ object CompileRW extends CompileRW {
             throw RWException(s"Expected JSON object for union type, got: $json")
         }
 
-        override def definition: FabricDefinition = {
+        override lazy val definition: FabricDefinition = {
           val childDefs = childRWs.map { case (_, fullName, rw) =>
             fullName -> rw.definition
           }.toMap.to(VectorMap)
@@ -910,8 +934,10 @@ object CompileRW extends CompileRW {
     // Extract per-field validation constraint annotations (@pattern, @minLength, etc.)
     val fieldConstraintsExpr = extractFieldConstraints(typeSymbol)
 
-    // Extract default values
-    val fieldDefaultsExpr = generateFieldDefaults[T](typeSymbol)
+    // Extract default values — use the lazy variant so per-field defaults are only evaluated when a
+    // consumer actually reads `definition.defaultValue` on that field. This avoids firing stateful
+    // case-class defaults (e.g. id generators) just because someone touched `rw.definition`.
+    val fieldDefaultsExpr = generateFieldDefaultsLazy[T](typeSymbol)
 
     val classNameExpr = Expr(fullTypeName(tpe))
     val genericTypesExpr = generateGenericTypes(tpe)
@@ -967,9 +993,9 @@ object CompileRW extends CompileRW {
           ${ generateDirectConstructor[T]('{map}) }
         }
 
-        override def definition: FabricDefinition = {
+        override lazy val definition: FabricDefinition = {
           val baseDef = FabricDefinition.applyFieldConstraints(
-            FabricDefinition.applyFieldDefaults(
+            FabricDefinition.applyFieldDefaultsLazy(
               FabricDefinition.applyFieldDeprecations(
                 FabricDefinition.applyFieldFormats(
                   FabricDefinition.applyGenericNames(
@@ -1178,6 +1204,48 @@ object CompileRW extends CompileRW {
     }
   }
 
+  /**
+    * Build a `Map[String, () => Json]` where each entry's value thunk evaluates the case-class default
+    * lazily. Used by the generated `RW.definition` so stateful defaults (e.g. id generators) are only
+    * invoked when a downstream consumer actually reads `definition.defaultValue` on the specific field.
+    */
+  private def generateFieldDefaultsLazy[T: Type](typeSymbol: Any)(using Quotes): Expr[Map[String, () => Json]] = {
+    import quotes.reflect._
+    val sym = typeSymbol.asInstanceOf[Symbol]
+    val comp = sym.companionClass
+    val body = comp.tree.asInstanceOf[ClassDef].body
+
+    val defaultDefs = (for {
+      case deff @ DefDef(name, _, _, _) <- body
+      if name.startsWith("$lessinit$greater$default")
+    } yield deff).toList
+
+    if (defaultDefs.isEmpty) '{ Map.empty }
+    else {
+      val fields = sym.caseFields
+      val entries = defaultDefs.flatMap { deff =>
+        val index = deff.name.stripPrefix("$lessinit$greater$default$").toInt - 1
+        if (index < fields.length) {
+          val fieldName = Expr(fields(index).name)
+          val fieldType = TypeRepr.of[T].memberType(fields(index))
+          fieldType.asType match {
+            case '[ft] =>
+              val reader = Expr.summon[Reader[ft]]
+              reader.map { r =>
+                val ref = Ref(deff.symbol).asExprOf[ft]
+                '{ ($fieldName, () => $r.read($ref)) }
+              }
+          }
+        } else None
+      }
+      if (entries.isEmpty) '{ Map.empty }
+      else {
+        val list = Expr.ofList(entries)
+        '{ $list.toMap }
+      }
+    }
+  }
+
   private case class SerializedMember(jsonKey: String, memberName: String, memberType: Any)
 
   private def extractSerializedMembers[T: Type](typeSymbol: Any)(using Quotes): List[SerializedMember] = {
@@ -1266,8 +1334,21 @@ object CompileRW extends CompileRW {
     // Check if T is a JsonWrapper
     val isJsonWrapperType = tpe <:< TypeRepr.of[JsonWrapper]
 
-    // Get default values
-    val defaultsExpr = getDefaultParmasImpl[T]
+    // Build a per-field lookup of default-arg method refs at macro time so we can inline each field's
+    // default invocation and only evaluate it when the field is actually missing (or null) in the JSON.
+    // Eagerly constructing a `Map[String, Any]` of all defaults on every deserialize was causing
+    // unnecessary (and sometimes harmful) work for stateful defaults — e.g. id generators.
+    val comp = typeSymbol.companionClass
+    val defaultRefByName: Map[String, Term] =
+      if (comp.exists) {
+        val body = comp.tree.asInstanceOf[ClassDef].body
+        (for {
+          case deff @ DefDef(name, _, _, _) <- body
+          if name.startsWith("$lessinit$greater$default$")
+          index = name.stripPrefix("$lessinit$greater$default$").toInt - 1
+          if index >= 0 && index < fields.size
+        } yield fields(index).name -> Ref(deff.symbol)).toMap
+      } else Map.empty
 
     // Generate field extraction expressions
     val fieldExprs = fields.map { field =>
@@ -1285,32 +1366,31 @@ object CompileRW extends CompileRW {
           val isJsonWrapperExpr = Expr(isJsonWrapperType)
           val classNameExpr = Expr(typeSymbol.fullName.replace("$", "."))
 
+          // Inline default-fallback expression for this specific field. For fields with a default, this
+          // references the default-arg method directly and is only evaluated when needed (field is null or
+          // missing from JSON). For fields without a default, fall back to None for Option or throw.
+          val defaultFallback: Expr[ft] = defaultRefByName.get(fieldName) match {
+            case Some(ref) => ref.asExprOf[ft]
+            case None =>
+              if (isOptional) '{ None.asInstanceOf[ft] }
+              else '{ throw fabric.rw.RWException(s"Unable to find field ${$classNameExpr}.${$fieldNameStr} (and no defaults set) in ${fabric.Obj($map)}") }
+          }
+          val hasDefaultExpr = Expr(defaultRefByName.contains(fieldName))
+
           '{
-            val defaults = $defaultsExpr
             val jsonOpt = _root_.fabric.rw.CompileRW.findValueCaseInsensitive($map, $fieldNameStr)
-            val defaultOpt = defaults.get($fieldNameStr)
 
             jsonOpt match {
               case Some(json) =>
                 json match {
-                  case fabric.Null if defaultOpt.isDefined => defaultOpt.get.asInstanceOf[ft]
+                  case fabric.Null if $hasDefaultExpr => $defaultFallback
                   case _ => _root_.fabric.rw.RWFieldHelper.writeField($writer, json, $classNameExpr, $fieldNameStr)
                 }
               case None =>
                 if ($fieldNameStr == "json" && $isJsonWrapperExpr) {
                   $writer.write(fabric.Obj($map))
                 } else {
-                  defaultOpt match {
-                    case Some(defaultValue) => defaultValue.asInstanceOf[ft]
-                    case None =>
-                      ${
-                        if (isOptional) {
-                          '{ None.asInstanceOf[ft] }
-                        } else {
-                          '{ throw fabric.rw.RWException(s"Unable to find field ${$classNameExpr}.${$fieldNameStr} (and no defaults set) in ${fabric.Obj($map)}") }
-                        }
-                      }
-                  }
+                  $defaultFallback
                 }
             }
           }
