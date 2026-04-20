@@ -1167,43 +1167,6 @@ object CompileRW extends CompileRW {
     }
   }
 
-  private def generateFieldDefaults[T: Type](typeSymbol: Any)(using Quotes): Expr[Map[String, Json]] = {
-    import quotes.reflect._
-    val sym = typeSymbol.asInstanceOf[Symbol]
-    val comp = sym.companionClass
-    val body = comp.tree.asInstanceOf[ClassDef].body
-
-    val defaultDefs = (for {
-      case deff @ DefDef(name, _, _, _) <- body
-      if name.startsWith("$lessinit$greater$default")
-    } yield deff).toList
-
-    if (defaultDefs.isEmpty) '{ Map.empty }
-    else {
-      val fields = sym.caseFields
-      val entries = defaultDefs.flatMap { deff =>
-        val index = deff.name.stripPrefix("$lessinit$greater$default$").toInt - 1
-        if (index < fields.length) {
-          val fieldName = Expr(fields(index).name)
-          val fieldType = TypeRepr.of[T].memberType(fields(index))
-          fieldType.asType match {
-            case '[ft] =>
-              val reader = Expr.summon[Reader[ft]]
-              reader.map { r =>
-                val ref = Ref(deff.symbol).asExprOf[ft]
-                '{ ($fieldName, $r.read($ref)) }
-              }
-          }
-        } else None
-      }
-      if (entries.isEmpty) '{ Map.empty }
-      else {
-        val list = Expr.ofList(entries)
-        '{ $list.toMap }
-      }
-    }
-  }
-
   /**
     * Build a `Map[String, () => Json]` where each entry's value thunk evaluates the case-class default
     * lazily. Used by the generated `RW.definition` so stateful defaults (e.g. id generators) are only

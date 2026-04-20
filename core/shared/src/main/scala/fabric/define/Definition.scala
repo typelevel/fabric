@@ -208,10 +208,14 @@ case class Definition(
 
 object Definition {
 
-  /** Sentinel empty-default thunk — shared to avoid per-instance lambda allocation when a field has no default. */
+  /**
+    * Sentinel empty-default thunk — shared to avoid per-instance lambda allocation when a field has no default.
+    */
   val NoDefault: () => Option[Json] = () => None
 
-  /** Wrap an eager `Option[Json]` as a thunk for `defaultValueThunk`. Cheaply memoizes. */
+  /**
+    * Wrap an eager `Option[Json]` as a thunk for `defaultValueThunk`. Cheaply memoizes.
+    */
   def eagerDefault(value: Option[Json]): () => Option[Json] = value match {
     case None => NoDefault
     case some => () => some
@@ -243,7 +247,6 @@ object Definition {
     deprecated,
     constraints
   )
-
 
   /**
     * Annotates fields of an Obj-typed Definition with format values from `@format` annotations.
