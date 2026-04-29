@@ -51,10 +51,10 @@ The focus of this project is minimalism and flexibility. To that end, the featur
 ### Setup
 
 For SBT simply include:
-`libraryDependencies += "org.typelevel" %%% "fabric-core" % "1.26.0"`
+`libraryDependencies += "org.typelevel" %%% "fabric-core" % "$VERSION"`
 
 For parsing support include:
-`libraryDependencies += "org.typelevel" %%% "fabric-io" % "1.26.0"`
+`libraryDependencies += "org.typelevel" %%% "fabric-io" % "$VERSION"`
 
 ### Create
 
@@ -270,6 +270,42 @@ given RW[Cat | Dog] = RW.gen[Cat | Dog]
 
 For collision unions where multiple variants share the same base class (e.g. `Id[String] | Id[Int]`), the `_generic`
 field is used to distinguish between them on the deserialization side.
+
+### Open Polymorphism with PolyType
+
+When a hierarchy is *open* — a library defines a base trait and downstream applications add their own subtypes —
+`RW.gen` and `RW.poly` can't see those subtypes at compile time. `PolyType[T]` is a runtime-registerable poly RW for
+this case:
+
+```scala
+import fabric.rw._
+
+trait Mode { def name: String }
+case object ConversationMode extends Mode { val name = "ConversationMode" }
+
+object Mode extends PolyType[Mode] {
+  register(RW.static(ConversationMode))
+}
+
+// Apps add their own at startup:
+case object WorkflowMode extends Mode { val name = "WorkflowMode" }
+Mode.register(RW.static(WorkflowMode))
+```
+
+Each `PolyType` exposes a `name` namespace for typed-name construction:
+
+```scala
+val n: PolyName[Mode] = Mode.name.of(ConversationMode)  // PolyName("ConversationMode")
+val all: Set[PolyName[Mode]] = Mode.name.registered     // current live set
+val maybe: Option[PolyName[Mode]] = Mode.name.from("X") // validated lookup
+```
+
+> ⚠️ **Mutability warning.** `PolyType` is the one place in fabric that uses mutable state. **Register subtypes at
+> startup, before any serialization or `Definition` access.** Any `Definition` snapshot taken before registration
+> will see an incomplete poly — most often visible as missing dispatchers in generated schemas. Centralize your
+> registrations in one place (e.g. an application init block) to avoid order-dependence bugs.
+
+If your hierarchy is closed (all subtypes known at compile time), prefer `RW.poly` or `RW.gen` for sealed traits/unions.
 
 ### Inspection & Generation
 
