@@ -22,7 +22,7 @@
 package fabric.rw
 
 import fabric.Json
-import fabric.define.Definition
+import fabric.define.{DefType, Definition}
 
 import scala.reflect.ClassTag
 
@@ -67,11 +67,64 @@ import scala.reflect.ClassTag
   * @tparam T
   *   the polymorphic base type
   */
-abstract class PolyType[T](protected implicit val classTag: ClassTag[T]) {
+trait PolyType[T: ClassTag] {
+
+  protected val classTag: ClassTag[T] = summon[ClassTag[T]]
+
   @volatile private var types: List[RW[? <: T]] = Nil
   @volatile private var _poly: RW[T] = generate()
 
-  private def generate(): RW[T] = RW.poly[T]()(types*)
+  /** Build the underlying RW from the registered subtype list, then overlay the
+    * type-compatible intersection of subtype field maps as `commonFields` on the
+    * poly Definition. Codegen consumers (e.g. spice's Dart generator) read
+    * `commonFields` directly to emit abstract-parent fields without re-deriving
+    * the intersection — and without needing to know about the parent trait's
+    * surface separately from each subtype's. */
+  private def generate(): RW[T] = {
+    val baseRw = RW.poly[T]()(types*)
+    new RW[T] {
+      override def read(t: T): Json = baseRw.read(t)
+      override def write(json: Json): T = baseRw.write(json)
+      override def definition: Definition = withCommonFields(baseRw.definition)
+    }
+  }
+
+  private def withCommonFields(d: Definition): Definition = d.defType match {
+    case p: DefType.Poly => d.copy(defType = p.copy(commonFields = computeCommonFields(p)))
+    case _               => d
+  }
+
+  /** Intersect the field maps of every subtype's `DefType.Obj`, keeping
+    * entries whose names + types match across ALL subtypes. Subtypes whose
+    * Definition isn't an Obj (case-object-style enum cases backed by
+    * `DefType.Null`, or other non-record shapes) contribute no fields and
+    * therefore cause the intersection to drop to empty — that's the right
+    * answer for a heterogeneous poly. Empty when there are no registered
+    * subtypes. */
+  private def computeCommonFields(p: DefType.Poly): Map[String, Definition] = {
+    if (p.values.isEmpty) Map.empty
+    else {
+      val perSubtype: List[Map[String, Definition]] = p.values.values.toList.map { defn =>
+        defn.defType match {
+          case o: DefType.Obj => o.map.toMap
+          case _              => Map.empty[String, Definition]
+        }
+      }
+      if (perSubtype.exists(_.isEmpty)) Map.empty
+      else {
+        val commonNames = perSubtype.iterator.map(_.keySet).reduce(_ intersect _)
+        commonNames.iterator.flatMap { name =>
+          val defs = perSubtype.flatMap(_.get(name))
+          // Keep the field only if every subtype's entry agrees on the
+          // serialized type. Compares `defType` shape — same primitive,
+          // same Obj structure, etc. — to avoid promoting a name that
+          // means different things on different subtypes.
+          val head = defs.head
+          if (defs.forall(_.defType == head.defType)) Some(name -> head) else None
+        }.toMap
+      }
+    }
+  }
 
   /**
     * Register additional `T` subtypes into the poly RW.

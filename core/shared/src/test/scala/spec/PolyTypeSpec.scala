@@ -85,7 +85,7 @@ class PolyTypeSpec extends AnyWordSpec with Matchers {
       val poly = PolyType[Animal]
       poly.register(RW.static(Cat), RW.static(Dog))
       poly.rw.definition.defType match {
-        case DefType.Poly(values) =>
+        case DefType.Poly(values, _) =>
           values.keySet should contain("Cat")
           values.keySet should contain("Dog")
         case other => fail(s"Expected DefType.Poly, got: $other")
@@ -96,10 +96,104 @@ class PolyTypeSpec extends AnyWordSpec with Matchers {
       poly.name.registered should be(Set.empty)
     }
   }
+
+  "PolyType.commonFields" should {
+
+    "be empty when no subtypes are registered" in {
+      val poly = PolyType[Shape]
+      poly.rw.definition.defType match {
+        case p: DefType.Poly =>
+          p.commonFields should be(empty)
+          p.values should be(empty)
+        case other => fail(s"Expected DefType.Poly, got: $other")
+      }
+    }
+
+    "include every field of a single registered subtype (intersection of one set is itself)" in {
+      val poly = PolyType[Shape]
+      poly.register(summon[RW[Circle]])
+      poly.rw.definition.defType match {
+        case p: DefType.Poly =>
+          // Single subtype: commonFields = the whole subtype's field map.
+          p.commonFields.keySet should be(Set("kind", "radius"))
+        case other => fail(s"Expected DefType.Poly, got: $other")
+      }
+    }
+
+    "intersect across subtypes — keep names every subtype carries" in {
+      val poly = PolyType[Shape]
+      poly.register(summon[RW[Circle]], summon[RW[Square]])
+      poly.rw.definition.defType match {
+        case p: DefType.Poly =>
+          // Both Circle and Square declare `kind: String`. Circle's
+          // `radius` and Square's `side` are subtype-specific; they
+          // drop out of the intersection.
+          p.commonFields.keySet should be(Set("kind"))
+        case other => fail(s"Expected DefType.Poly, got: $other")
+      }
+    }
+
+    "shrink commonFields when a new subtype registers without one of the previously-common fields" in {
+      val poly = PolyType[Shape]
+      poly.register(summon[RW[Circle]])
+      // After Circle alone: kind + radius are both common (single-subtype).
+      poly.register(summon[RW[Square]])
+      // After Square joins: only `kind` survives — radius is Circle-only.
+      poly.rw.definition.defType match {
+        case p: DefType.Poly =>
+          p.commonFields.keySet should be(Set("kind"))
+        case other => fail(s"Expected DefType.Poly, got: $other")
+      }
+    }
+
+    "drop a name where subtypes disagree on the field's type" in {
+      val poly = PolyType[Mismatch]
+      poly.register(summon[RW[StringValued]], summon[RW[IntValued]])
+      poly.rw.definition.defType match {
+        case p: DefType.Poly =>
+          // Both subtypes have `value` but with different types — the
+          // intersection drops it because the abstract parent can't
+          // declare a single type for the field.
+          p.commonFields should not contain key("value")
+        case other => fail(s"Expected DefType.Poly, got: $other")
+      }
+    }
+
+    "be empty when any subtype is non-Obj (e.g. case-object enum cases)" in {
+      // A poly mixing record-shaped and unit-shaped subtypes has no
+      // record-level intersection — the unit subtype contributes no
+      // fields.
+      val poly = PolyType[MixedShape]
+      poly.register(summon[RW[Triangle]], RW.static(MixedShape.Origin))
+      poly.rw.definition.defType match {
+        case p: DefType.Poly =>
+          p.commonFields should be(empty)
+        case other => fail(s"Expected DefType.Poly, got: $other")
+      }
+    }
+  }
 }
 
 object PolyTypeSpec {
   sealed trait Animal
   case object Cat extends Animal
   case object Dog extends Animal
+
+  // For commonFields tests — record-shaped subtypes with overlap.
+  trait Shape
+  case class Circle(kind: String, radius: Double) extends Shape derives RW
+  case class Square(kind: String, side: Double) extends Shape derives RW
+
+  // Same field name, different field type — intersection should drop it.
+  trait Mismatch
+  case class StringValued(value: String) extends Mismatch derives RW
+  case class IntValued(value: Int) extends Mismatch derives RW
+
+  // Heterogeneous: one record-shaped, one case-object — no record-level
+  // intersection should be possible.
+  trait MixedShape
+  case class Triangle(sides: Int) extends MixedShape derives RW
+  object MixedShape {
+    case object Origin extends MixedShape
+  }
 }

@@ -14,7 +14,7 @@ paths:
         - 'Gameplay'
       operationId: 'get-board'
       responses:
-        200:
+        '200':
           description: 'OK'
           content:
             application/json:
@@ -31,13 +31,13 @@ paths:
         - 'Gameplay'
       operationId: 'get-square'
       responses:
-        200:
+        '200':
           description: 'OK'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/mark'
-        400:
+        '400':
           description: 'The provided parameters are incorrect'
           content:
             text/html:
@@ -57,13 +57,13 @@ paths:
             schema:
               $ref: '#/components/schemas/mark'
       responses:
-        200:
+        '200':
           description: 'OK'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/status'
-        400:
+        '400':
           description: 'The provided parameters are incorrect'
           content:
             text/html:

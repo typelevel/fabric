@@ -156,7 +156,7 @@ case class Definition(
     case DefType.Bool => bool(config.bool(path))
     case DefType.Json => config.json(path)
     case DefType.Null => Null
-    case DefType.Poly(values) => config.poly(path, values)
+    case DefType.Poly(values, _) => config.poly(path, values)
   }
 
   /**
@@ -350,10 +350,15 @@ object Definition {
       case DefType.Bool => obj("type" -> str("boolean"))
       case DefType.Json => obj("type" -> str("json"))
       case DefType.Null => obj("type" -> str("null"))
-      case DefType.Poly(values) => obj(
+      case DefType.Poly(values, commonFields) =>
+        val baseFields = Vector[(String, Json)](
           "type" -> str("poly"),
           "values" -> fabric.Obj(values.map { case (key, inner) => key -> toJson(inner) })
         )
+        val commonField =
+          if (commonFields.isEmpty) Vector.empty
+          else Vector("commonFields" -> fabric.Obj(commonFields.map { case (k, v) => k -> toJson(v) }))
+        obj((baseFields ++ commonField)*)
     }
     var result = withOptional(
       withOptional(withOptional(base, "className", d.className), "description", d.description),

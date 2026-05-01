@@ -345,7 +345,7 @@ class FabricDefinitionSpec extends AnyWordSpec with Matchers {
       val definition = oldEnumJson.as[Definition]
       definition.className should be(Some("spec.VehicleType"))
       definition.defType match {
-        case DefType.Poly(values) =>
+        case DefType.Poly(values, _) =>
           values.keySet should be(Set("Car", "SUV", "Truck"))
           values.values.foreach(_.defType should be(DefType.Null))
         case other => fail(s"Expected DefType.Poly, got: $other")
