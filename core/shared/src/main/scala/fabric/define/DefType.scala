@@ -130,7 +130,19 @@ object DefType {
     *   - Sealed trait `Shape { Circle(r: Double), Rect(w: Double, h: Double) }` →
     *     `Poly(Map("Circle" -> Definition(Obj("r" -> ...)), "Rect" -> Definition(Obj("w" -> ..., "h" -> ...))))`
     */
-  case class Poly(values: Map[String, Definition]) extends DefType
+  /**
+    * Polymorphic Definition.
+    *
+    * @param values        per-subtype Definition map (key is the subtype's discriminator on the wire — typically
+    *                      `Product.productPrefix` for case classes, or the enum case name).
+    * @param commonFields  fields shared by every subtype in `values`. Computed by [[fabric.rw.PolyType.register]] as
+    *                      the type-compatible intersection across each subtype's `DefType.Obj` field map. Empty for
+    *                      compile-time `RW.poly` Definitions; populated for open registries built via
+    *                      `PolyType[T]`. Codegen consumers use this to emit abstract-parent fields without
+    *                      re-deriving the intersection.
+    */
+  case class Poly(values: Map[String, Definition],
+                  commonFields: Map[String, Definition] = Map.empty) extends DefType
   object Poly {
     def apply(entries: (String, Definition)*): Poly = Poly(VectorMap(entries*))
   }

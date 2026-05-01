@@ -28,23 +28,39 @@ object YamlFormatter extends Formatter {
 
   override def apply(json: Json): String = write(json, 0).trim
 
+  private val NumericKey = "^-?\\d+(?:\\.\\d+)?$".r
+  private val ReservedKeys = Set("true", "false", "null", "yes", "no", "on", "off", "True", "False", "Null", "TRUE", "FALSE", "NULL")
+
+  private def needsKeyQuoting(key: String): Boolean =
+    key.isEmpty ||
+      NumericKey.matches(key) ||
+      ReservedKeys.contains(key) ||
+      key.headOption.exists(c => c == '-' || c == '?' || c == ':' || c == ',' || c == '[' || c == ']' || c == '{' || c == '}' || c == '#' || c == '&' || c == '*' || c == '!' || c == '|' || c == '>' || c == '\'' || c == '"' || c == '%' || c == '@' || c == '`') ||
+      key.contains(": ") ||
+      key.contains(" #")
+
+  private def renderKey(key: String): String =
+    if (needsKeyQuoting(key)) s"'${key.replace("'", "''")}'" else key
+
   private def write(json: Json, depth: Int): String = {
     def pad(adjust: Int = 0): String = "".padTo((depth + adjust) * 2, ' ')
     def fix(s: String): String = s.replace("'", "''")
     json match {
+      case Arr(v, _) if v.isEmpty => "[]"
       case Arr(v, _) =>
         v.map(write(_, depth + 1)).map(s => s"${pad()}- ${s.dropWhile(_.isWhitespace)}").mkString("\n", "\n", "")
       case Bool(b, _) => b.toString
       case Null => ""
       case NumInt(n, _) => n.toString
       case NumDec(n, _) => n.toString()
+      case Obj(map) if map.isEmpty => "{}"
       case Obj(map) => map.toList
           .map { case (key, value) =>
             val v = write(value, depth + 1) match {
               case s if s.headOption.contains('\n') => s
               case s => s" $s"
             }
-            s"${pad()}$key:$v"
+            s"${pad()}${renderKey(key)}:$v"
           }
           .mkString("\n", "\n", "")
       case Str(s, _) if s.contains("\n") => fix(s).split('\n').map(s => s"${pad()}$s").mkString("|-\n", "\n", "")
