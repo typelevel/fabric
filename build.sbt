@@ -16,6 +16,11 @@ ThisBuild / javaOptions ++= Seq("-Xss50M")
 ThisBuild / javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
 ThisBuild / crossScalaVersions := scalaVersions
 
+// Scala Native test-interface patch versions are binary compatible — scalatest 3.2.20 / scalacheck 1.18.0
+// pin older 0.5.x versions but Scala Native itself depends on 0.5.11. Downgrade the eviction error to a
+// warning so the build resolves to 0.5.11.
+ThisBuild / evictionErrorLevel := Level.Warn
+
 ThisBuild / publishTo := sonatypePublishToBundle.value
 ThisBuild / sonatypeProfileName := "org.typelevel"
 ThisBuild / licenses := Seq(
