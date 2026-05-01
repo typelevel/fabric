@@ -148,10 +148,10 @@ abstract class PolyType[T](implicit protected val classTag: ClassTag[T]) {
   /**
     * Namespace for typed-name construction and lookup against this `PolyType`'s live registration.
     *
-    *   - [[name.of(instance:* name.of(instance)]] — derive a `PolyName[T]` from a concrete instance
-    *   - [[name.of[S]:* name.of[S]]] — derive a `PolyName[T]` from a subtype at compile time
-    *   - [[name.from name.from(s)]] — validated lookup against registered subtypes
-    *   - [[name.registered name.registered]] — the live set of registered names
+    *   - `name.of(instance)` — derive a `PolyName[T]` from a concrete instance
+    *   - `name.of[S]` — derive a `PolyName[T]` from a subtype at compile time
+    *   - `name.from(s)` — validated lookup against registered subtypes
+    *   - `name.registered` — the live set of registered names
     *
     * Each `PolyType`'s `name.*` naturally scopes to its own registration — no need to pass the `PolyType` reference
     * around.
