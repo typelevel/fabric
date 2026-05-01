@@ -29,18 +29,19 @@ object YamlFormatter extends Formatter {
   override def apply(json: Json): String = write(json, 0).trim
 
   private val NumericKey = "^-?\\d+(?:\\.\\d+)?$".r
-  private val ReservedKeys = Set("true", "false", "null", "yes", "no", "on", "off", "True", "False", "Null", "TRUE", "FALSE", "NULL")
+  private val ReservedKeys =
+    Set("true", "false", "null", "yes", "no", "on", "off", "True", "False", "Null", "TRUE", "FALSE", "NULL")
 
-  private def needsKeyQuoting(key: String): Boolean =
-    key.isEmpty ||
-      NumericKey.matches(key) ||
-      ReservedKeys.contains(key) ||
-      key.headOption.exists(c => c == '-' || c == '?' || c == ':' || c == ',' || c == '[' || c == ']' || c == '{' || c == '}' || c == '#' || c == '&' || c == '*' || c == '!' || c == '|' || c == '>' || c == '\'' || c == '"' || c == '%' || c == '@' || c == '`') ||
-      key.contains(": ") ||
-      key.contains(" #")
+  private def needsKeyQuoting(key: String): Boolean = key.isEmpty ||
+    NumericKey.matches(key) ||
+    ReservedKeys.contains(key) ||
+    key.headOption.exists(c =>
+      c == '-' || c == '?' || c == ':' || c == ',' || c == '[' || c == ']' || c == '{' || c == '}' || c == '#' || c == '&' || c == '*' || c == '!' || c == '|' || c == '>' || c == '\'' || c == '"' || c == '%' || c == '@' || c == '`'
+    ) ||
+    key.contains(": ") ||
+    key.contains(" #")
 
-  private def renderKey(key: String): String =
-    if (needsKeyQuoting(key)) s"'${key.replace("'", "''")}'" else key
+  private def renderKey(key: String): String = if (needsKeyQuoting(key)) s"'${key.replace("'", "''")}'" else key
 
   private def write(json: Json, depth: Int): String = {
     def pad(adjust: Int = 0): String = "".padTo((depth + adjust) * 2, ' ')
