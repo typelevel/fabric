@@ -45,11 +45,11 @@ val scalaCheckVersion: String = "3.2.19.0"
 // Parse module dependencies
 val literallyVersion: String = "1.2.0"
 
-val jacksonVersion: String = "2.21.2"
+val jacksonVersion: String = "2.21.3"
 
 val apacheCommonsTextVersion: String = "1.15.0"
 
-val typesafeConfigVersion: String = "1.4.6"
+val typesafeConfigVersion: String = "1.4.7"
 
 val jsoniterJavaVersion: String = "0.9.23"
 
