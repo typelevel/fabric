@@ -21,9 +21,7 @@
 
 package spec
 
-import fabric._
-import fabric.dsl._
-import fabric.define.{DefType, Definition}
+import fabric.define.DefType
 import fabric.rw._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -111,7 +109,7 @@ class PolyTypeSpec extends AnyWordSpec with Matchers {
 
     "include every field of a single registered subtype (intersection of one set is itself)" in {
       val poly = PolyType[Shape]
-      poly.register(summon[RW[Circle]])
+      poly.register(implicitly[RW[Circle]])
       poly.rw.definition.defType match {
         case p: DefType.Poly =>
           // Single subtype: commonFields = the whole subtype's field map.
@@ -122,7 +120,7 @@ class PolyTypeSpec extends AnyWordSpec with Matchers {
 
     "intersect across subtypes — keep names every subtype carries" in {
       val poly = PolyType[Shape]
-      poly.register(summon[RW[Circle]], summon[RW[Square]])
+      poly.register(implicitly[RW[Circle]], implicitly[RW[Square]])
       poly.rw.definition.defType match {
         case p: DefType.Poly =>
           // Both Circle and Square declare `kind: String`. Circle's
@@ -135,20 +133,19 @@ class PolyTypeSpec extends AnyWordSpec with Matchers {
 
     "shrink commonFields when a new subtype registers without one of the previously-common fields" in {
       val poly = PolyType[Shape]
-      poly.register(summon[RW[Circle]])
+      poly.register(implicitly[RW[Circle]])
       // After Circle alone: kind + radius are both common (single-subtype).
-      poly.register(summon[RW[Square]])
+      poly.register(implicitly[RW[Square]])
       // After Square joins: only `kind` survives — radius is Circle-only.
       poly.rw.definition.defType match {
-        case p: DefType.Poly =>
-          p.commonFields.keySet should be(Set("kind"))
+        case p: DefType.Poly => p.commonFields.keySet should be(Set("kind"))
         case other => fail(s"Expected DefType.Poly, got: $other")
       }
     }
 
     "drop a name where subtypes disagree on the field's type" in {
       val poly = PolyType[Mismatch]
-      poly.register(summon[RW[StringValued]], summon[RW[IntValued]])
+      poly.register(implicitly[RW[StringValued]], implicitly[RW[IntValued]])
       poly.rw.definition.defType match {
         case p: DefType.Poly =>
           // Both subtypes have `value` but with different types — the
@@ -164,10 +161,9 @@ class PolyTypeSpec extends AnyWordSpec with Matchers {
       // record-level intersection — the unit subtype contributes no
       // fields.
       val poly = PolyType[MixedShape]
-      poly.register(summon[RW[Triangle]], RW.static(MixedShape.Origin))
+      poly.register(implicitly[RW[Triangle]], RW.static(MixedShape.Origin))
       poly.rw.definition.defType match {
-        case p: DefType.Poly =>
-          p.commonFields should be(empty)
+        case p: DefType.Poly => p.commonFields should be(empty)
         case other => fail(s"Expected DefType.Poly, got: $other")
       }
     }
@@ -181,18 +177,33 @@ object PolyTypeSpec {
 
   // For commonFields tests — record-shaped subtypes with overlap.
   trait Shape
-  case class Circle(kind: String, radius: Double) extends Shape derives RW
-  case class Square(kind: String, side: Double) extends Shape derives RW
+  case class Circle(kind: String, radius: Double) extends Shape
+  object Circle {
+    implicit val rw: RW[Circle] = RW.gen[Circle]
+  }
+  case class Square(kind: String, side: Double) extends Shape
+  object Square {
+    implicit val rw: RW[Square] = RW.gen[Square]
+  }
 
   // Same field name, different field type — intersection should drop it.
   trait Mismatch
-  case class StringValued(value: String) extends Mismatch derives RW
-  case class IntValued(value: Int) extends Mismatch derives RW
+  case class StringValued(value: String) extends Mismatch
+  object StringValued {
+    implicit val rw: RW[StringValued] = RW.gen[StringValued]
+  }
+  case class IntValued(value: Int) extends Mismatch
+  object IntValued {
+    implicit val rw: RW[IntValued] = RW.gen[IntValued]
+  }
 
   // Heterogeneous: one record-shaped, one case-object — no record-level
   // intersection should be possible.
   trait MixedShape
-  case class Triangle(sides: Int) extends MixedShape derives RW
+  case class Triangle(sides: Int) extends MixedShape
+  object Triangle {
+    implicit val rw: RW[Triangle] = RW.gen[Triangle]
+  }
   object MixedShape {
     case object Origin extends MixedShape
   }

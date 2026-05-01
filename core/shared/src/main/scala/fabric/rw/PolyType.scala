@@ -22,7 +22,7 @@
 package fabric.rw
 
 import fabric.Json
-import fabric.define.{DefType, Definition}
+import fabric.define.{Definition, DefType}
 
 import scala.reflect.ClassTag
 
@@ -67,19 +67,19 @@ import scala.reflect.ClassTag
   * @tparam T
   *   the polymorphic base type
   */
-trait PolyType[T: ClassTag] {
-
-  protected val classTag: ClassTag[T] = summon[ClassTag[T]]
+abstract class PolyType[T](implicit protected val classTag: ClassTag[T]) {
 
   @volatile private var types: List[RW[? <: T]] = Nil
   @volatile private var _poly: RW[T] = generate()
 
-  /** Build the underlying RW from the registered subtype list, then overlay the
+  /**
+    * Build the underlying RW from the registered subtype list, then overlay the
     * type-compatible intersection of subtype field maps as `commonFields` on the
     * poly Definition. Codegen consumers (e.g. spice's Dart generator) read
     * `commonFields` directly to emit abstract-parent fields without re-deriving
     * the intersection — and without needing to know about the parent trait's
-    * surface separately from each subtype's. */
+    * surface separately from each subtype's.
+    */
   private def generate(): RW[T] = {
     val baseRw = RW.poly[T]()(types*)
     new RW[T] {
@@ -91,23 +91,25 @@ trait PolyType[T: ClassTag] {
 
   private def withCommonFields(d: Definition): Definition = d.defType match {
     case p: DefType.Poly => d.copy(defType = p.copy(commonFields = computeCommonFields(p)))
-    case _               => d
+    case _ => d
   }
 
-  /** Intersect the field maps of every subtype's `DefType.Obj`, keeping
+  /**
+    * Intersect the field maps of every subtype's `DefType.Obj`, keeping
     * entries whose names + types match across ALL subtypes. Subtypes whose
     * Definition isn't an Obj (case-object-style enum cases backed by
     * `DefType.Null`, or other non-record shapes) contribute no fields and
     * therefore cause the intersection to drop to empty — that's the right
     * answer for a heterogeneous poly. Empty when there are no registered
-    * subtypes. */
-  private def computeCommonFields(p: DefType.Poly): Map[String, Definition] = {
+    * subtypes.
+    */
+  private def computeCommonFields(p: DefType.Poly): Map[String, Definition] =
     if (p.values.isEmpty) Map.empty
     else {
       val perSubtype: List[Map[String, Definition]] = p.values.values.toList.map { defn =>
         defn.defType match {
           case o: DefType.Obj => o.map.toMap
-          case _              => Map.empty[String, Definition]
+          case _ => Map.empty[String, Definition]
         }
       }
       if (perSubtype.exists(_.isEmpty)) Map.empty
@@ -124,7 +126,6 @@ trait PolyType[T: ClassTag] {
         }.toMap
       }
     }
-  }
 
   /**
     * Register additional `T` subtypes into the poly RW.
@@ -132,11 +133,10 @@ trait PolyType[T: ClassTag] {
     * Call this at backend startup, before any serialization or `Definition` access. Any `Definition` snapshots taken
     * before registration will not see the newly registered subtypes.
     */
-  def register(types: RW[? <: T]*): Unit =
-    synchronized {
-      this.types = this.types ++ types.toList
-      _poly = generate()
-    }
+  def register(types: RW[? <: T]*): Unit = synchronized {
+    this.types = this.types ++ types.toList
+    _poly = generate()
+  }
 
   private def shortName(fullName: String): String = {
     val lastDot = fullName.lastIndexOf('.')
@@ -158,21 +158,23 @@ trait PolyType[T: ClassTag] {
     */
   object name {
 
-    /** Build a `PolyName[T]` from a concrete `T` instance. Uses the simple class name (trailing `$` stripped for
+    /**
+      * Build a `PolyName[T]` from a concrete `T` instance. Uses the simple class name (trailing `$` stripped for
       * case objects).
       */
-    def of(instance: T): PolyName[T] =
-      new PolyName[T](instance.getClass.getSimpleName.stripSuffix("$"))
+    def of(instance: T): PolyName[T] = new PolyName[T](instance.getClass.getSimpleName.stripSuffix("$"))
 
-    /** Build a `PolyName[T]` from a subtype at compile time. Uses the simple class name (trailing `$` stripped for
+    /**
+      * Build a `PolyName[T]` from a subtype at compile time. Uses the simple class name (trailing `$` stripped for
       * case objects).
       */
     def of[S <: T](implicit ct: ClassTag[S]): PolyName[T] =
       new PolyName[T](ct.runtimeClass.getSimpleName.stripSuffix("$"))
 
-    /** Validated lookup: returns `Some(PolyName)` if `n` matches a registered subtype, else `None`. */
-    def from(n: String): Option[PolyName[T]] =
-      if (registered.exists(_.name == n)) Some(new PolyName[T](n)) else None
+    /**
+      * Validated lookup: returns `Some(PolyName)` if `n` matches a registered subtype, else `None`.
+      */
+    def from(n: String): Option[PolyName[T]] = if (registered.exists(_.name == n)) Some(new PolyName[T](n)) else None
 
     /**
       * The set of subtype names currently registered. Derived from each registered RW's `Definition.className`.

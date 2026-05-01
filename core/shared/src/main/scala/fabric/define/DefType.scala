@@ -141,8 +141,7 @@ object DefType {
     *                      `PolyType[T]`. Codegen consumers use this to emit abstract-parent fields without
     *                      re-deriving the intersection.
     */
-  case class Poly(values: Map[String, Definition],
-                  commonFields: Map[String, Definition] = Map.empty) extends DefType
+  case class Poly(values: Map[String, Definition], commonFields: Map[String, Definition] = Map.empty) extends DefType
   object Poly {
     def apply(entries: (String, Definition)*): Poly = Poly(VectorMap(entries*))
   }
