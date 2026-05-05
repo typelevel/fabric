@@ -211,19 +211,17 @@ object RWMacros {
           .filter(_.annotations.exists(_.tree.tpe =:= typeOf[notSerialized]))
           .map(_.asTerm.name.decodedName.toString)
           .toSet
-        val fieldDefs = fields.zipWithIndex
-          .filterNot { case (field, _) => transientNames.contains(field.asTerm.name.decodedName.toString) }
-          .map { case (field, index) =>
+        val fieldDefs = fields
+          .filterNot(field => transientNames.contains(field.asTerm.name.decodedName.toString))
+          .map { field =>
             val name = field.asTerm.name
             val key = name.decodedName.toString
             val returnType = tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
             val descAnn = field.annotations.find(_.tree.tpe =:= typeOf[description])
-            val baseDef =
-              if (defaults.contains(index)) {
-                q"implicitly[RW[$returnType]].definition.opt"
-              } else {
-                q"implicitly[RW[$returnType]].definition"
-              }
+            // Defaults are not represented by wrapping in Opt — `defaultValue` on the Definition
+            // (set later via applyFieldDefaults) signals "this can be omitted at the JSON level."
+            // Fields whose Scala type is Option[T] still produce an Opt naturally via their RW.
+            val baseDef = q"implicitly[RW[$returnType]].definition"
             descAnn match {
               case Some(ann) => ann.tree.children.tail.head match {
                   case l: LiteralApi =>

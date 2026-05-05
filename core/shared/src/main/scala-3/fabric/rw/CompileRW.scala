@@ -192,22 +192,16 @@ trait CompileRW {
   }
 
   inline def toDefinitionElems[A, T <: Tuple, L <: Tuple](index: Int): Map[String, FabricDefinition] = {
-    // Use the name-only variant here — we only need to know WHICH fields have defaults to mark their
-    // definitions as optional. Building the full value map per-field would eagerly invoke every default
-    // method (including stateful ones like id generators) multiple times per `definition` access.
-    val defaultNames = getDefaultParamNames[A]
-    toDefinitionElemsImpl[A, T, L](index, defaultNames)
-  }
-
-  inline def toDefinitionElemsImpl[A, T <: Tuple, L <: Tuple](index: Int, defaultNames: Set[String]): Map[String, FabricDefinition] = {
     inline erasedValue[T] match {
       case _: (hd *: tl) => {
         inline erasedValue[L] match {
           case _: (hdLabel *: tlLabels) =>
             val hdLabelValue = constValue[hdLabel].asInstanceOf[String]
             val rw = summonInline[RW[hd]]
-            val d = if (defaultNames.contains(hdLabelValue)) rw.definition.opt else rw.definition
-            VectorMap(hdLabelValue -> d) ++ toDefinitionElemsImpl[A, tl, tlLabels](index + 1, defaultNames)
+            // Defaults are not represented by wrapping in Opt — `defaultValue` on the Definition
+            // (set later via applyFieldDefaults) signals "this can be omitted at the JSON level."
+            // Fields whose Scala type is Option[T] still produce an Opt naturally via their RW.
+            VectorMap(hdLabelValue -> rw.definition) ++ toDefinitionElems[A, tl, tlLabels](index + 1)
           case EmptyTuple => sys.error("Not possible")
         }
       }
