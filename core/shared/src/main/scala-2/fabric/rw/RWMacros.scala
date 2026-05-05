@@ -211,9 +211,8 @@ object RWMacros {
           .filter(_.annotations.exists(_.tree.tpe =:= typeOf[notSerialized]))
           .map(_.asTerm.name.decodedName.toString)
           .toSet
-        val fieldDefs = fields
-          .filterNot(field => transientNames.contains(field.asTerm.name.decodedName.toString))
-          .map { field =>
+        val fieldDefs =
+          fields.filterNot(field => transientNames.contains(field.asTerm.name.decodedName.toString)).map { field =>
             val name = field.asTerm.name
             val key = name.decodedName.toString
             val returnType = tpe.decl(name).typeSignature.asSeenFrom(tpe, tpe.typeSymbol.asClass)
