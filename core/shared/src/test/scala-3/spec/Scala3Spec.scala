@@ -197,6 +197,40 @@ class Scala3Spec extends AnyWordSpec with Matchers {
       // Round-trip
       (Shape.Rectangle(3.0, 4.0): Shape).json.as[Shape] should be(Shape.Rectangle(3.0, 4.0))
     }
+    "expose stable className metadata for every enum case (no `.anon.N`)" in {
+      // Every variant of an `enum ... derives RW` — case class OR case
+      // object — must carry a `Definition.className` that names the
+      // case itself (e.g. `Shape.Point`), not the JVM-level anonymous
+      // wrapper Scala 3's mirror generates for parameterless enum
+      // cases. Case classes already produce a stable semantic name
+      // (`<EnumFQN>.<Case>`); case objects historically surfaced the
+      // raw `<Parent>$$anon$N` JVM identifier, which fabric's
+      // `cleanClassName` turned into `<Parent>..anon.N` — losing the
+      // case's real name and forcing every consumer that reads
+      // `className` for type-name derivation into ad-hoc fallback
+      // logic. Stable names across all cases let consumers use one
+      // path.
+      import MixedEnumTest._
+      val defn = summon[RW[Shape]].definition
+      defn.defType match {
+        case DefType.Poly(values, _) =>
+          val classNames = values.toList.map { case (k, v) => k -> v.className }
+          // Case classes — already work, included as a regression guard.
+          classNames.find(_._1 == "Circle").flatMap(_._2) should be(Some("spec.MixedEnumTest.Shape.Circle"))
+          classNames.find(_._1 == "Rectangle").flatMap(_._2) should be(Some("spec.MixedEnumTest.Shape.Rectangle"))
+          // The case object — this is the one #267 cared about. The
+          // className must point at the enum case (`Shape.Point`) and
+          // must not contain `anon`.
+          val pointCn = classNames.find(_._1 == "Point").flatMap(_._2)
+          pointCn should be(Some("spec.MixedEnumTest.Shape.Point"))
+          pointCn.foreach { cn =>
+            withClue(s"className $cn must not leak the JVM-level anonymous wrapper: ") {
+              cn.contains("anon") should be(false)
+            }
+          }
+        case other => fail(s"Expected DefType.Poly, got: $other")
+      }
+    }
     "include @serialized members in JSON output" in {
       import SerializedTest._
       val person = NamedPerson("Matt", "Hicks")

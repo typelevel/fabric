@@ -525,9 +525,33 @@ object CompileRW extends CompileRW {
               val ref = Ref(childSym.termRef.termSymbol).asExprOf[t]
               '{ RW.static[t]($ref) }
             } else if (childSym.flags.is(Flags.Enum) && childSym.flags.is(Flags.Case) && !childSym.isClassDef) {
-              // Simple enum case (e.g., `case Point` in a mixed enum) — treated as singleton
+              // Simple enum case (e.g., `case Point` in a mixed enum) —
+              // treated as a singleton. Scala 3 represents
+              // parameterless enum cases as anonymous classes
+              // (`<Enum>$$anon$N`), so `value.getClass.getName` (which
+              // `RW.static` reads) leaks `..anon.N` into the
+              // `Definition.className` after the standard `$ → .`
+              // cleanup. Override with the case's semantic full name
+              // from the symbol so consumers reading `className` see
+              // the case itself (`Shape.Point`), not the anonymous
+              // wrapper.
               val ref = Ref(childSym.termRef.termSymbol).asExprOf[t]
-              '{ RW.static[t]($ref) }
+              // Scala 3's `Symbol.fullName` already uses `.` for the
+              // enum-case path (`spec.MixedEnumTest.Shape.Point`); only
+              // residual `$` markers from the JVM encoding of nested
+              // companions need stripping. Replace `$.` and `$` (in
+              // that order) to collapse the doubled separators without
+              // creating `..`.
+              val classNameExpr = Expr(childSym.fullName.replace("$.", ".").replace("$", "."))
+              '{
+                val base = RW.static[t]($ref)
+                new RW[t] {
+                  override def read(value: t): fabric.Json     = base.read(value)
+                  override def write(json: fabric.Json): t     = base.write(json)
+                  override def definition: fabric.define.Definition =
+                    base.definition.withClassName($classNameExpr)
+                }
+              }
             } else {
               report.errorAndAbort(s"No RW found for child type ${childType.show}. Provide an RW instance or make it a case class.")
             }
