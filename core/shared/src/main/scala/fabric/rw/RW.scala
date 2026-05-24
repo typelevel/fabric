@@ -187,8 +187,7 @@ object RW extends CompileRW {
     val directPairs = types.toList.flatMap { rw =>
       val parent = typeName(rw) -> rw
       val nested = rw.definition.defType match {
-        case p: DefType.Poly =>
-          p.values.toList.flatMap { case (_, variantDefn) =>
+        case p: DefType.Poly => p.values.toList.flatMap { case (_, variantDefn) =>
             variantDefn.simpleClassName.map(_ -> rw)
           }
         case _ => Nil
@@ -199,13 +198,14 @@ object RW extends CompileRW {
     // Registration-time collision guardrail: two subtypes (or auto-recursed variants) producing the same
     // primary key is a registration bug — fail loud at startup rather than silently routing wrong at
     // runtime.
-    directPairs.groupBy(_._1).collectFirst { case (key, occurrences) if occurrences.size > 1 =>
-      val cns = occurrences.flatMap(_._2.definition.className).distinct.mkString(", ")
-      throw new RuntimeException(
-        s"Duplicate polymorphic dispatch key '$key' from multiple registered types: [$cns]. " +
-          "Each subtype must produce a unique simpleClassName (class-chain form). Rename one of the " +
-          "colliding types, or use typeAliases to pin distinct wire discriminators."
-      )
+    directPairs.groupBy(_._1).collectFirst {
+      case (key, occurrences) if occurrences.size > 1 =>
+        val cns = occurrences.flatMap(_._2.definition.className).distinct.mkString(", ")
+        throw new RuntimeException(
+          s"Duplicate polymorphic dispatch key '$key' from multiple registered types: [$cns]. " +
+            "Each subtype must produce a unique simpleClassName (class-chain form). Rename one of the " +
+            "colliding types, or use typeAliases to pin distinct wire discriminators."
+        )
     }
     val directTypeMappings = directPairs.toMap
 
@@ -213,36 +213,39 @@ object RW extends CompileRW {
     // className. Unambiguous matches dispatch through this fallback so persisted records using the
     // pre-1.29 wire format (`{"type": "Success"}`) continue to read. Ambiguous matches throw with a
     // typeAliases pointer rather than silently picking a winner.
-    val legacyLeafIndex: Map[String, List[RW[? <: P]]] =
-      types.toList.groupBy { rw =>
-        val cn = rw.definition.className.getOrElse("")
-        val leaf = cn.split('.').filter(_.nonEmpty).lastOption.getOrElse(cn)
-        leaf.toLowerCase
-      }
+    val legacyLeafIndex: Map[String, List[RW[? <: P]]] = types.toList.groupBy { rw =>
+      val cn = rw.definition.className.getOrElse("")
+      val leaf = cn.split('.').filter(_.nonEmpty).lastOption.getOrElse(cn)
+      leaf.toLowerCase
+    }
 
     val aliasedTypeMappings = typeAliases.map { case (alias, primary) =>
       // Look up primary by exact match (new simpleClassName form) first; fall back to case-insensitive
       // leaf-only match (legacy form) so aliases written against pre-1.29 fabric continue to work
       // without modification when they're unambiguous.
-      val rw = directTypeMappings.get(primary).orElse {
-        legacyLeafIndex.get(primary.toLowerCase) match {
-          case Some(single :: Nil) => Some(single)
-          case _ => None
+      val rw = directTypeMappings
+        .get(primary)
+        .orElse {
+          legacyLeafIndex.get(primary.toLowerCase) match {
+            case Some(single :: Nil) => Some(single)
+            case _ => None
+          }
         }
-      }.getOrElse(
-        throw new RuntimeException(
-          s"Unable to map alias '$alias' → '$primary': '$primary' not found in registered keys " +
-            s"[${directTypeMappings.keys.mkString(", ")}]"
+        .getOrElse(
+          throw new RuntimeException(
+            s"Unable to map alias '$alias' → '$primary': '$primary' not found in registered keys " +
+              s"[${directTypeMappings.keys.mkString(", ")}]"
+          )
         )
-      )
       alias -> rw
     }.toMap
 
     val className: String = cleanClassName(implicitly[ClassTag[P]].runtimeClass.getName)
     val typeMap = directTypeMappings ++ aliasedTypeMappings
 
-    def resolve(rawType: String): Option[RW[? <: P]] =
-      typeMap.get(rawType).orElse {
+    def resolve(rawType: String): Option[RW[? <: P]] = typeMap
+      .get(rawType)
+      .orElse {
         legacyLeafIndex.get(rawType.toLowerCase) match {
           case Some(single :: Nil) => Some(single)
           case Some(many) if many.size > 1 =>
@@ -255,7 +258,8 @@ object RW extends CompileRW {
             )
           case _ => None
         }
-      }.map(_.asInstanceOf[RW[? <: P]])
+      }
+      .map(_.asInstanceOf[RW[? <: P]])
 
     from(
       r = (p: P) => {

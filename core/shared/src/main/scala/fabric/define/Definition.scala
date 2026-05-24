@@ -244,7 +244,7 @@ object Definition {
     // source-level FQNs or raw JVM names uniformly.
     val cleaned = rawClassName.replace("$u0020", " ").replace("$", ".") match {
       case s if s.endsWith(".") => s.substring(0, s.length - 1)
-      case s                    => s
+      case s => s
     }
     val parts = cleaned.split('.').filter(_.nonEmpty)
     val chain = parts.dropWhile(p => p.charAt(0).isLower)

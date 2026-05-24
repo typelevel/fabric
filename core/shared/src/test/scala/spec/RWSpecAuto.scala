@@ -193,14 +193,14 @@ class RWSpecAuto extends AnyWordSpec with Matchers {
     }
     "supporting sealed traits" in {
       val car: VehicleType = VehicleType.Car
-      car.json should be(Str("Car"))
-      "SUV".json.as[VehicleType] should be(VehicleType.SUV)
+      car.json should be(Str("VehicleType.Car"))
+      "VehicleType.SUV".json.as[VehicleType] should be(VehicleType.SUV)
       VehicleType.rw.definition.defType.asInstanceOf[DefType.Poly].values.keySet should be(
         Set(
-          "Car",
-          "SUV",
-          "Truck",
-          "Mini Van"
+          "VehicleType.Car",
+          "VehicleType.SUV",
+          "VehicleType.Truck",
+          "VehicleType.Mini Van"
         )
       )
     }

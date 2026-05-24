@@ -158,16 +158,36 @@ trait CompileRW {
     override def definition: FabricDefinition = FabricDefinition(DefType.Obj(Map.empty), className = Some(getFullTypeName[T]))
   }
 
-  // Enumeration support for sealed traits with only case objects
+  // Enumeration support for sealed traits with only case objects. Wire discriminator is the simpleClassName
+  // form (class-chain, e.g. "VehicleType.Car"), matching the polymorphic dispatch convention. Reading
+  // accepts legacy leaf-form ("Car") unambiguously and throws when leaf names collide.
   inline def enumeration[T](instances: List[T]): RW[T] = new RW[T] {
-    private val nameToInstance = instances.map(i => i.toString -> i).toMap
-    private val instanceToName = instances.map(i => i -> i.toString).toMap
+    private val instanceToName: Map[T, String] = instances.map { i =>
+      i -> fabric.define.Definition.simpleClassName(RW.cleanClassName(i.getClass.getName))
+    }.toMap
+    private val nameToInstance: Map[String, T] = instanceToName.map(_.swap)
+    private val legacyLeafIndex: Map[String, List[T]] = instanceToName.toList
+      .groupBy { case (_, sn) => sn.split('.').lastOption.getOrElse(sn).toLowerCase }
+      .view
+      .mapValues(_.map(_._1))
+      .toMap
 
     override def read(value: T): Json = Str(instanceToName.getOrElse(value, value.toString))
 
     override def write(json: Json): T = json match {
       case Str(name, _) =>
-        nameToInstance.getOrElse(name, throw RWException(s"Unknown enumeration value: $name"))
+        nameToInstance.get(name).orElse {
+          legacyLeafIndex.get(name.toLowerCase) match {
+            case Some(single :: Nil) => Some(single)
+            case Some(many) if many.size > 1 =>
+              throw RWException(
+                s"Ambiguous legacy enumeration value '$name' — matches ${many.size} cases: " +
+                  s"[${many.map(instanceToName).mkString(", ")}]. Migrate the stored records to " +
+                  s"the new wire form."
+              )
+            case _ => None
+          }
+        }.getOrElse(throw RWException(s"Unknown enumeration value: $name"))
       case _ =>
         throw RWException(s"Expected string for enumeration, got: $json")
     }
