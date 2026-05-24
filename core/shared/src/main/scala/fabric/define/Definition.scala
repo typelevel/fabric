@@ -108,6 +108,21 @@ case class Definition(
   lazy val defaultValue: Option[Json] = defaultValueThunk()
 
   /**
+    * Class-chain form of [[className]] — package segments (lowercase-leading) dropped, nested-class chain
+    * (uppercase-leading segments) preserved. `Some` whenever `className` is `Some`. The dispatch key used
+    * by `RW.poly` and the wire `"type"` discriminator emitted by polymorphic RWs.
+    *
+    *   className = `Some("com.example.foo.Bar")`              → simpleClassName = `Some("Bar")`
+    *   className = `Some("com.example.foo.Outer.Inner")`      → simpleClassName = `Some("Outer.Inner")`
+    *   className = `Some("com.example.foo.Outer$Inner")`      → simpleClassName = `Some("Outer.Inner")`
+    *   className = `Some("test.X.Y.Z")` (all-uppercase chain) → simpleClassName = `Some("X.Y.Z")`
+    *
+    * Independent of package layout — moving a type to a different package leaves `simpleClassName`
+    * unchanged. Distinct from a bare leaf name (`Inner`) which would collide across enclosing classes.
+    */
+  lazy val simpleClassName: Option[String] = className.map(Definition.simpleClassName)
+
+  /**
     * Returns true if the underlying type is optional (`DefType.Opt`).
     */
   def isOpt: Boolean = defType.isOpt
@@ -212,6 +227,30 @@ object Definition {
     * Sentinel empty-default thunk — shared to avoid per-instance lambda allocation when a field has no default.
     */
   val NoDefault: () => Option[Json] = () => None
+
+  /**
+    * Derive the class-chain form of a className string. Companion form of [[Definition.simpleClassName]]
+    * for callers working with a raw FQN string rather than a full `Definition` — typically polymorphic
+    * dispatch from `instance.getClass.getName` (which `cleanClassName` should normalize first).
+    *
+    * Splits the FQN on `.` and drops any leading lowercase-first segments (the package portion). The
+    * remaining uppercase-first segments (the class chain) are rejoined with `.`. When the input is all
+    * lowercase (no class chain), falls back to the last segment.
+    */
+  def simpleClassName(rawClassName: String): String = {
+    // Normalize $ → . (Scala 3 source-level fullNames can include $ markers for nested companions,
+    // and raw JVM getClass.getName uses $ between enclosing classes). Strip trailing `.` produced by
+    // cleaning a case-object's trailing `$`. Mirrors `RW.cleanClassName` so callers can pass either
+    // source-level FQNs or raw JVM names uniformly.
+    val cleaned = rawClassName.replace("$u0020", " ").replace("$", ".") match {
+      case s if s.endsWith(".") => s.substring(0, s.length - 1)
+      case s                    => s
+    }
+    val parts = cleaned.split('.').filter(_.nonEmpty)
+    val chain = parts.dropWhile(p => p.charAt(0).isLower)
+    if (chain.isEmpty) parts.lastOption.getOrElse(cleaned)
+    else chain.mkString(".")
+  }
 
   /**
     * Wrap an eager `Option[Json]` as a thunk for `defaultValueThunk`. Cheaply memoizes.

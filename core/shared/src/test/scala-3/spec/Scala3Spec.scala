@@ -51,13 +51,14 @@ class Scala3Spec extends AnyWordSpec with Matchers {
       str("Green").as[Color] should be(Color.Green)
     }
     "handle enums with derives RW" in {
-      Direction.North.json should be(str("North"))
-      str("South").as[Direction] should be(Direction.South)
+      Direction.North.json should be(str("Scala3Spec.Direction.North"))
+      str("Scala3Spec.Direction.South").as[Direction] should be(Direction.South)
     }
     "round-trip all enum values with derives RW" in {
       Direction.values.foreach { d =>
-        str(d.toString).as[Direction] should be(d)
-        d.json should be(str(d.toString))
+        val wire = s"Scala3Spec.Direction.${d.toString}"
+        str(wire).as[Direction] should be(d)
+        d.json should be(str(wire))
       }
     }
     "handle union types (A | B) serialization" in {
@@ -66,10 +67,10 @@ class Scala3Spec extends AnyWordSpec with Matchers {
       val dogVal: Cat | Dog = Dog("Rex", "Golden")
 
       val catJson = catVal.json
-      catJson should be(obj("type" -> "Cat", "name" -> "Whiskers", "age" -> 3))
+      catJson should be(obj("type" -> "UnionTest.Cat", "name" -> "Whiskers", "age" -> 3))
 
       val dogJson = dogVal.json
-      dogJson should be(obj("type" -> "Dog", "name" -> "Rex", "breed" -> "Golden"))
+      dogJson should be(obj("type" -> "UnionTest.Dog", "name" -> "Rex", "breed" -> "Golden"))
     }
     "handle union types (A | B) deserialization" in {
       import UnionTest._
@@ -94,10 +95,10 @@ class Scala3Spec extends AnyWordSpec with Matchers {
       val fish: Cat | Dog | Fish = Fish("Nemo", saltwater = true)
 
       val catJson = cat.json
-      catJson should be(obj("type" -> "Cat", "name" -> "Milo", "age" -> 2))
+      catJson should be(obj("type" -> "UnionTest.Cat", "name" -> "Milo", "age" -> 2))
 
       val fishJson = fish.json
-      fishJson should be(obj("type" -> "Fish", "name" -> "Nemo", "saltwater" -> true))
+      fishJson should be(obj("type" -> "UnionTest.Fish", "name" -> "Nemo", "saltwater" -> true))
 
       catJson.as[Cat | Dog | Fish] should be(Cat("Milo", 2))
       dog.json.as[Cat | Dog | Fish] should be(Dog("Buddy", "Poodle"))
@@ -121,8 +122,8 @@ class Scala3Spec extends AnyWordSpec with Matchers {
       intJson("_generic")("T")("type").asString should be("numeric")
 
       // Wrap with type field as the union would
-      val unionStr = strJson.asObj.merge(Obj("type" -> Str("Box"))).asObj
-      val unionInt = intJson.asObj.merge(Obj("type" -> Str("Box"))).asObj
+      val unionStr = strJson.asObj.merge(Obj("type" -> Str("GenericCollisionTest.Box"))).asObj
+      val unionInt = intJson.asObj.merge(Obj("type" -> Str("GenericCollisionTest.Box"))).asObj
 
       // Deserialize through union RW — _generic disambiguates
       val restored1 = unionStr.as[T]
@@ -142,10 +143,10 @@ class Scala3Spec extends AnyWordSpec with Matchers {
       val rect: Shape = Shape.Rectangle(3.0, 4.0)
 
       val rgbJson = rgb.json
-      rgbJson should be(obj("type" -> "Circle", "radius" -> 5.0))
+      rgbJson should be(obj("type" -> "ParameterizedEnumTest.Shape.Circle", "radius" -> 5.0))
 
       val rectJson = rect.json
-      rectJson should be(obj("type" -> "Rectangle", "width" -> 3.0, "height" -> 4.0))
+      rectJson should be(obj("type" -> "ParameterizedEnumTest.Shape.Rectangle", "width" -> 3.0, "height" -> 4.0))
 
       rgbJson.as[Shape] should be(Shape.Circle(5.0))
       rectJson.as[Shape] should be(Shape.Rectangle(3.0, 4.0))
@@ -172,7 +173,7 @@ class Scala3Spec extends AnyWordSpec with Matchers {
       import CustomFieldTest._
       val circle: CustomShape = CustomShape.Round(5.0)
       val json = circle.json
-      json should be(obj("kind" -> "Round", "radius" -> 5.0))
+      json should be(obj("kind" -> "CustomFieldTest.CustomShape.Round", "radius" -> 5.0))
       json.as[CustomShape] should be(CustomShape.Round(5.0))
     }
     "reject union type deserialization without type discriminator" in {
@@ -186,10 +187,10 @@ class Scala3Spec extends AnyWordSpec with Matchers {
       val point: Shape = Shape.Point
 
       val circleJson = circle.json
-      circleJson should be(obj("type" -> "Circle", "radius" -> 5.0))
+      circleJson should be(obj("type" -> "MixedEnumTest.Shape.Circle", "radius" -> 5.0))
 
       val pointJson = point.json
-      pointJson should be(obj("type" -> "Point"))
+      pointJson should be(obj("type" -> "MixedEnumTest.Shape.Point"))
 
       circleJson.as[Shape] should be(Shape.Circle(5.0))
       pointJson.as[Shape] should be(Shape.Point)
@@ -216,12 +217,11 @@ class Scala3Spec extends AnyWordSpec with Matchers {
         case DefType.Poly(values, _) =>
           val classNames = values.toList.map { case (k, v) => k -> v.className }
           // Case classes — already work, included as a regression guard.
-          classNames.find(_._1 == "Circle").flatMap(_._2) should be(Some("spec.MixedEnumTest.Shape.Circle"))
-          classNames.find(_._1 == "Rectangle").flatMap(_._2) should be(Some("spec.MixedEnumTest.Shape.Rectangle"))
-          // The case object — this is the one #267 cared about. The
-          // className must point at the enum case (`Shape.Point`) and
-          // must not contain `anon`.
-          val pointCn = classNames.find(_._1 == "Point").flatMap(_._2)
+          classNames.find(_._1 == "MixedEnumTest.Shape.Circle").flatMap(_._2) should be(Some("spec.MixedEnumTest.Shape.Circle"))
+          classNames.find(_._1 == "MixedEnumTest.Shape.Rectangle").flatMap(_._2) should be(Some("spec.MixedEnumTest.Shape.Rectangle"))
+          // The case object — the className must point at the enum case
+          // (`Shape.Point`) and must not contain `anon`.
+          val pointCn = classNames.find(_._1 == "MixedEnumTest.Shape.Point").flatMap(_._2)
           pointCn should be(Some("spec.MixedEnumTest.Shape.Point"))
           pointCn.foreach { cn =>
             withClue(s"className $cn must not leak the JVM-level anonymous wrapper: ") {

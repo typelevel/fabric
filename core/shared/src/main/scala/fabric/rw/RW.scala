@@ -58,10 +58,10 @@ object RW extends CompileRW {
 
   def enumeration[T: ClassTag](
     list: List[T],
-    asString: T => String = (t: T) => defaultClassNameMapping(t.getClass.getName),
+    asString: T => String = (t: T) => Definition.simpleClassName(cleanClassName(t.getClass.getName)),
     caseSensitive: Boolean = false
   ): RW[T] = new RW[T] {
-    val className: String = implicitly[ClassTag[T]].runtimeClass.getName.replace('$', '.')
+    val className: String = cleanClassName(implicitly[ClassTag[T]].runtimeClass.getName)
 
     private def fixString(s: String): String = if (caseSensitive) s else s.toLowerCase
 
@@ -150,54 +150,129 @@ object RW extends CompileRW {
   )
 
   /**
-    * Convenience functionality for working with polymorphic types
+    * Convenience functionality for working with polymorphic types.
+    *
+    * Dispatch keys are the class-chain form of each subtype's [[Definition.className]] — packages stripped,
+    * nested-class chain preserved — so distinct enums declaring same-named cases (`Foo.Success` vs
+    * `Bar.Success`) never collide. The wire JSON `"type"` field stamps the same string. Both registration
+    * and instance dispatch derive the key via [[Definition.simpleClassName]], so the two sides are
+    * symmetric by construction.
+    *
+    * A legacy-leaf fallback index lets persisted records written under the historical leaf-name
+    * convention (`{"type": "Success"}`) continue to be read, provided the leaf is unambiguous across
+    * registered subtypes. Ambiguous legacy discriminators throw at read time with an actionable message
+    * (declare `typeAliases` to pin the intended target). Registration-time collision detection on the
+    * primary keys fails fast if two registered RWs produce the same `simpleClassName`.
     *
     * @param fieldName
-    *   the field name stored in the value (defaults to "type")
-    * @param classNameMapping
-    *   a function to convert from the actual class name to a stringified class name
+    *   the JSON field name carrying the type discriminator (defaults to "type")
     * @param typeAliases
-    *   allows aliases to RW types "Alias" -> "ExistingType", mostly for backwards compatability after class renaming
+    *   `("alias" -> "primaryKey")` entries that route an old wire discriminator to a registered subtype.
+    *   Use this for renames, migrations off the legacy-leaf format, or pinning ambiguous legacy data.
     */
   def poly[P: ClassTag](
     fieldName: String = "type",
-    classNameMapping: String => String = defaultClassNameMapping,
     typeAliases: List[(String, String)] = Nil
   )(
     types: RW[? <: P]*
   ): RW[P] = {
-    def typeName(rw: RW[? <: P]): String = {
-      val className = rw.definition.className.getOrElse(throw new RuntimeException(s"No className defined for $rw"))
-      classNameMapping(className)
+    def typeName(rw: RW[? <: P]): String =
+      rw.definition.simpleClassName.getOrElse(throw new RuntimeException(s"No className defined for $rw"))
+
+    // Auto-recurse into nested polymorphic subtypes: when a registered subtype's defType is itself a
+    // Poly (e.g. the registered RW is an enum or sealed trait), each of its variants gets a typeMap entry
+    // pointing back to the parent's RW. Instance dispatch on a variant type then routes through the
+    // parent's RW (which handles the actual variant dispatch internally) without requiring per-variant
+    // registration. No-op for flat hierarchies (case-class subtypes have non-Poly defTypes).
+    val directPairs = types.toList.flatMap { rw =>
+      val parent = typeName(rw) -> rw
+      val nested = rw.definition.defType match {
+        case p: DefType.Poly =>
+          p.values.toList.flatMap { case (_, variantDefn) =>
+            variantDefn.simpleClassName.map(_ -> rw)
+          }
+        case _ => Nil
+      }
+      parent :: nested
     }
-    val directTypeMappings = Map(types.toList.map(rw => typeName(rw).toLowerCase -> rw): _*)
-    val aliasedTypeMappings = Map(typeAliases.map { case (alias, direct) =>
-      val rw = directTypeMappings.getOrElse(
-        direct.toLowerCase,
+
+    // Registration-time collision guardrail: two subtypes (or auto-recursed variants) producing the same
+    // primary key is a registration bug — fail loud at startup rather than silently routing wrong at
+    // runtime.
+    directPairs.groupBy(_._1).collectFirst { case (key, occurrences) if occurrences.size > 1 =>
+      val cns = occurrences.flatMap(_._2.definition.className).distinct.mkString(", ")
+      throw new RuntimeException(
+        s"Duplicate polymorphic dispatch key '$key' from multiple registered types: [$cns]. " +
+          "Each subtype must produce a unique simpleClassName (class-chain form). Rename one of the " +
+          "colliding types, or use typeAliases to pin distinct wire discriminators."
+      )
+    }
+    val directTypeMappings = directPairs.toMap
+
+    // Legacy-leaf fallback: case-insensitive index keyed by the leaf segment of each registered subtype's
+    // className. Unambiguous matches dispatch through this fallback so persisted records using the
+    // pre-1.29 wire format (`{"type": "Success"}`) continue to read. Ambiguous matches throw with a
+    // typeAliases pointer rather than silently picking a winner.
+    val legacyLeafIndex: Map[String, List[RW[? <: P]]] =
+      types.toList.groupBy { rw =>
+        val cn = rw.definition.className.getOrElse("")
+        val leaf = cn.split('.').filter(_.nonEmpty).lastOption.getOrElse(cn)
+        leaf.toLowerCase
+      }
+
+    val aliasedTypeMappings = typeAliases.map { case (alias, primary) =>
+      // Look up primary by exact match (new simpleClassName form) first; fall back to case-insensitive
+      // leaf-only match (legacy form) so aliases written against pre-1.29 fabric continue to work
+      // without modification when they're unambiguous.
+      val rw = directTypeMappings.get(primary).orElse {
+        legacyLeafIndex.get(primary.toLowerCase) match {
+          case Some(single :: Nil) => Some(single)
+          case _ => None
+        }
+      }.getOrElse(
         throw new RuntimeException(
-          s"Unable to map $alias -> $direct as $direct not found in ${directTypeMappings.keys.mkString(", ")}"
+          s"Unable to map alias '$alias' → '$primary': '$primary' not found in registered keys " +
+            s"[${directTypeMappings.keys.mkString(", ")}]"
         )
       )
-      alias.toLowerCase -> rw
-    }: _*)
-    val className: String = implicitly[ClassTag[P]].runtimeClass.getName
+      alias -> rw
+    }.toMap
+
+    val className: String = cleanClassName(implicitly[ClassTag[P]].runtimeClass.getName)
     val typeMap = directTypeMappings ++ aliasedTypeMappings
+
+    def resolve(rawType: String): Option[RW[? <: P]] =
+      typeMap.get(rawType).orElse {
+        legacyLeafIndex.get(rawType.toLowerCase) match {
+          case Some(single :: Nil) => Some(single)
+          case Some(many) if many.size > 1 =>
+            throw new RuntimeException(
+              s"Ambiguous legacy discriminator '$rawType' — matches ${many.size} registered types: " +
+                s"[${many.flatMap(_.definition.className).mkString(", ")}]. " +
+                s"Persisted records using leaf-only discriminators are ambiguous across these types; " +
+                s"add typeAliases to pin '$rawType' to one of them, or migrate the stored records to " +
+                s"the new wire form."
+            )
+          case _ => None
+        }
+      }.map(_.asInstanceOf[RW[? <: P]])
+
     from(
       r = (p: P) => {
-        val `type` = classNameMapping(p.getClass.getName)
-        typeMap.get(`type`.toLowerCase) match {
-          case Some(rw) => rw.asInstanceOf[RW[P]].read(p).merge(obj("type" -> str(`type`)))
+        val `type` = Definition.simpleClassName(cleanClassName(p.getClass.getName))
+        resolve(`type`) match {
+          case Some(rw) => rw.asInstanceOf[RW[P]].read(p).merge(obj(fieldName -> str(`type`)))
           case None => throw new RuntimeException(
               s"Type not found [${`type`}] converting from value $p. Available types are: [${typeMap.keySet.mkString(", ")}]"
             )
         }
       },
       w = (json: Json) => {
-        val `type` = json(fieldName).asString.toLowerCase
-        typeMap.get(`type`) match {
+        val rawType = json(fieldName).asString
+        resolve(rawType) match {
           case Some(rw) => rw.write(json)
           case None => throw new RuntimeException(
-              s"Type not found [${`type`}] converting from value $json. Available types are: [${typeMap.keySet.mkString(", ")}]"
+              s"Type not found [$rawType] converting from value $json. Available types are: [${typeMap.keySet.mkString(", ")}]"
             )
         }
       },
@@ -217,14 +292,4 @@ object RW extends CompileRW {
     case s if s.endsWith(".") => s.substring(0, s.length - 1)
     case s => s
   }
-
-  def defaultClassNameMapping(className: String): String = {
-    val cn = cleanClassName(className)
-    val index = cn.lastIndexOf('.')
-    if (index != -1) {
-      cn.substring(index + 1)
-    } else {
-      cn
-    }
-  }.replace("$", "")
 }

@@ -167,8 +167,8 @@ class FabricSpec extends AnyWordSpec with Matchers {
       json.toString should be("{\"name\": null, \"age\": 21, \"data\": null}")
     }
     "use polymorphic values" in {
-      val json1 = obj("type" -> "Blank")
-      val json2 = obj("type" -> "PolyValue", "s" -> "Hello, World!")
+      val json1 = obj("type" -> "Polymorphic.Blank")
+      val json2 = obj("type" -> "Polymorphic.PolyValue", "s" -> "Hello, World!")
       val json3 = obj("type" -> "Empty")
 
       val p1 = json1.as[Polymorphic]
@@ -187,12 +187,12 @@ class FabricSpec extends AnyWordSpec with Matchers {
         obj(
           "type" -> "poly",
           "values" -> obj(
-            "Blank" -> obj(
+            "Polymorphic.Blank" -> obj(
               "type" -> "object",
               "values" -> obj(),
               "className" -> "spec.Polymorphic.Blank"
             ),
-            "PolyValue" -> obj(
+            "Polymorphic.PolyValue" -> obj(
               "type" -> "object",
               "values" -> obj(
                 "s" -> obj(

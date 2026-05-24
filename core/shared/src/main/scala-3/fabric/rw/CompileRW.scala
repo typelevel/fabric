@@ -185,7 +185,7 @@ trait CompileRW {
     ${ CompileRW.fromNameImpl[T]('name) }
 
   inline def toClassName[T](using ct: ClassTag[T]): Option[String] =
-    Some(ct.runtimeClass.getName.replace("$", "."))
+    Some(RW.cleanClassName(ct.runtimeClass.getName))
 
   inline def toDefinition[T](using p: Mirror.ProductOf[T], ct: ClassTag[T]): FabricDefinition = {
     FabricDefinition(DefType.Obj(toDefinitionElems[T, p.MirroredElemTypes, p.MirroredElemLabels](0)), className = toClassName[T])
@@ -374,13 +374,10 @@ object CompileRW extends CompileRW {
     import quotes.reflect._
     val tpe = TypeRepr.of[T]
     val symbol = tpe.typeSymbol
-
-    // Get the simple name without package
-    val fullName = symbol.fullName
-    val simpleName = fullName.split('.').last
-
-    // Handle case objects by stripping the trailing $
-    Expr(simpleName.stripSuffix("$"))
+    // Class-chain form (package segments dropped, nested-class chain preserved). Matches
+    // `Definition.simpleClassName` so the inner dispatch key in macro-generated RWs agrees with the
+    // outer polymorphic dispatch key.
+    Expr(fabric.define.Definition.simpleClassName(symbol.fullName))
   }
 
   def getFullTypeNameImpl[T: Type](using Quotes): Expr[String] = {
@@ -464,22 +461,52 @@ object CompileRW extends CompileRW {
     // Extract enum case names for DefType.Poly
     val tpe = TypeRepr.of[T]
     val typeSymbol = tpe.typeSymbol
+    val parentSimpleName = fabric.define.Definition.simpleClassName(typeSymbol.fullName)
     val caseNames = typeSymbol.children.filter(c => c.flags.is(Flags.Case)).map(_.name.stripSuffix("$"))
-    val caseNamesExpr = Expr(caseNames)
-    val classNameExpr = Expr(typeSymbol.fullName.replace("$", "."))
+    val variantSimpleNames = caseNames.map(cn => s"$parentSimpleName.$cn")
+    // (productPrefix, simpleName) pairs — runtime read uses productPrefix to look up the simpleName;
+    // runtime write uses simpleName (the wire `"type"` value) to recover the productPrefix for valueOf.
+    val prefixSimpleNamePairs = caseNames.zip(variantSimpleNames)
+    val prefixSimpleNamePairsExpr = Expr(prefixSimpleNamePairs)
+    val variantSimpleNamesExpr = Expr(variantSimpleNames)
+    val parentClassNameExpr = Expr(typeSymbol.fullName.replace("$", "."))
 
     '{
       new RW[T] {
-        override def read(value: T): Json = Str(value.asInstanceOf[scala.reflect.Enum].productPrefix)
+        private lazy val prefixToSimpleName: Map[String, String] = $prefixSimpleNamePairsExpr.toMap
+        private lazy val simpleNameToPrefix: Map[String, String] = prefixToSimpleName.map(_.swap)
+        // Case-insensitive leaf-only fallback for legacy persisted records: dispatch on the variant's
+        // leaf name when the new class-chain key isn't directly present.
+        private lazy val legacyLeafIndex: Map[String, List[String]] =
+          prefixToSimpleName.toList.groupBy(_._1.toLowerCase).view.mapValues(_.map(_._1)).toMap
+
+        override def read(value: T): Json = {
+          val pp = value.asInstanceOf[scala.reflect.Enum].productPrefix
+          Str(prefixToSimpleName.getOrElse(pp, pp))
+        }
 
         override def write(json: Json): T = json match {
-          case Str(name, _) => $valueOfExpr(name)
+          case Str(name, _) =>
+            val pp = simpleNameToPrefix.get(name)
+              .orElse {
+                legacyLeafIndex.get(name.toLowerCase) match {
+                  case Some(single :: Nil) => Some(single)
+                  case Some(many) if many.size > 1 =>
+                    throw RWException(
+                      s"Ambiguous legacy enum discriminator '$name' — matches ${many.size} cases: " +
+                        s"[${many.mkString(", ")}]. Migrate the stored records to the new wire form."
+                    )
+                  case _ => None
+                }
+              }
+              .getOrElse(name)
+            $valueOfExpr(pp)
           case _ => throw RWException(s"Expected string for enum, got: $json")
         }
 
         override val definition: FabricDefinition = FabricDefinition(
-          DefType.Poly($caseNamesExpr.map(n => n -> FabricDefinition(DefType.Null)).toMap.to(VectorMap)),
-          className = Some($classNameExpr)
+          DefType.Poly($variantSimpleNamesExpr.map(n => n -> FabricDefinition(DefType.Null)).toMap.to(VectorMap)),
+          className = Some($parentClassNameExpr)
         )
       }
     }
@@ -556,8 +583,9 @@ object CompileRW extends CompileRW {
               report.errorAndAbort(s"No RW found for child type ${childType.show}. Provide an RW instance or make it a case class.")
             }
           }
-          val name = getSimpleTypeNameFromType(childType)
-          '{ (${ Expr(name) }, $rw.asInstanceOf[RW[_]]) }
+          val productPrefix = childSym.name.stripSuffix("$")
+          val simpleName = fabric.define.Definition.simpleClassName(childSym.fullName)
+          '{ (${ Expr(productPrefix) }, ${ Expr(simpleName) }, $rw.asInstanceOf[RW[_]]) }
       }
     }
     val childRWsExpr = Expr.ofList(childExprs)
@@ -565,9 +593,21 @@ object CompileRW extends CompileRW {
   }
 
   /** Shared polymorphic RW generation for sealed traits and union types.
-    * Uses "type" discriminator field by default (consistent with RW.poly),
-    * configurable via @typeField("customName") annotation on the type. */
-  private def genPolyRW[T: Type](childRWsExpr: Expr[List[(String, RW[_])]])(using Quotes): Expr[RW[T]] = {
+    *
+    * Each child entry is `(productPrefix, simpleName, RW)`:
+    *   - `productPrefix` is the Scala-level case name (`p.productPrefix` at runtime) — used to map a
+    *     received instance back to its dispatch entry without needing `getClass.getName` (which is
+    *     anon-wrapped for parameterless enum cases).
+    *   - `simpleName` is `Definition.simpleClassName` of the child's symbol — class-chain form, the
+    *     wire `"type"` discriminator stamped on the JSON, and the lookup key on the write side.
+    *
+    * Uses `"type"` as the discriminator field by default; configurable via the `@typeField` annotation.
+    *
+    * A case-insensitive leaf-only fallback index covers legacy persisted records written under the
+    * pre-1.29 wire format (`{"type": "Success"}` rather than `{"type": "WriteFileOutput.Success"}`).
+    * Unambiguous matches dispatch through the fallback; ambiguous matches throw.
+    */
+  private def genPolyRW[T: Type](childRWsExpr: Expr[List[(String, String, RW[_])]])(using Quotes): Expr[RW[T]] = {
     import quotes.reflect._
 
     val tpe = TypeRepr.of[T]
@@ -583,23 +623,46 @@ object CompileRW extends CompileRW {
     }.getOrElse("type")
     val fieldNameExpr = Expr(fieldName)
 
-    val fullTypeName = typeSymbol.fullName.replace("$", ".")
+    val fullTypeName = fabric.define.Definition.simpleClassName(typeSymbol.fullName)
     val fullTypeNameExpr = Expr(fullTypeName)
 
     '{
       new RW[T] {
         private val typeField = $fieldNameExpr
-        private lazy val childRWs = $childRWsExpr
+        private lazy val children: List[(String, String, RW[_])] = $childRWsExpr
 
-        override def read(value: T): Json = {
-          val typeName = safeTypeName(value)
-          val (_, rw) = childRWs.find(_._1 == typeName).getOrElse {
-            throw RWException(s"Unknown subtype: $typeName")
+        // Legacy-leaf fallback: case-insensitive index keyed by the last segment of each simpleName.
+        // Lets persisted records written under the pre-1.29 wire format dispatch through unambiguously,
+        // and throw with a clear message on ambiguity (rather than silently routing wrong).
+        private lazy val legacyLeafIndex: Map[String, List[(String, String, RW[_])]] =
+          children.groupBy { case (_, simpleName, _) =>
+            simpleName.split('.').lastOption.getOrElse(simpleName).toLowerCase
           }
 
-          rw.asInstanceOf[RW[T]].read(value) match {
-            case obj: Obj => obj.merge(Obj(typeField -> Str(typeName)))
-            case other => Obj(typeField -> Str(typeName), "value" -> other)
+        private def lookupByWireName(rawType: String): Option[(String, String, RW[_])] =
+          children.find(_._2 == rawType).orElse {
+            legacyLeafIndex.get(rawType.toLowerCase) match {
+              case Some(single :: Nil) => Some(single)
+              case Some(many) if many.size > 1 =>
+                val cns = many.map(_._2).mkString(", ")
+                throw RWException(
+                  s"Ambiguous legacy discriminator '$rawType' — matches ${many.size} variants: [$cns]. " +
+                    s"Migrate the stored records to the new wire form."
+                )
+              case _ => None
+            }
+          }
+
+        override def read(value: T): Json = {
+          val pp = safeTypeName(value)
+          children.find(_._1 == pp) match {
+            case Some((_, sn, rw)) =>
+              rw.asInstanceOf[RW[T]].read(value) match {
+                case obj: Obj => obj.merge(Obj(typeField -> Str(sn)))
+                case other    => Obj(typeField -> Str(sn), "value" -> other)
+              }
+            case None =>
+              throw RWException(s"Unknown subtype: $pp")
           }
         }
 
@@ -607,8 +670,8 @@ object CompileRW extends CompileRW {
           case obj @ Obj(map) =>
             map.get(typeField) match {
               case Some(Str(typeName, _)) =>
-                childRWs.find(_._1 == typeName) match {
-                  case Some((_, rw)) =>
+                lookupByWireName(typeName) match {
+                  case Some((_, _, rw)) =>
                     val cleanedMap = map - typeField
                     val cleanedJson = if (cleanedMap.isEmpty && map.size == 2 && map.contains("value")) {
                       map("value")
@@ -627,9 +690,7 @@ object CompileRW extends CompileRW {
         }
 
         override lazy val definition: FabricDefinition = {
-          val childDefs = childRWs.map { case (name, rw) =>
-            name -> rw.definition
-          }.toMap
+          val childDefs = children.map { case (_, sn, rw) => sn -> rw.definition }.toMap
           FabricDefinition(DefType.Poly(childDefs), className = Some($fullTypeNameExpr))
         }
       }
@@ -669,8 +730,9 @@ object CompileRW extends CompileRW {
                 report.errorAndAbort(s"No RW found for union member type ${memberType.show}. Ensure all union member types have an RW instance.")
               }
             }
-            val name = getSimpleTypeNameFromType(memberType)
-            '{ (${ Expr(name) }, $rw.asInstanceOf[RW[_]]) }
+            val productPrefix = memberType.typeSymbol.name.stripSuffix("$")
+            val simpleName = fabric.define.Definition.simpleClassName(memberType.typeSymbol.fullName)
+            '{ (${ Expr(productPrefix) }, ${ Expr(simpleName) }, $rw.asInstanceOf[RW[_]]) }
         }
       }
       val childRWsExpr = Expr.ofList(childExprs)
@@ -699,9 +761,10 @@ object CompileRW extends CompileRW {
               report.errorAndAbort(s"No RW found for union member type ${memberType.show}.")
             }
           }
+          val productPrefix = memberType.typeSymbol.name.stripSuffix("$")
           val simpleName = getSimpleTypeNameFromType(memberType)
           val fullName = fullTypeName(memberType)
-          '{ (${ Expr(simpleName) }, ${ Expr(fullName) }, $rw.asInstanceOf[RW[_]]) }
+          '{ (${ Expr(productPrefix) }, ${ Expr(simpleName) }, ${ Expr(fullName) }, $rw.asInstanceOf[RW[_]]) }
       }
     }
     val childListExpr = Expr.ofList(childExprs)
@@ -712,37 +775,37 @@ object CompileRW extends CompileRW {
     '{
       new RW[T] {
         private val typeField = "type"
-        private lazy val childRWs: List[(String, String, RW[_])] = $childListExpr
+        // (productPrefix, simpleName, fullName, rw). productPrefix matches `safeTypeName(value)` at read
+        // time; simpleName is the wire `"type"` discriminator; fullName is used for `_generic` matching
+        // when multiple candidates share the same productPrefix (the generic-collision case).
+        private lazy val childRWs: List[(String, String, String, RW[_])] = $childListExpr
 
-        private def matchGeneric(json: Json, candidates: List[(String, String, RW[_])]): Option[(String, RW[_])] = {
+        private def matchGeneric(json: Json, candidates: List[(String, String, String, RW[_])]): Option[(String, RW[_])] = {
           json match {
             case Obj(map) =>
               map.get("_generic") match {
                 case Some(genericJson) =>
-                  // Match by comparing _generic content against each candidate's definition.genericTypes
-                  candidates.find { case (_, _, rw) =>
+                  candidates.find { case (_, _, _, rw) =>
                     val expected = Obj(rw.definition.genericTypes.map(gt => gt.name -> gt.definition.json): _*)
                     expected == genericJson
-                  }.map(c => (c._2, c._3))
+                  }.map(c => (c._2, c._4))
                 case None =>
-                  // No _generic field — take first candidate
-                  candidates.headOption.map(c => (c._2, c._3))
+                  candidates.headOption.map(c => (c._2, c._4))
               }
-            case _ => candidates.headOption.map(c => (c._2, c._3))
+            case _ => candidates.headOption.map(c => (c._2, c._4))
           }
         }
 
         override def read(value: T): Json = {
-          val simpleName = safeTypeName(value)
-          val candidates = childRWs.filter(_._1 == simpleName)
-          // Use first candidate for read — the child RW will embed _generic in its output
+          val pp = safeTypeName(value)
+          val candidates = childRWs.filter(_._1 == pp)
           candidates.headOption match {
-            case Some((_, _, rw)) =>
+            case Some((_, sn, _, rw)) =>
               rw.asInstanceOf[RW[T]].read(value) match {
-                case obj: Obj => obj.merge(Obj(typeField -> Str(simpleName)))
-                case other => Obj(typeField -> Str(simpleName), "value" -> other)
+                case obj: Obj => obj.merge(Obj(typeField -> Str(sn)))
+                case other    => Obj(typeField -> Str(sn), "value" -> other)
               }
-            case None => throw RWException(s"Unknown subtype: $simpleName")
+            case None => throw RWException(s"Unknown subtype: $pp")
           }
         }
 
@@ -750,15 +813,15 @@ object CompileRW extends CompileRW {
           case obj @ Obj(map) =>
             map.get(typeField) match {
               case Some(Str(typeName, _)) =>
-                val candidates = childRWs.filter(_._1 == typeName)
+                val candidates = childRWs.filter(_._2 == typeName)
                 val (_, rw) = if (candidates.size > 1) {
                   // Collision — use _generic to disambiguate
                   val cleanedJson = Obj(map - typeField)
                   matchGeneric(cleanedJson, candidates).getOrElse(
-                    throw RWException(s"Cannot disambiguate type '$typeName' — no matching _generic found. Available: ${candidates.map(_._2).mkString(", ")}")
+                    throw RWException(s"Cannot disambiguate type '$typeName' — no matching _generic found. Available: ${candidates.map(_._3).mkString(", ")}")
                   )
                 } else {
-                  candidates.headOption.map(c => (c._2, c._3)).getOrElse(
+                  candidates.headOption.map(c => (c._3, c._4)).getOrElse(
                     throw RWException(s"Unknown type discriminator: $typeName")
                   )
                 }
@@ -777,7 +840,7 @@ object CompileRW extends CompileRW {
         }
 
         override lazy val definition: FabricDefinition = {
-          val childDefs = childRWs.map { case (_, fullName, rw) =>
+          val childDefs = childRWs.map { case (_, _, fullName, rw) =>
             fullName -> rw.definition
           }.toMap.to(VectorMap)
           FabricDefinition(DefType.Poly(childDefs), className = Some($fullTypeNameExpr))
@@ -861,9 +924,7 @@ object CompileRW extends CompileRW {
     import quotes.reflect._
     val typeRepr = tpe.asInstanceOf[TypeRepr]
     val symbol = typeRepr.typeSymbol
-    val fullName = symbol.fullName
-    val simpleName = fullName.split('.').last
-    simpleName.stripSuffix("$")
+    fabric.define.Definition.simpleClassName(symbol.fullName)
   }
 
   def genAnyValMacro[T: Type](using Quotes): Expr[RW[T]] = {

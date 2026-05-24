@@ -36,7 +36,7 @@ class PolyTypeSpec extends AnyWordSpec with Matchers {
       poly.register(RW.static(Cat), RW.static(Dog))
       val cat: Animal = Cat
       val json = poly.rw.read(cat)
-      json("type").asString should be("Cat")
+      json("type").asString should be("PolyTypeSpec.Cat")
     }
     "round-trip via the registered RW" in {
       val poly = PolyType[Animal]
@@ -84,8 +84,8 @@ class PolyTypeSpec extends AnyWordSpec with Matchers {
       poly.register(RW.static(Cat), RW.static(Dog))
       poly.rw.definition.defType match {
         case DefType.Poly(values, _) =>
-          values.keySet should contain("Cat")
-          values.keySet should contain("Dog")
+          values.keySet should contain("PolyTypeSpec.Cat")
+          values.keySet should contain("PolyTypeSpec.Dog")
         case other => fail(s"Expected DefType.Poly, got: $other")
       }
     }
