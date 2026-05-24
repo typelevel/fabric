@@ -195,11 +195,14 @@ object RW extends CompileRW {
       parent :: nested
     }
 
-    // Registration-time collision guardrail: two subtypes (or auto-recursed variants) producing the same
-    // primary key is a registration bug — fail loud at startup rather than silently routing wrong at
-    // runtime.
+    // Registration-time collision guardrail: two subtypes producing the same primary key from
+    // DIFFERENT className sources is a registration bug (different types whose `simpleClassName`
+    // collides — by definition unrecoverable at dispatch time). Two entries with the SAME className
+    // are a harmless duplicate (typically a consumer registering the same RW twice through different
+    // discovery paths — its own outputRW plus a framework-shipped catalog entry); dedupe silently
+    // and keep the first occurrence.
     directPairs.groupBy(_._1).collectFirst {
-      case (key, occurrences) if occurrences.size > 1 =>
+      case (key, occurrences) if occurrences.map(_._2.definition.className).distinct.size > 1 =>
         val cns = occurrences.flatMap(_._2.definition.className).distinct.mkString(", ")
         throw new RuntimeException(
           s"Duplicate polymorphic dispatch key '$key' from multiple registered types: [$cns]. " +
@@ -207,7 +210,12 @@ object RW extends CompileRW {
             "colliding types, or use typeAliases to pin distinct wire discriminators."
         )
     }
-    val directTypeMappings = directPairs.toMap
+    // First-occurrence-wins on key collision (groupBy semantics) so duplicate-className entries that
+    // passed the guardrail above don't shadow each other under `Map.toMap`'s last-wins behavior.
+    val directTypeMappings: Map[String, RW[? <: P]] =
+      directPairs.foldLeft(Map.empty[String, RW[? <: P]]) { case (acc, (k, v)) =>
+        if (acc.contains(k)) acc else acc + (k -> v)
+      }
 
     // Legacy-leaf fallback: case-insensitive index keyed by the leaf segment of each registered subtype's
     // className. Unambiguous matches dispatch through this fallback so persisted records using the
