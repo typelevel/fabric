@@ -212,10 +212,9 @@ object RW extends CompileRW {
     }
     // First-occurrence-wins on key collision (groupBy semantics) so duplicate-className entries that
     // passed the guardrail above don't shadow each other under `Map.toMap`'s last-wins behavior.
-    val directTypeMappings: Map[String, RW[? <: P]] =
-      directPairs.foldLeft(Map.empty[String, RW[? <: P]]) { case (acc, (k, v)) =>
-        if (acc.contains(k)) acc else acc + (k -> v)
-      }
+    val directTypeMappings: Map[String, RW[? <: P]] = directPairs.foldLeft(Map.empty[String, RW[? <: P]]) {
+      case (acc, (k, v)) => if (acc.contains(k)) acc else acc + (k -> v)
+    }
 
     // Legacy-leaf fallback: case-insensitive index keyed by the leaf segment of each registered subtype's
     // className. Unambiguous matches dispatch through this fallback so persisted records using the
