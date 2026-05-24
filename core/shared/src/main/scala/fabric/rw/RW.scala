@@ -278,7 +278,7 @@ object RW extends CompileRW {
         val parent = Definition.simpleClassName(cleanClassName(p.getClass.getSuperclass.getName))
         p match {
           case product: Product => s"$parent.${product.productPrefix}"
-          case _                => Definition.simpleClassName(raw)
+          case _ => Definition.simpleClassName(raw)
         }
       } else Definition.simpleClassName(raw)
     }
