@@ -108,17 +108,18 @@ case class Definition(
   lazy val defaultValue: Option[Json] = defaultValueThunk()
 
   /**
-    * Class-chain form of [[className]] — package segments (lowercase-leading) dropped, nested-class chain
+    * Class-chain form of `className` — package segments (lowercase-leading) dropped, nested-class chain
     * (uppercase-leading segments) preserved. `Some` whenever `className` is `Some`. The dispatch key used
     * by `RW.poly` and the wire `"type"` discriminator emitted by polymorphic RWs.
     *
-    *   className = `Some("com.example.foo.Bar")`              → simpleClassName = `Some("Bar")`
-    *   className = `Some("com.example.foo.Outer.Inner")`      → simpleClassName = `Some("Outer.Inner")`
-    *   className = `Some("com.example.foo.Outer$Inner")`      → simpleClassName = `Some("Outer.Inner")`
-    *   className = `Some("test.X.Y.Z")` (all-uppercase chain) → simpleClassName = `Some("X.Y.Z")`
+    * Examples (input → output):
+    *   - `Some("com.example.foo.Bar")` → `Some("Bar")`
+    *   - `Some("com.example.foo.Outer.Inner")` → `Some("Outer.Inner")`
+    *   - `Some("com.example.foo.Outer\$Inner")` → `Some("Outer.Inner")`
+    *   - `Some("test.X.Y.Z")` (all-uppercase chain) → `Some("X.Y.Z")`
     *
     * Independent of package layout — moving a type to a different package leaves `simpleClassName`
-    * unchanged. Distinct from a bare leaf name (`Inner`) which would collide across enclosing classes.
+    * unchanged. Distinct from a bare leaf name which would collide across enclosing classes.
     */
   lazy val simpleClassName: Option[String] = className.map(Definition.simpleClassName)
 

@@ -152,10 +152,10 @@ object RW extends CompileRW {
   /**
     * Convenience functionality for working with polymorphic types.
     *
-    * Dispatch keys are the class-chain form of each subtype's [[Definition.className]] — packages stripped,
+    * Dispatch keys are the class-chain form of each subtype's `Definition.className` — packages stripped,
     * nested-class chain preserved — so distinct enums declaring same-named cases (`Foo.Success` vs
     * `Bar.Success`) never collide. The wire JSON `"type"` field stamps the same string. Both registration
-    * and instance dispatch derive the key via [[Definition.simpleClassName]], so the two sides are
+    * and instance dispatch derive the key via `Definition.simpleClassName`, so the two sides are
     * symmetric by construction.
     *
     * A legacy-leaf fallback index lets persisted records written under the historical leaf-name
