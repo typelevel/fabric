@@ -268,9 +268,24 @@ object RW extends CompileRW {
       }
       .map(_.asInstanceOf[RW[? <: P]])
 
+    // Derive the instance's dispatch key. For Scala 3 parameterless enum cases (whose runtime class
+    // is an anonymous wrapper — `<Enum>$$anon$N`) the cleaned getClass.getName produces a useless
+    // `<Enum>.anon.N` chain. Recover the case name via `Product#productPrefix` combined with the
+    // enum's simpleClassName from the anon class's superclass.
+    def instanceKey(p: P): String = {
+      val raw = cleanClassName(p.getClass.getName)
+      if (raw.contains(".anon.")) {
+        val parent = Definition.simpleClassName(cleanClassName(p.getClass.getSuperclass.getName))
+        p match {
+          case product: Product => s"$parent.${product.productPrefix}"
+          case _                => Definition.simpleClassName(raw)
+        }
+      } else Definition.simpleClassName(raw)
+    }
+
     from(
       r = (p: P) => {
-        val `type` = Definition.simpleClassName(cleanClassName(p.getClass.getName))
+        val `type` = instanceKey(p)
         resolve(`type`) match {
           case Some(rw) => rw.asInstanceOf[RW[P]].read(p).merge(obj(fieldName -> str(`type`)))
           case None => throw new RuntimeException(
