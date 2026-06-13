@@ -36,7 +36,7 @@ object DoRelease {
     updateReadme(version)
     gitCommit(version)
     gitTag(version)
-    gitPush()
+    gitPush(version)
   }
 
   private def getBaseVersion(): Version = {
@@ -71,7 +71,7 @@ object DoRelease {
     case n => throw new RuntimeException(s"Git Tag Failure: $n")
   }
 
-  private def gitPush(): Unit = "git push origin master --tags".! match {
+  private def gitPush(version: Version): Unit = s"git push origin master $version".! match {
     case 0 => // Success
     case n => throw new RuntimeException(s"Git Push Failure: $n")
   }
