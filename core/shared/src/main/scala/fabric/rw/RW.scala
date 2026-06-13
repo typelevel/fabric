@@ -36,6 +36,32 @@ trait RW[T] extends Reader[T] with Writer[T] {
 
   def withPreWrite(f: Json => Json): RW[T] = EnhancedRW[T](this, preWrite = List(f))
   def withPostRead(f: (T, Json) => Json): RW[T] = EnhancedRW[T](this, postRead = List(f))
+  def withDefinition(f: Definition => Definition): RW[T] = EnhancedRW[T](this, postDefinition = List(f))
+
+  def mapType(fieldName: String = "type")(f: String => String): RW[T] = withPostRead { case (_, json) =>
+    if (json.isStr) {
+      str(f(json.asString))
+    } else if (json.isObj) {
+      val o = json.asObj
+      o.value.get(fieldName) match {
+        case Some(string: Str) => o.merge(
+            obj(
+              fieldName -> str(f(string.value))
+            )
+          )
+        case _ => json
+      }
+    } else {
+      json
+    }
+  }.withDefinition(d => RW.mapPolyNames(f)(d))
+
+  def leaf: RW[T] = mapType() { s =>
+    s.substring(s.lastIndexOf('.') + 1)
+  }
+
+  def lowerCase: RW[T] = mapType()(_.toLowerCase)
+  def upperCase: RW[T] = mapType()(_.toUpperCase)
 }
 
 object RW extends CompileRW {
@@ -56,6 +82,18 @@ object RW extends CompileRW {
     override def definition: Definition = d
   }
 
+  /**
+    * Apply a name transform to the top-level [[DefType.Poly]] variant keys (the discriminator
+    * names) so a `mapType`/`leaf`/`lowerCase` transform is reflected in the schema as well as on
+    * the wire. Top-level only (mirroring the runtime transform, which touches only the outer
+    * discriminator) and a no-op for non-poly definitions.
+    */
+  private[rw] def mapPolyNames(f: String => String)(d: Definition): Definition = d.defType match {
+    case DefType.Poly(values, commonFields) =>
+      d.copy(defType = DefType.Poly(VectorMap.from(values.toSeq.map { case (k, v) => f(k) -> v }), commonFields))
+    case _ => d
+  }
+
   def enumeration[T: ClassTag](
     list: List[T],
     asString: T => String = (t: T) => Definition.simpleClassName(cleanClassName(t.getClass.getName)),
@@ -67,7 +105,33 @@ object RW extends CompileRW {
 
     private lazy val map = list.map(t => fixString(asString(t)) -> t).toMap
 
-    override def write(value: Json): T = map(fixString(value.asString))
+    private lazy val leafIndex: Map[String, List[T]] = list.groupBy { t =>
+      val s = asString(t)
+      fixString(s.split('.').filter(_.nonEmpty).lastOption.getOrElse(s))
+    }
+
+    override def write(value: Json): T = {
+      val raw = value.asString
+      val key = fixString(raw)
+      map
+        .get(key)
+        .orElse {
+          leafIndex.get(key) match {
+            case Some(single :: Nil) => Some(single)
+            case Some(many) if many.size > 1 =>
+              throw RWException(
+                s"Ambiguous enumeration value '$raw' — matches ${many.size} cases in $className. " +
+                  s"Use a distinct `asString` mapping or the fully-qualified form."
+              )
+            case _ => None
+          }
+        }
+        .getOrElse(
+          throw RWException(
+            s"Unknown enumeration value '$raw' for $className. Valid values: [${map.keys.mkString(", ")}]"
+          )
+        )
+    }
 
     override def read(t: T): Json = str(asString(t))
 

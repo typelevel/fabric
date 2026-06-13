@@ -23,9 +23,13 @@ package fabric.rw
 import fabric.Json
 import fabric.define.Definition
 
-case class EnhancedRW[T](rw: RW[T], preWrite: List[Json => Json] = Nil, postRead: List[(T, Json) => Json] = Nil)
-    extends RW[T] {
-  override def definition: Definition = rw.definition
+case class EnhancedRW[T](
+  rw: RW[T],
+  preWrite: List[Json => Json] = Nil,
+  postRead: List[(T, Json) => Json] = Nil,
+  postDefinition: List[Definition => Definition] = Nil
+) extends RW[T] {
+  override def definition: Definition = postDefinition.foldLeft(rw.definition)((d, f) => f(d))
 
   override def write(value: Json): T = {
     val json = preWrite.foldLeft(value)((j, f) => f(j))
@@ -40,4 +44,6 @@ case class EnhancedRW[T](rw: RW[T], preWrite: List[Json => Json] = Nil, postRead
   override def withPreWrite(f: Json => Json): RW[T] = copy(preWrite = preWrite ::: List(f))
 
   override def withPostRead(f: (T, Json) => Json): RW[T] = copy(postRead = postRead ::: List(f))
+
+  override def withDefinition(f: Definition => Definition): RW[T] = copy(postDefinition = postDefinition ::: List(f))
 }
