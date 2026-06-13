@@ -28,11 +28,11 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 /**
- * Verifies that `mapType`-derived transforms (`leaf`, `lowerCase`) apply consistently to BOTH the
- * wire value AND the `definition` (the `DefType.Poly` variant keys), so the generated schema can't
- * drift from what's actually written. Covered for the two `DefType.Poly` producers: `enumeration`
- * (whole-value `Str` discriminator) and `poly` (a `"type"` field inside an `Obj`).
- */
+  * Verifies that `mapType`-derived transforms (`leaf`, `lowerCase`) apply consistently to BOTH the
+  * wire value AND the `definition` (the `DefType.Poly` variant keys), so the generated schema can't
+  * drift from what's actually written. Covered for the two `DefType.Poly` producers: `enumeration`
+  * (whole-value `Str` discriminator) and `poly` (a `"type"` field inside an `Obj`).
+  */
 class RWMapTypeSpec extends AnyWordSpec with Matchers {
   sealed trait Color
   object Color {
@@ -57,7 +57,7 @@ class RWMapTypeSpec extends AnyWordSpec with Matchers {
 
   private def polyKeys(rw: RW[_]): Set[String] = rw.definition.defType match {
     case DefType.Poly(values, _) => values.keySet
-    case other                   => fail(s"expected a Poly definition, got: $other")
+    case other => fail(s"expected a Poly definition, got: $other")
   }
 
   "leaf on an enumeration" should {

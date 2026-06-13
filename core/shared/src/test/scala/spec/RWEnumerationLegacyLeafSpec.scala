@@ -27,13 +27,13 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 /**
- * Pins the contract of [[fabric.rw.RW.enumeration]] around the parent-qualified
- * wire form fabric adopted in v1.29.x and the legacy-leaf fallback that
- * accompanies it. Documents both the read-side leniency (forward-compat for
- * records persisted under the old leaf-only wire form) and the write-side
- * asymmetry (writes only produce the new form — relevant for downstream
- * consumers that match indexed string values literally).
- */
+  * Pins the contract of [[fabric.rw.RW.enumeration]] around the parent-qualified
+  * wire form fabric adopted in v1.29.x and the legacy-leaf fallback that
+  * accompanies it. Documents both the read-side leniency (forward-compat for
+  * records persisted under the old leaf-only wire form) and the write-side
+  * asymmetry (writes only produce the new form — relevant for downstream
+  * consumers that match indexed string values literally).
+  */
 class RWEnumerationLegacyLeafSpec extends AnyWordSpec with Matchers {
 
   sealed trait Color
