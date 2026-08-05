@@ -45,7 +45,7 @@ val reactifyVersion: String = "4.2.0"
 
 val scalaTestVersion: String = "3.2.20"
 
-val scalaCheckVersion: String = "3.2.19.0"
+val scalaCheckVersion: String = "3.2.20.0"
 
 // Parse module dependencies
 val literallyVersion: String = "1.2.0"
@@ -81,7 +81,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     mimaPreviousArtifacts := Set.empty,
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % scalaCheckVersion % Test
+      "org.scalatestplus" %%% "scalacheck-1-19" % scalaCheckVersion % Test
     ),
     libraryDependencies ++= (
       if (scalaVersion.value.startsWith("3")) {
@@ -111,7 +111,7 @@ lazy val io = crossProject(JSPlatform, JVMPlatform)
       "com.jsoniter" % "jsoniter" % jsoniterJavaVersion,
       "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion % Provided,
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % scalaCheckVersion % Test
+      "org.scalatestplus" %%% "scalacheck-1-19" % scalaCheckVersion % Test
     )
   )
   .jvmSettings(
@@ -133,7 +133,7 @@ lazy val reactify = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     libraryDependencies ++= Seq(
       "com.outr" %%% "reactify" % reactifyVersion,
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % scalaCheckVersion % Test
+      "org.scalatestplus" %%% "scalacheck-1-19" % scalaCheckVersion % Test
     )
   )
   .dependsOn(core)
