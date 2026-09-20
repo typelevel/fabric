@@ -23,7 +23,7 @@ package spec
 
 import fabric._
 import fabric.dsl.*
-import fabric.io.{Format, JsonParser}
+import fabric.io.{Format, JsonFormatter, JsonParser}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -46,6 +46,10 @@ class JVMParsingSpec extends AnyWordSpec with Matchers {
     "parse basic HOCON" in {
       val json = JsonParser("""test.hocon = "yes"""", Format.Hocon)
       json should be(obj("test" -> obj("hocon" -> "yes")))
+    }
+    "read back a string longer than Jackson's default limit" in {
+      val json = obj("text" -> ("x" * 25000000))
+      JsonParser(JsonFormatter.Compact(json), Format.Json) should be(json)
     }
     "parse basic Properties" in {
       val json = JsonParser("test.properties=yes", Format.Properties)

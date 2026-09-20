@@ -21,14 +21,16 @@
 
 package fabric.io
 
-import com.fasterxml.jackson.core.{JsonFactory, JsonParser => JParser, JsonToken}
+import com.fasterxml.jackson.core.{JsonFactory, JsonParser => JParser, JsonToken, StreamReadConstraints}
 import fabric.{Arr, Bool, Json, Null, NumDec, NumInt, Obj, Str}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.VectorMap
 
 object JacksonParser extends FormatParser {
+  // The writer has no string-length limit, so the reader carries none either: anything written can be read back.
   private lazy val factory = new JsonFactory()
+    .setStreamReadConstraints(StreamReadConstraints.builder().maxStringLength(Int.MaxValue).build())
     .enable(JParser.Feature.ALLOW_COMMENTS)
     .enable(JParser.Feature.ALLOW_SINGLE_QUOTES)
     .enable(JParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
