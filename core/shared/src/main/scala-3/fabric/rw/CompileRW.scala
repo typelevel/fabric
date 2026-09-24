@@ -148,7 +148,10 @@ trait CompileRW {
 
   inline def getFullTypeName[T]: String = ${ CompileRW.getFullTypeNameImpl[T] }
 
-  inline def findValueCaseInsensitive(map: Map[String, Json], key: String): Option[Json] =
+  // a plain method, not inline: every derived reader calls it for every field it reads, and inlined, each call site
+  // carried its own copy of the case-insensitive search (a partial function class apiece), which on Scala.js was
+  // hundreds of kilobytes of a bundle for the same few lines
+  def findValueCaseInsensitive(map: Map[String, Json], key: String): Option[Json] =
     map.get(key).orElse(map.collectFirst { case (k, v) if k.equalsIgnoreCase(key) => v })
 
   // Helper for case objects
