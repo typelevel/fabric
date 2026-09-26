@@ -360,7 +360,13 @@ object RW extends CompileRW {
       w = (json: Json) => {
         val rawType = json(fieldName).asString
         resolve(rawType) match {
-          case Some(rw) => rw.write(json)
+          // A nested polymorphic subtype dispatches on the discriminator again; any other subtype reads the
+          // object without it, so a JsonWrapper's `json` holds only its own fields.
+          case Some(rw) if rw.definition.defType.isInstanceOf[DefType.Poly] => rw.write(json)
+          case Some(rw) => rw.write(json match {
+              case o: Obj => o.reference.fold(Obj(o.value - fieldName))(r => Obj(o.value - fieldName, r))
+              case other => other
+            })
           case None => throw new RuntimeException(
               s"Type not found [$rawType] converting from value $json. Available types are: [${typeMap.keySet.mkString(", ")}]"
             )
