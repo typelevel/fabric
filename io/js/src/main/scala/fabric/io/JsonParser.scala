@@ -28,5 +28,8 @@ object JsonParser extends MultiFormatParser {
 
   def apply(content: String): Json = apply(content, Format.Json)
 
-  private[io] def escapeJson(s: String): String = s.replace("\\", "\\\\").replace("\n", "\\n").replace("\"", "\\\"")
+  // JSON's escapes for a string: the quote, the backslash and every control character (U+0000 to U+001F), the named
+  // ones by name and the rest as \u00XX. Only the backslash, a newline and the quote were escaped, so a carriage
+  // return, a tab or an escape went out raw, and a strict reader (Jackson on a server) refused the whole message
+  private[io] def escapeJson(s: String): String = fabric.Str.escape(s)
 }

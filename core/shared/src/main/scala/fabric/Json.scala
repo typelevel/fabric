@@ -592,16 +592,36 @@ case class Str(value: String, reference: Option[Any] = None) extends Json {
 }
 
 object Str {
-  def escape(s: String): String = s.map {
-    case '\b' => "\\b"
-    case '\f' => "\\f"
-    case '\n' => "\\n"
-    case '\r' => "\\r"
-    case '\t' => "\\t"
-    case '\\' => "\\\\"
-    case '"' => "\\\""
-    case c => c.toString
-  }.mkString
+  /** `s` as it goes inside a JSON string: the quote and the backslash escaped, and every control character (U+0000 to
+    * U+001F), the named ones by name and the rest as `\u00XX`, as JSON requires. */
+  def escape(s: String): String = {
+    val b = new java.lang.StringBuilder(s.length + 8)
+    var i = 0
+    while (i < s.length) {
+      val c = s.charAt(i)
+      c match {
+        case '\b' => b.append("\\b")
+        case '\f' => b.append("\\f")
+        case '\n' => b.append("\\n")
+        case '\r' => b.append("\\r")
+        case '\t' => b.append("\\t")
+        case '\\' => b.append("\\\\")
+        case '"' => b.append("\\\"")
+        case _ if c < ' ' =>
+          val hex = Integer.toHexString(c.toInt)
+          b.append("\\u")
+          var pad = 4 - hex.length
+          while (pad > 0) {
+            b.append('0')
+            pad -= 1
+          }
+          b.append(hex)
+        case _ => b.append(c)
+      }
+      i += 1
+    }
+    b.toString
+  }
 }
 
 sealed trait Num extends Json {

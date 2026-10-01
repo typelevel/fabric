@@ -65,6 +65,20 @@ class JsonFormattingSpec extends AnyWordSpec with Matchers {
       val s = array.as[Simple](Format.Json)
       s should be(Simple("Hello, World!"))
     }
+    "escape every control character, and read them back" in {
+      // what a terminal sends: Enter, Tab, an arrow key's escape sequence, Ctrl+C, and the rest down to NUL
+      val sent = "\r\t\u001b[A\u0003\u0000\u001f\b\f\n\"\\ plain"
+      val compact = JsonFormatter.Compact(obj("data" -> str(sent)))
+      compact.exists(_ < ' ') should be(false)
+      JsonParser(compact)("data").asString should be(sent)
+      // pretty: only its own line breaks are raw
+      val pretty = JsonFormatter.Default(obj("data" -> str(sent)))
+      pretty.exists(c => c < ' ' && c != '\n') should be(false)
+      JsonParser(pretty)("data").asString should be(sent)
+      // hex in either case is JSON (the JVM writes it upper case)
+      JsonFormatter.Compact(str("\r\u001b")).toLowerCase should be("\"\\r\\u001b\"")
+      Str("\u0003").toString should be("\"\\u0003\"")
+    }
   }
 
   case class Simple(value: String)
