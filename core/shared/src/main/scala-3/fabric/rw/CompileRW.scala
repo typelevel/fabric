@@ -992,16 +992,73 @@ object CompileRW extends CompileRW {
       report.errorAndAbort(s"${typeSymbol.name} is not a case class")
     }
 
-    val mirror = Expr.summon[Mirror.ProductOf[T]].getOrElse {
-      report.errorAndAbort(s"No Mirror.ProductOf found for ${Type.show[T]}")
+    val fields = typeSymbol.caseFields
+    val isJsonWrapperType = tpe <:< TypeRepr.of[JsonWrapper]
+    val defaultRefByName = defaultRefs(tpe, fields)
+
+    // Each field's reader, writer and RW. The runtime loops of CaseClassRW read them from one array, of one RW per
+    // field where the three are the same (as they are unless an app gives a field a separate Reader or Writer).
+    val codecs = fields.map { field =>
+      val fieldTypeRepr = tpe.memberType(field)
+      fieldTypeRepr.asType match {
+        case '[ft] =>
+          val reader = Expr.summon[Reader[ft]].getOrElse {
+            report.errorAndAbort(s"No Reader found for field ${field.name} of type ${Type.show[ft]}")
+          }
+          val writer = Expr.summon[Writer[ft]].getOrElse {
+            report.errorAndAbort(s"No Writer found for field ${field.name} of type ${Type.show[ft]}")
+          }
+          val rw = Expr.summon[RW[ft]].getOrElse {
+            report.errorAndAbort(s"No RW found for field ${field.name} of type ${Type.show[ft]}")
+          }
+          (reader.asTerm, writer.asTerm, rw.asTerm)
+      }
     }
-    val ct = Expr.summon[ClassTag[T]].getOrElse {
-      report.errorAndAbort(s"No ClassTag found for ${Type.show[T]}")
+    val shared = codecs.forall { case (r, w, rw) => r.show == rw.show && w.show == rw.show }
+    val codecTerms = if (shared) codecs.map(_._3) else codecs.map(_._1) ::: codecs.map(_._2) ::: codecs.map(_._3)
+    val codecsExpr = Varargs(codecTerms.map(_.asExprOf[AnyRef]))
+
+    val labelsExpr = Varargs(fields.map(f => Expr(f.name)))
+    val kinds = fields.map { field =>
+      if (defaultRefByName.contains(field.name)) 'd'
+      else if (tpe.memberType(field) <:< TypeRepr.of[Option[?]]) 'o'
+      else 'r'
+    }.mkString
+
+    // field i's default, called only when the field is missing or null, as the default may be stateful (an id
+    // generator); a chain of ifs, which Scala.js writes more briefly than a match
+    val defaultsExpr: Expr[Int => Any] = if (defaultRefByName.isEmpty) '{ null } else {
+      '{ (i: Int) => ${
+        val withDefaults = fields.zipWithIndex.flatMap { case (field, index) =>
+          defaultRefByName.get(field.name).map { ref =>
+            tpe.memberType(field).asType match {
+              case '[ft] =>
+                val value = ref.asExprOf[ft]
+                (index, '{ $value: Any })
+            }
+          }
+        }
+        withDefaults.init.foldRight(withDefaults.last._2) { case ((index, value), otherwise) =>
+          '{ if (i == ${ Expr(index) }) $value else $otherwise }
+        }
+      } }
     }
+
+    val createExpr: Expr[Array[Any] => T] = '{ (values: Array[Any]) => ${
+      val args = fields.zipWithIndex.map { case (field, index) =>
+        tpe.memberType(field).asType match {
+          case '[ft] => '{ values(${ Expr(index) }).asInstanceOf[ft] }.asTerm
+        }
+      }
+      val constructor = New(TypeTree.of[T]).select(typeSymbol.primaryConstructor)
+      (tpe match {
+        case AppliedType(_, typeArgs) => constructor.appliedToTypes(typeArgs).appliedToArgs(args)
+        case _ => constructor.appliedToArgs(args)
+      }).asExprOf[T]
+    } }
 
     // Extract @description annotations from constructor parameters
     val fieldDescs = extractFieldDescriptions(typeSymbol)
-    val fieldDescsExpr = Expr(fieldDescs)
 
     // Extract @serialized members (vals and no-arg defs)
     val serializedMembers = extractSerializedMembers[T](typeSymbol)
@@ -1018,8 +1075,7 @@ object CompileRW extends CompileRW {
 
     // Extract @format annotations
     val fieldFormats = extractFieldFormats(typeSymbol)
-    val fieldFormatsExpr = if (fieldFormats.isEmpty) '{ Map.empty[String, Format] }
-    else {
+    val fieldFormatsExpr = {
       val entries = fieldFormats.map { case (k, v) =>
         val keyExpr = Expr(k)
         val valExpr = Expr(v)
@@ -1031,17 +1087,14 @@ object CompileRW extends CompileRW {
 
     // Extract @fieldDeprecated annotations
     val deprecatedFields = extractDeprecatedFields(typeSymbol)
-    val deprecatedFieldsExpr = Expr(deprecatedFields)
 
     // Extract per-field validation constraint annotations (@pattern, @minLength, etc.)
     val fieldConstraintsExpr = extractFieldConstraints(typeSymbol)
 
-    // Extract default values — use the lazy variant so per-field defaults are only evaluated when a
-    // consumer actually reads `definition.defaultValue` on that field. This avoids firing stateful
-    // case-class defaults (e.g. id generators) just because someone touched `rw.definition`.
-    val fieldDefaultsExpr = generateFieldDefaultsLazy[T](typeSymbol)
-
     val classNameExpr = Expr(fullTypeName(tpe))
+    // the name a field's errors give the class, which differs from its className only for some nested and generic ones
+    val pathName = typeSymbol.fullName.replace("$", ".")
+    val pathNameExpr: Expr[String] = if (pathName == fullTypeName(tpe)) '{ null } else Expr(pathName)
     val genericTypesExpr = generateGenericTypes(tpe)
     val fieldGenericNamesExpr = extractFieldGenericNames(tpe)
 
@@ -1075,59 +1128,87 @@ object CompileRW extends CompileRW {
       }
     } else None
 
-    '{
-      new ClassRW[T] {
-        override protected def t2Map(t: T): Map[String, Json] = {
-          val base = CompileRW.toMap(t)(using $mirror)
+    // The JSON's additions to the fields', in the order they always had: @serialized members, then @notSerialized
+    // fields taken out, then `_generic`
+    val extendExpr: Expr[(T, Map[String, Json]) => Map[String, Json]] =
+      if (!hasExtra && !hasTransient && genericJsonExpr.isEmpty) '{ null } else {
+        '{ (t: T, base: Map[String, Json]) => {
           val withExtra = ${ extraMapExpr match {
             case Some(gen) => '{ base ++ ${ gen('{t}) } }
             case None => '{ base }
           }}
-          val withTransient = ${ if (hasTransient) '{ withExtra -- $transientFieldsExpr }
-             else '{ withExtra } }
+          val withTransient = ${ if (hasTransient) '{ withExtra -- $transientFieldsExpr } else '{ withExtra } }
           ${ genericJsonExpr match {
             case Some(gj) => '{ if (RW.SerializeGenerics) withTransient + ("_generic" -> $gj) else withTransient }
             case None => '{ withTransient }
           }}
-        }
-
-        override protected def map2T(map: Map[String, Json]): T = {
-          ${ generateDirectConstructor[T]('{map}) }
-        }
-
-        override lazy val definition: FabricDefinition = {
-          val baseDef = FabricDefinition.applyFieldConstraints(
-            FabricDefinition.applyFieldDefaultsLazy(
-              FabricDefinition.applyFieldDeprecations(
-                FabricDefinition.applyFieldFormats(
-                  FabricDefinition.applyGenericNames(
-                    CompileRW.applyFieldDescriptions(
-                      CompileRW.toDefinition[T](using $mirror, $ct),
-                      $fieldDescsExpr
-                    ),
-                    $fieldGenericNamesExpr
-                  ),
-                  $fieldFormatsExpr
-                ),
-                $deprecatedFieldsExpr
-              ),
-              $fieldDefaultsExpr
-            ),
-            $fieldConstraintsExpr
-          ).withClassName($classNameExpr).copy(genericTypes = $genericTypesExpr)
-          ${ (hasExtra, hasTransient) match {
-            case (true, true) =>
-              '{ CompileRW.removeTransientFields(CompileRW.applySerializedFields(baseDef, ${ extraDefExpr.get }), $transientFieldsExpr) }
-            case (true, false) =>
-              '{ CompileRW.applySerializedFields(baseDef, ${ extraDefExpr.get }) }
-            case (false, true) =>
-              '{ CompileRW.removeTransientFields(baseDef, $transientFieldsExpr) }
-            case (false, false) =>
-              '{ baseDef }
-          }}
-        }
+        } }
       }
+
+    // The definition's annotations, each applied only where the class has it; each touches its own part of a field's
+    // definition, so applying them after the defaults gives what applying them before did
+    val steps: List[Expr[FabricDefinition] => Expr[FabricDefinition]] = List(
+      Option.when(fieldDescs.nonEmpty)((d: Expr[FabricDefinition]) =>
+        '{ CompileRW.applyFieldDescriptions($d, ${ Expr(fieldDescs) }) }),
+      Option.when(typeParamSyms.nonEmpty)((d: Expr[FabricDefinition]) =>
+        '{ FabricDefinition.applyGenericNames($d, $fieldGenericNamesExpr) }),
+      Option.when(fieldFormats.nonEmpty)((d: Expr[FabricDefinition]) =>
+        '{ FabricDefinition.applyFieldFormats($d, $fieldFormatsExpr) }),
+      Option.when(deprecatedFields.nonEmpty)((d: Expr[FabricDefinition]) =>
+        '{ FabricDefinition.applyFieldDeprecations($d, ${ Expr(deprecatedFields) }) }),
+      fieldConstraintsExpr.map(c => (d: Expr[FabricDefinition]) => '{ FabricDefinition.applyFieldConstraints($d, $c) }),
+      Option.when(hasTypeArgs)((d: Expr[FabricDefinition]) =>
+        '{ $d.copy(genericTypes = $genericTypesExpr) }),
+      extraDefExpr.map(e => (d: Expr[FabricDefinition]) => '{ CompileRW.applySerializedFields($d, $e) }),
+      Option.when(hasTransient)((d: Expr[FabricDefinition]) =>
+        '{ CompileRW.removeTransientFields($d, $transientFieldsExpr) })
+    ).flatten
+    val describeExpr: Expr[FabricDefinition => FabricDefinition] =
+      if (steps.isEmpty) '{ null } else '{ (d: FabricDefinition) => ${ steps.foldLeft('d)((e, step) => step(e)) } }
+
+    '{
+      new CaseClassRW[T](
+        $classNameExpr,
+        $pathNameExpr,
+        Array[String]($labelsExpr*),
+        ${ Expr(kinds) },
+        ${ Expr(isJsonWrapperType) },
+        () => Array[AnyRef]($codecsExpr*),
+        $defaultsExpr,
+        $createExpr,
+        $extendExpr,
+        $describeExpr
+      )
     }
+  }
+
+  /**
+    * The default-arg method of each field with one, by field name. A generic class's default-arg methods take its type
+    * parameters, so they are applied to the type's arguments, without which a generic class with a default could not
+    * be derived at all.
+    */
+  private def defaultRefs(using Quotes)(
+    tpe: quotes.reflect.TypeRepr,
+    fields: List[quotes.reflect.Symbol]
+  ): Map[String, quotes.reflect.Term] = {
+    import quotes.reflect._
+    val comp = tpe.typeSymbol.companionClass
+    val typeArgs = tpe match {
+      case AppliedType(_, args) => args
+      case _ => Nil
+    }
+    if (comp.exists) {
+      val body = comp.tree.asInstanceOf[ClassDef].body
+      (for {
+        case deff @ DefDef(name, _, _, _) <- body
+        if name.startsWith("$lessinit$greater$default$")
+        index = name.stripPrefix("$lessinit$greater$default$").toInt - 1
+        if index >= 0 && index < fields.size
+      } yield {
+        val generic = deff.symbol.paramSymss.headOption.exists(_.exists(_.isTypeParam))
+        fields(index).name -> (if (generic && typeArgs.nonEmpty) Ref(deff.symbol).appliedToTypes(typeArgs) else Ref(deff.symbol))
+      }).toMap
+    } else Map.empty
   }
 
   private def extractFieldDescriptions(typeSymbol: Any)(using Quotes): Map[String, String] = {
@@ -1184,8 +1265,8 @@ object CompileRW extends CompileRW {
   }
 
   /** Collect validation-constraint annotations per constructor parameter and emit a
-    * `Map[String, Constraints]` expression for macro substitution. */
-  private def extractFieldConstraints(typeSymbol: Any)(using Quotes): Expr[Map[String, Constraints]] = {
+    * `Map[String, Constraints]` expression for macro substitution, or None where no parameter has one. */
+  private def extractFieldConstraints(typeSymbol: Any)(using Quotes): Option[Expr[Map[String, Constraints]]] = {
     import quotes.reflect._
     val sym = typeSymbol.asInstanceOf[Symbol]
 
@@ -1262,52 +1343,10 @@ object CompileRW extends CompileRW {
       else None
     }
 
-    if (entries.isEmpty) '{ Map.empty[String, Constraints] }
+    if (entries.isEmpty) None
     else {
       val list = Expr.ofList(entries)
-      '{ $list.toMap }
-    }
-  }
-
-  /**
-    * Build a `Map[String, () => Json]` where each entry's value thunk evaluates the case-class default
-    * lazily. Used by the generated `RW.definition` so stateful defaults (e.g. id generators) are only
-    * invoked when a downstream consumer actually reads `definition.defaultValue` on the specific field.
-    */
-  private def generateFieldDefaultsLazy[T: Type](typeSymbol: Any)(using Quotes): Expr[Map[String, () => Json]] = {
-    import quotes.reflect._
-    val sym = typeSymbol.asInstanceOf[Symbol]
-    val comp = sym.companionClass
-    val body = comp.tree.asInstanceOf[ClassDef].body
-
-    val defaultDefs = (for {
-      case deff @ DefDef(name, _, _, _) <- body
-      if name.startsWith("$lessinit$greater$default")
-    } yield deff).toList
-
-    if (defaultDefs.isEmpty) '{ Map.empty }
-    else {
-      val fields = sym.caseFields
-      val entries = defaultDefs.flatMap { deff =>
-        val index = deff.name.stripPrefix("$lessinit$greater$default$").toInt - 1
-        if (index < fields.length) {
-          val fieldName = Expr(fields(index).name)
-          val fieldType = TypeRepr.of[T].memberType(fields(index))
-          fieldType.asType match {
-            case '[ft] =>
-              val reader = Expr.summon[Reader[ft]]
-              reader.map { r =>
-                val ref = Ref(deff.symbol).asExprOf[ft]
-                '{ ($fieldName, () => $r.read($ref)) }
-              }
-          }
-        } else None
-      }
-      if (entries.isEmpty) '{ Map.empty }
-      else {
-        val list = Expr.ofList(entries)
-        '{ $list.toMap }
-      }
+      Some('{ $list.toMap })
     }
   }
 
@@ -1399,21 +1438,9 @@ object CompileRW extends CompileRW {
     // Check if T is a JsonWrapper
     val isJsonWrapperType = tpe <:< TypeRepr.of[JsonWrapper]
 
-    // Build a per-field lookup of default-arg method refs at macro time so we can inline each field's
-    // default invocation and only evaluate it when the field is actually missing (or null) in the JSON.
-    // Eagerly constructing a `Map[String, Any]` of all defaults on every deserialize was causing
-    // unnecessary (and sometimes harmful) work for stateful defaults — e.g. id generators.
-    val comp = typeSymbol.companionClass
-    val defaultRefByName: Map[String, Term] =
-      if (comp.exists) {
-        val body = comp.tree.asInstanceOf[ClassDef].body
-        (for {
-          case deff @ DefDef(name, _, _, _) <- body
-          if name.startsWith("$lessinit$greater$default$")
-          index = name.stripPrefix("$lessinit$greater$default$").toInt - 1
-          if index >= 0 && index < fields.size
-        } yield fields(index).name -> Ref(deff.symbol)).toMap
-      } else Map.empty
+    // The default-arg method of each field with one, called only when the field is missing (or null) in the JSON, as
+    // a default may be stateful (an id generator)
+    val defaultRefByName: Map[String, Term] = defaultRefs(tpe, fields)
 
     // Generate field extraction expressions
     val fieldExprs = fields.map { field =>
