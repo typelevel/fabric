@@ -592,35 +592,43 @@ case class Str(value: String, reference: Option[Any] = None) extends Json {
 }
 
 object Str {
-  /** `s` as it goes inside a JSON string: the quote and the backslash escaped, and every control character (U+0000 to
-    * U+001F), the named ones by name and the rest as `\u00XX`, as JSON requires. */
+  private val Hex: Array[Char] = "0123456789abcdef".toCharArray
+
+  /**
+    * `s` as it goes inside a JSON string: the quote and the backslash escaped, and every control character (U+0000 to
+    * U+001F), the named ones by name and the rest as `\u00XX`, as JSON requires. A string with nothing to escape is
+    * returned as it is.
+    */
   def escape(s: String): String = {
-    val b = new java.lang.StringBuilder(s.length + 8)
+    val n = s.length
     var i = 0
-    while (i < s.length) {
-      val c = s.charAt(i)
-      c match {
-        case '\b' => b.append("\\b")
-        case '\f' => b.append("\\f")
-        case '\n' => b.append("\\n")
-        case '\r' => b.append("\\r")
-        case '\t' => b.append("\\t")
-        case '\\' => b.append("\\\\")
-        case '"' => b.append("\\\"")
-        case _ if c < ' ' =>
-          val hex = Integer.toHexString(c.toInt)
-          b.append("\\u")
-          var pad = 4 - hex.length
-          while (pad > 0) {
-            b.append('0')
-            pad -= 1
+    while (i < n && { val c = s.charAt(i); c >= ' ' && c != '"' && c != '\\' }) i += 1
+    if (i == n) s
+    else {
+      val b = new java.lang.StringBuilder(n + 16)
+      b.append(s, 0, i)
+      var start = i
+      while (i < n) {
+        val c = s.charAt(i)
+        if (c < ' ' || c == '"' || c == '\\') {
+          if (start < i) b.append(s, start, i)
+          c match {
+            case '\b' => b.append("\\b")
+            case '\f' => b.append("\\f")
+            case '\n' => b.append("\\n")
+            case '\r' => b.append("\\r")
+            case '\t' => b.append("\\t")
+            case '\\' => b.append("\\\\")
+            case '"' => b.append("\\\"")
+            case _ => b.append("\\u00").append(Hex(c >> 4)).append(Hex(c & 0xf))
           }
-          b.append(hex)
-        case _ => b.append(c)
+          start = i + 1
+        }
+        i += 1
       }
-      i += 1
+      if (start < n) b.append(s, start, n)
+      b.toString
     }
-    b.toString
   }
 }
 

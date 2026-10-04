@@ -28,10 +28,7 @@ trait JsonFormatterConfig {
 
   def keyValueSeparator(): String = ": "
 
-  def encodeString(s: String): String = {
-    val e = JsonParser.escapeJson(s)
-    s""""$e""""
-  }
+  def encodeString(s: String): String = JsonParser.quoteJson(s)
 }
 
 object JsonFormatterConfig {

@@ -116,7 +116,7 @@ lazy val io = crossProject(JSPlatform, JVMPlatform)
   )
   .jvmSettings(
     libraryDependencies ++= Seq(
-      "org.apache.commons" % "commons-text" % apacheCommonsTextVersion,
+      "org.apache.commons" % "commons-text" % apacheCommonsTextVersion % Test,
       "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonVersion,
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-xml" % jacksonVersion,
