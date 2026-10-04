@@ -93,6 +93,9 @@ object JsonEscaper {
       }
       i += 1
     }
-    if (start < n) b.append(s, start, n)
+    if (start < n) {
+      b.append(s, start, n)
+      ()
+    }
   }
 }
