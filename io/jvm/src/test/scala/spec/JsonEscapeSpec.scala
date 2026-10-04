@@ -84,11 +84,11 @@ class JsonEscapeSpec extends AnyWordSpec with Matchers {
     val b = new java.lang.StringBuilder(length)
     while (b.length < length) {
       random.nextInt(10) match {
-      case 0 => b.appendCodePoint(0x10000 + random.nextInt(0x100000)) // a valid surrogate pair
-      case 1 => b.append(alphabet(random.nextInt(alphabet.length)))
-      case 2 => b.append((0xd800 + random.nextInt(0x800)).toChar) // a lone or mismatched surrogate
-      case 3 => b.append(random.nextInt(0x10000).toChar)
-      case _ => b.append((' ' + random.nextInt(95)).toChar)
+        case 0 => b.appendCodePoint(0x10000 + random.nextInt(0x100000)) // a valid surrogate pair
+        case 1 => b.append(alphabet(random.nextInt(alphabet.length)))
+        case 2 => b.append((0xd800 + random.nextInt(0x800)).toChar) // a lone or mismatched surrogate
+        case 3 => b.append(random.nextInt(0x10000).toChar)
+        case _ => b.append((' ' + random.nextInt(95)).toChar)
       }
       ()
     }
