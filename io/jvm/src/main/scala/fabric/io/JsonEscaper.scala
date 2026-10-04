@@ -58,7 +58,10 @@ object JsonEscaper {
     val first = firstEscape(s)
     val b = new java.lang.StringBuilder(s.length + (if (first < 0) 2 else 18))
     b.append('"')
-    if (first < 0) b.append(s) else appendFrom(s, first, b)
+    if (first < 0) {
+      b.append(s)
+      ()
+    } else appendFrom(s, first, b)
     b.append('"')
     b.toString
   }
@@ -71,7 +74,10 @@ object JsonEscaper {
     while (i < n) {
       val c = s.charAt(i)
       if (needsEscape(c)) {
-        if (start < i) b.append(s, start, i)
+        if (start < i) {
+          b.append(s, start, i)
+          ()
+        }
         c match {
           case '"' => b.append("\\\"")
           case '\\' => b.append("\\\\")

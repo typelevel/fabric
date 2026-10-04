@@ -611,7 +611,10 @@ object Str {
       while (i < n) {
         val c = s.charAt(i)
         if (c < ' ' || c == '"' || c == '\\') {
-          if (start < i) b.append(s, start, i)
+          if (start < i) {
+            b.append(s, start, i)
+            ()
+          }
           c match {
             case '\b' => b.append("\\b")
             case '\f' => b.append("\\f")
@@ -626,7 +629,10 @@ object Str {
         }
         i += 1
       }
-      if (start < n) b.append(s, start, n)
+      if (start < n) {
+        b.append(s, start, n)
+        ()
+      }
       b.toString
     }
   }
