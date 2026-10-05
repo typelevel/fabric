@@ -111,12 +111,15 @@ object NestedTop {
   implicit lazy val rw: RW[NestedTop] = RW.gen[NestedTop]
 }
 
-/** A value initialized on a thread of its own, failing where it does not finish within ten seconds. */
+/**
+  * A value initialized on a thread of its own, failing where it does not finish within ten seconds.
+  */
 object Initializes {
   def apply[T](value: => T): T = {
     val result = new AtomicReference[Either[Throwable, T]]
     val thread = new Thread(new Runnable {
-      override def run(): Unit = result.set(try Right(value) catch { case t: Throwable => Left(t) })
+      override def run(): Unit = result.set(try Right(value)
+      catch { case t: Throwable => Left(t) })
     })
     thread.setDaemon(true)
     thread.start()
