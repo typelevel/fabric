@@ -126,3 +126,13 @@ class CaseClassRW[T](
     if (describe == null) d else describe(d)
   }
 }
+
+object CaseClassRW {
+
+  /** A class's fields' values, in the constructor's order, as the Product its Mirror makes the class from. */
+  final class Values(values: Array[Any]) extends Product {
+    override def canEqual(that: Any): Boolean = true
+    override def productArity: Int = values.length
+    override def productElement(n: Int): Any = values(n)
+  }
+}

@@ -1026,7 +1026,8 @@ object CompileRW extends CompileRW {
     }.mkString
 
     // field i's default, called only when the field is missing or null, as the default may be stateful (an id
-    // generator); a chain of ifs, which Scala.js writes more briefly than a match
+    // generator); ifs, which Scala.js writes more briefly than a match, halving the fields at each, so the tree the
+    // compiler walks stays shallow however many defaults the class has
     val defaultsExpr: Expr[Int => Any] = if (defaultRefByName.isEmpty) '{ null } else {
       '{ (i: Int) => ${
         val withDefaults = fields.zipWithIndex.flatMap { case (field, index) =>
@@ -1038,24 +1039,40 @@ object CompileRW extends CompileRW {
             }
           }
         }
-        withDefaults.init.foldRight(withDefaults.last._2) { case ((index, value), otherwise) =>
-          '{ if (i == ${ Expr(index) }) $value else $otherwise }
+        def select(defaults: List[(Int, Expr[Any])]): Expr[Any] = defaults match {
+          case (_, value) :: Nil => value
+          case _ =>
+            val (below, from) = defaults.splitAt(defaults.size / 2)
+            '{ if (i < ${ Expr(from.head._1) }) ${ select(below) } else ${ select(from) } }
         }
+        select(withDefaults)
       } }
     }
 
-    val createExpr: Expr[Array[Any] => T] = '{ (values: Array[Any]) => ${
-      val args = fields.zipWithIndex.map { case (field, index) =>
-        tpe.memberType(field).asType match {
-          case '[ft] => '{ values(${ Expr(index) }).asInstanceOf[ft] }.asTerm
+    // The class made from its fields' values by its Mirror (its companion), which the lambda reaches only when called.
+    // A lambda calling a constructor of a class nested in an object is compiled as a method of that object, so making
+    // the lambda would initialize the object, which may itself be registering this RW. Without a Mirror the
+    // constructor is called from an anonymous class, which keeps no reference to the object.
+    val createExpr: Expr[Array[Any] => T] = Expr.summon[Mirror.ProductOf[T]] match {
+      case Some(mirror) => '{ (values: Array[Any]) => $mirror.fromProduct(new CaseClassRW.Values(values)) }
+      case None =>
+        '{
+          new (Array[Any] => T) {
+            def apply(values: Array[Any]): T = ${
+              val args = fields.zipWithIndex.map { case (field, index) =>
+                tpe.memberType(field).asType match {
+                  case '[ft] => '{ values(${ Expr(index) }).asInstanceOf[ft] }.asTerm
+                }
+              }
+              val constructor = New(TypeTree.of[T]).select(typeSymbol.primaryConstructor)
+              (tpe match {
+                case AppliedType(_, typeArgs) => constructor.appliedToTypes(typeArgs).appliedToArgs(args)
+                case _ => constructor.appliedToArgs(args)
+              }).asExprOf[T]
+            }
+          }
         }
-      }
-      val constructor = New(TypeTree.of[T]).select(typeSymbol.primaryConstructor)
-      (tpe match {
-        case AppliedType(_, typeArgs) => constructor.appliedToTypes(typeArgs).appliedToArgs(args)
-        case _ => constructor.appliedToArgs(args)
-      }).asExprOf[T]
-    } }
+    }
 
     // Extract @description annotations from constructor parameters
     val fieldDescs = extractFieldDescriptions(typeSymbol)
