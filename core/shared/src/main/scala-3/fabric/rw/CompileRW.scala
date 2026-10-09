@@ -612,7 +612,31 @@ object CompileRW extends CompileRW {
       }
     }
     val childRWsExpr = Expr.ofList(childExprs)
-    genPolyRW[T](childRWsExpr)
+    genPolyRW[T](childRWsExpr, unknownCaseOf[T](childSymbols))
+  }
+
+  /** The `(productPrefix, field name)` of the child marked `@unknownCase`, if any. The marked child must be a case
+    * class whose only field is a `String`, and at most one child may be marked. */
+  private def unknownCaseOf[T: Type](using Quotes)(children: List[quotes.reflect.Symbol]): Option[(String, String)] = {
+    import quotes.reflect._
+
+    val marked = children.filter(_.annotations.exists(_.tpe.typeSymbol.fullName == "fabric.rw.unknownCase"))
+    val typeName = TypeRepr.of[T].typeSymbol.name
+    marked match {
+      case Nil => None
+      case child :: Nil =>
+        val fields = child.caseFields
+        val singleString = child.isClassDef && child.flags.is(Flags.Case) && fields.size == 1 &&
+          child.typeRef.memberType(fields.head) =:= TypeRepr.of[String]
+        if (!singleString) {
+          report.errorAndAbort(
+            s"@unknownCase ${child.name} in $typeName must be a case class with exactly one field, a String"
+          )
+        }
+        Some((child.name.stripSuffix("$"), fields.head.name))
+      case many =>
+        report.errorAndAbort(s"@unknownCase marks ${many.size} cases of $typeName; at most one may be marked")
+    }
   }
 
   /** Shared polymorphic RW generation for sealed traits and union types.
@@ -629,8 +653,15 @@ object CompileRW extends CompileRW {
     * A case-insensitive leaf-only fallback index covers legacy persisted records written under the
     * pre-1.29 wire format (`{"type": "Success"}` rather than `{"type": "WriteFileOutput.Success"}`).
     * Unambiguous matches dispatch through the fallback; ambiguous matches throw.
+    *
+    * `unknownCase` names the child marked `@unknownCase` by `(productPrefix, field name)`: it has no discriminator
+    * of its own, receives every discriminator no other child declares, writes back under the one it holds, and is
+    * left out of the definition.
     */
-  private def genPolyRW[T: Type](childRWsExpr: Expr[List[(String, String, RW[_])]])(using Quotes): Expr[RW[T]] = {
+  private def genPolyRW[T: Type](
+    childRWsExpr: Expr[List[(String, String, RW[_])]],
+    unknownCase: Option[(String, String)] = None
+  )(using Quotes): Expr[RW[T]] = {
     import quotes.reflect._
 
     val tpe = TypeRepr.of[T]
@@ -648,22 +679,30 @@ object CompileRW extends CompileRW {
 
     val fullTypeName = fabric.define.Definition.simpleClassName(typeSymbol.fullName)
     val fullTypeNameExpr = Expr(fullTypeName)
+    val unknownPrefixExpr = Expr(unknownCase.map(_._1))
+    val unknownFieldExpr = Expr(unknownCase.fold("")(_._2))
 
     '{
       new RW[T] {
         private val typeField = $fieldNameExpr
         private lazy val children: List[(String, String, RW[_])] = $childRWsExpr
+        private val unknownPrefix: Option[String] = $unknownPrefixExpr
+        private val unknownField: String = $unknownFieldExpr
+        private lazy val declared: List[(String, String, RW[_])] =
+          children.filterNot(c => unknownPrefix.contains(c._1))
+        private lazy val unknownChild: Option[(String, String, RW[_])] =
+          unknownPrefix.flatMap(pp => children.find(_._1 == pp))
 
         // Legacy-leaf fallback: case-insensitive index keyed by the last segment of each simpleName.
         // Lets persisted records written under the pre-1.29 wire format dispatch through unambiguously,
         // and throw with a clear message on ambiguity (rather than silently routing wrong).
         private lazy val legacyLeafIndex: Map[String, List[(String, String, RW[_])]] =
-          children.groupBy { case (_, simpleName, _) =>
+          declared.groupBy { case (_, simpleName, _) =>
             simpleName.split('.').lastOption.getOrElse(simpleName).toLowerCase
           }
 
         private def lookupByWireName(rawType: String): Option[(String, String, RW[_])] =
-          children.find(_._2 == rawType).orElse {
+          declared.find(_._2 == rawType).orElse {
             legacyLeafIndex.get(rawType.toLowerCase) match {
               case Some(single :: Nil) => Some(single)
               case Some(many) if many.size > 1 =>
@@ -679,6 +718,11 @@ object CompileRW extends CompileRW {
         override def read(value: T): Json = {
           val pp = safeTypeName(value)
           children.find(_._1 == pp) match {
+            case Some((_, _, rw)) if unknownPrefix.contains(pp) =>
+              rw.asInstanceOf[RW[T]].read(value) match {
+                case Obj(fields) if fields.contains(unknownField) => Obj(typeField -> fields(unknownField))
+                case other => throw RWException(s"Expected '$unknownField' in $pp, got: $other")
+              }
             case Some((_, sn, rw)) =>
               rw.asInstanceOf[RW[T]].read(value) match {
                 case obj: Obj => obj.merge(Obj(typeField -> Str(sn)))
@@ -703,7 +747,10 @@ object CompileRW extends CompileRW {
                     }
                     rw.asInstanceOf[RW[T]].write(cleanedJson)
                   case None =>
-                    throw RWException(s"Unknown type discriminator: $typeName")
+                    unknownChild match {
+                      case Some((_, _, rw)) => rw.asInstanceOf[RW[T]].write(Obj(unknownField -> Str(typeName)))
+                      case None => throw RWException(s"Unknown type discriminator: $typeName")
+                    }
                 }
               case _ =>
                 throw RWException(s"Missing or invalid '$typeField' field in JSON for polymorphic type")
@@ -713,7 +760,7 @@ object CompileRW extends CompileRW {
         }
 
         override lazy val definition: FabricDefinition = {
-          val childDefs = children.map { case (_, sn, rw) => sn -> rw.definition }.toMap
+          val childDefs = declared.map { case (_, sn, rw) => sn -> rw.definition }.toMap
           FabricDefinition(DefType.Poly(childDefs), className = Some($fullTypeNameExpr))
         }
       }

@@ -190,6 +190,7 @@ object User {
 | `@serialized`      | Include a `val`/`def` member in the JSON output                      |
 | `@notSerialized`   | Exclude a constructor param from the JSON output                     |
 | `@typeField`       | Customize the type-discriminator field name for sealed traits/unions |
+| `@unknownCase`     | (Scala 3) Marks the case of a sum type that decodes any discriminator the type does not declare, so stored values of a removed case still read |
 
 Default values from case class parameters are captured automatically into `Definition.defaultValue`.
 
