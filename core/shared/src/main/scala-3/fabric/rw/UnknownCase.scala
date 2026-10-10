@@ -31,6 +31,10 @@ import scala.annotation.StaticAnnotation
   * written back under that same discriminator, so a value read this way and stored again still names its original
   * case. It is left out of the type's `Definition`. Without the annotation, an unknown discriminator fails to decode.
   *
+  * When every other case is parameterless, the type is written as plain strings, as it is without the marked case: an
+  * unknown string decodes to the marked case, which is written back as that same string, and the Definition is the
+  * one the type has without the marked case.
+  *
   * Example:
   * {{{
   * enum Notice derives RW {
