@@ -83,6 +83,61 @@ class UnknownCaseSpec extends AnyWordSpec with Matchers {
     }
   }
 
+  "@unknownCase on an enum written as strings" should {
+    "write every declared case as the same plain string as an enum without the marked case" in {
+      (Level.Low: Level).json should be(str("UnknownCaseTest.Level.Low"))
+      (Level.High: Level).json should be(str("UnknownCaseTest.Level.High"))
+      (PlainLevel.High: PlainLevel).json should be(str("UnknownCaseTest.PlainLevel.High"))
+    }
+    "read every declared case by its full name and by its leaf name" in {
+      str("UnknownCaseTest.Level.High").as[Level] should be(Level.High)
+      str("high").as[Level] should be(Level.High)
+    }
+    "decode an unknown string into the marked case" in {
+      str("UnknownCaseTest.Level.Medium").as[Level] should be(Level.Retired("UnknownCaseTest.Level.Medium"))
+      str("Medium").as[Level] should be(Level.Retired("Medium"))
+    }
+    "write the marked case back as the same plain string" in {
+      val retired: Level = Level.Retired("UnknownCaseTest.Level.Medium")
+      retired.json should be(str("UnknownCaseTest.Level.Medium"))
+      retired.json.as[Level] should be(retired)
+    }
+    "decode an unknown string nested inside a stored record" in {
+      obj("name" -> "a", "level" -> "Medium").as[Leveled] should be(Leveled("a", Level.Retired("Medium")))
+      Leveled("a", Level.Retired("Medium")).json should be(obj("name" -> "a", "level" -> "Medium"))
+    }
+    "keep the definition of an enum without the marked case" in {
+      val marked = summon[RW[Level]].definition
+      val plain = summon[RW[PlainLevel]].definition
+      (marked.defType, plain.defType) match {
+        case (DefType.Poly(values, _), DefType.Poly(plainValues, _)) =>
+          values.keySet should be(Set("UnknownCaseTest.Level.Low", "UnknownCaseTest.Level.High"))
+          values.keySet.map(_.replace(".Level.", ".PlainLevel.")) should be(plainValues.keySet)
+          values.values.toList should be(plainValues.values.toList)
+        case other => fail(s"Expected Poly definitions, got $other")
+      }
+      marked.className should be(plain.className.map(_.replace("PlainLevel", "Level")))
+    }
+    "still refuse a value that is not a string" in {
+      an[RWException] should be thrownBy obj("type" -> "UnknownCaseTest.Level.Low").as[Level]
+      an[RWException] should be thrownBy num(1).as[Level]
+    }
+  }
+
+  "@unknownCase on a sealed trait of case objects" should {
+    "write every case object as the string it had without the marked case, and take any other string" in {
+      (Color.Red: Color).json should be(str("UnknownCaseTest.Color.Red"))
+      (PlainColor.Red: PlainColor).json should be(str("UnknownCaseTest.PlainColor.Red"))
+      str("UnknownCaseTest.Color.Red").as[Color] should be(Color.Red)
+      str("UnknownCaseTest.Color.Green").as[Color] should be(Color.Other("UnknownCaseTest.Color.Green"))
+      (Color.Other("UnknownCaseTest.Color.Green"): Color).json should be(str("UnknownCaseTest.Color.Green"))
+      summon[RW[Color]].definition.defType match {
+        case DefType.Poly(values, _) => values.keySet should be(Set("UnknownCaseTest.Color.Red", "UnknownCaseTest.Color.Blue"))
+        case other                   => fail(s"Expected a Poly definition, got $other")
+      }
+    }
+  }
+
   "a derivation without @unknownCase" should {
     "still refuse an unknown discriminator" in {
       an[RWException] should be thrownBy obj("type" -> "UnknownCaseTest.Plain.Gone").as[Plain]
@@ -132,5 +187,31 @@ object UnknownCaseTest {
 
   enum Plain derives RW {
     case Kept(x: Int)
+  }
+
+  enum Level derives RW {
+    case Low
+    case High
+    @unknownCase case Retired(wireName: String)
+  }
+
+  enum PlainLevel derives RW {
+    case Low
+    case High
+  }
+
+  case class Leveled(name: String, level: Level) derives RW
+
+  sealed trait Color derives RW
+  object Color {
+    case object Red extends Color
+    case object Blue extends Color
+    @unknownCase case class Other(wireName: String) extends Color
+  }
+
+  sealed trait PlainColor derives RW
+  object PlainColor {
+    case object Red extends PlainColor
+    case object Blue extends PlainColor
   }
 }
