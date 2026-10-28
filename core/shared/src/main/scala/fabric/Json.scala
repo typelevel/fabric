@@ -595,14 +595,49 @@ object Str {
   private val Hex: Array[Char] = "0123456789abcdef".toCharArray
 
   /**
-    * `s` as it goes inside a JSON string: the quote and the backslash escaped, and every control character (U+0000 to
-    * U+001F), the named ones by name and the rest as `\u00XX`, as JSON requires. A string with nothing to escape is
+    * Whether `s` has a valid surrogate pair starting at `i`.
+    */
+  @inline private[fabric] def pairAt(s: String, i: Int): Boolean = Character.isHighSurrogate(s.charAt(i)) &&
+    i + 1 < s.length &&
+    Character.isLowSurrogate(s.charAt(i + 1))
+
+  /**
+    * `s` with every unpaired surrogate replaced by U+FFFD, as strict UTF-8 readers require. A string with none is
     * returned as it is.
+    */
+  private[fabric] def wellFormed(s: String): String = {
+    val n = s.length
+    var i = 0
+    var b: java.lang.StringBuilder = null
+    var start = 0
+    while (i < n) {
+      val c = s.charAt(i)
+      if (Character.isSurrogate(c)) {
+        if (pairAt(s, i)) i += 2
+        else {
+          if (b == null) b = new java.lang.StringBuilder(n)
+          b.append(s, start, i).append('\uFFFD')
+          i += 1
+          start = i
+        }
+      } else i += 1
+    }
+    if (b == null) s
+    else {
+      b.append(s, start, n)
+      b.toString
+    }
+  }
+
+  /**
+    * `s` as it goes inside a JSON string: the quote and the backslash escaped, every control character (U+0000 to
+    * U+001F), the named ones by name and the rest as `\u00XX`, as JSON requires, and every unpaired surrogate written as
+    * U+FFFD, which strict readers require. A string with nothing to escape is returned as it is.
     */
   def escape(s: String): String = {
     val n = s.length
     var i = 0
-    while (i < n && { val c = s.charAt(i); c >= ' ' && c != '"' && c != '\\' }) i += 1
+    while (i < n && { val c = s.charAt(i); c >= ' ' && c != '"' && c != '\\' && !Character.isSurrogate(c) }) i += 1
     if (i == n) s
     else {
       val b = new java.lang.StringBuilder(n + 16)
@@ -610,7 +645,13 @@ object Str {
       var start = i
       while (i < n) {
         val c = s.charAt(i)
-        if (c < ' ' || c == '"' || c == '\\') {
+        if (Character.isSurrogate(c)) {
+          if (pairAt(s, i)) i += 1
+          else {
+            b.append(s, start, i).append('\uFFFD')
+            start = i + 1
+          }
+        } else if (c < ' ' || c == '"' || c == '\\') {
           if (start < i) {
             b.append(s, start, i)
             ()

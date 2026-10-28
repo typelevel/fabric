@@ -21,10 +21,13 @@
 
 package fabric.io
 
+import fabric.Str
+
 /**
   * Writes a string as the JVM's JSON writer always has: the quote, the backslash and `/` escaped, `\b \f \n \r \t` by
   * name, and every other character below U+0020 or from U+007F up (each half of a surrogate pair on its own) as
-  * `\uXXXX` in upper-case hex. A string with nothing to escape is copied whole.
+  * `\uXXXX` in upper-case hex. An unpaired surrogate is written as `\uFFFD`, since strict readers refuse a lone one. A
+  * string with nothing to escape is copied whole.
   */
 object JsonEscaper {
   private val Hex: Array[Char] = "0123456789ABCDEF".toCharArray
@@ -66,6 +69,16 @@ object JsonEscaper {
     b.toString
   }
 
+  private def appendHex(c: Char, b: java.lang.StringBuilder): Unit = {
+    b.append('\\')
+      .append('u')
+      .append(Hex((c >> 12) & 0xf))
+      .append(Hex((c >> 8) & 0xf))
+      .append(Hex((c >> 4) & 0xf))
+      .append(Hex(c & 0xf))
+    ()
+  }
+
   private def appendFrom(s: String, first: Int, b: java.lang.StringBuilder): Unit = {
     b.append(s, 0, first)
     val n = s.length
@@ -87,13 +100,13 @@ object JsonEscaper {
           case '\n' => b.append("\\n")
           case '\r' => b.append("\\r")
           case '\t' => b.append("\\t")
-          case _ => b
-              .append('\\')
-              .append('u')
-              .append(Hex((c >> 12) & 0xf))
-              .append(Hex((c >> 8) & 0xf))
-              .append(Hex((c >> 4) & 0xf))
-              .append(Hex(c & 0xf))
+          case _ if Character.isSurrogate(c) =>
+            if (Str.pairAt(s, i)) {
+              appendHex(c, b)
+              i += 1
+              appendHex(s.charAt(i), b)
+            } else appendHex('\uFFFD', b)
+          case _ => appendHex(c, b)
         }
         start = i + 1
       }

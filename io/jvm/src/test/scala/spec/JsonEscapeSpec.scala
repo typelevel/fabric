@@ -30,8 +30,18 @@ import org.scalatest.wordspec.AnyWordSpec
 import scala.util.Random
 
 class JsonEscapeSpec extends AnyWordSpec with Matchers {
-  // the escaping the JVM writer used before, kept here as the oracle
-  private def oldQuote(s: String): String = s""""${StringEscapeUtils.escapeJson(s)}""""
+  // the escaping the JVM writer used before, kept here as the oracle, over the string with every unpaired surrogate
+  // replaced by U+FFFD
+  private def oldQuote(s: String): String = s""""${StringEscapeUtils.escapeJson(replaceLone(s))}""""
+
+  private def replaceLone(s: String): String = {
+    val b = new java.lang.StringBuilder(s.length)
+    s.codePoints().forEach { cp =>
+      if (cp >= 0xd800 && cp <= 0xdfff) b.append('\uFFFD') else b.appendCodePoint(cp)
+      ()
+    }
+    b.toString
+  }
 
   // Str.escape as it was before its fast path
   private def oldStrEscape(s: String): String = {
@@ -71,7 +81,8 @@ class JsonEscapeSpec extends AnyWordSpec with Matchers {
     JsonFormatter.Compact(Str(s)) should be(expected)
     JsonFormatter.Default(Str(s)) should be(expected)
     val strEscaped = Str.escape(s)
-    if (strEscaped != oldStrEscape(s)) fail(s"Str.escape differs for ${s.map(_.toInt.toHexString).mkString(" ")}")
+    if (strEscaped != oldStrEscape(replaceLone(s)))
+      fail(s"Str.escape differs for ${s.map(_.toInt.toHexString).mkString(" ")}")
   }
 
   private val random = new Random(4242)
@@ -103,7 +114,7 @@ class JsonEscapeSpec extends AnyWordSpec with Matchers {
         check(s"ab${c}cd")
         check(s"$c$c")
       }
-    "write every surrogate pair and lone surrogate as the previous escaper did" in {
+    "write every surrogate pair as the previous escaper did, and each lone surrogate as U+FFFD" in {
       val rnd = new Random(7)
       (0 until 20000).foreach { _ =>
         val pair = new String(Character.toChars(0x10000 + rnd.nextInt(0x100000)))
@@ -134,8 +145,9 @@ class JsonEscapeSpec extends AnyWordSpec with Matchers {
         compact should be(s"""{${oldQuote(key)}:${oldQuote(value)},"n":[${oldQuote(value)},1]}""")
         val pretty = JsonFormatter.Default(json)
         pretty should include(s"${oldQuote(key)}: ${oldQuote(value)}")
-        JsonParser(compact) should be(json)
-        JsonParser(pretty) should be(json)
+        val read = obj(replaceLone(key) -> str(replaceLone(value)), "n" -> arr(str(replaceLone(value)), num(1)))
+        JsonParser(compact) should be(read)
+        JsonParser(pretty) should be(read)
       }
   }
 }

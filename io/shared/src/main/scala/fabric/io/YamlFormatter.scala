@@ -41,11 +41,14 @@ object YamlFormatter extends Formatter {
     key.contains(": ") ||
     key.contains(" #")
 
-  private def renderKey(key: String): String = if (needsKeyQuoting(key)) s"'${key.replace("'", "''")}'" else key
+  private def renderKey(raw: String): String = {
+    val key = Str.wellFormed(raw)
+    if (needsKeyQuoting(key)) s"'${key.replace("'", "''")}'" else key
+  }
 
   private def write(json: Json, depth: Int): String = {
     def pad(adjust: Int = 0): String = "".padTo((depth + adjust) * 2, ' ')
-    def fix(s: String): String = s.replace("'", "''")
+    def fix(s: String): String = Str.wellFormed(s).replace("'", "''")
     json match {
       case Arr(v, _) if v.isEmpty => "[]"
       case Arr(v, _) =>
