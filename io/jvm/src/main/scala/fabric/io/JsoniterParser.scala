@@ -40,8 +40,8 @@ object JsoniterParser extends FormatParser {
       Null
     case com.jsoniter.ValueType.ARRAY => readArr(iterator)
     case com.jsoniter.ValueType.NUMBER => iterator.readBigDecimal() match {
-        case bd if bd.scale() == 0 => NumInt(bd.longValue())
-        case bd => NumDec(BigDecimal(bd))
+        case bd if bd.scale() == 0 && bd.unscaledValue().bitLength() < 64 => NumInt(bd.longValue())
+        case bd => NumDec(BigDecimal.exact(bd))
       }
     case com.jsoniter.ValueType.BOOLEAN => Bool(iterator.readBoolean())
     case com.jsoniter.ValueType.OBJECT => readObj(iterator)

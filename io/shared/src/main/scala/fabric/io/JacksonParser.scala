@@ -51,8 +51,12 @@ object JacksonParser extends FormatParser {
     case JsonToken.START_OBJECT => parseObj(parser, VectorMap.empty)
     case JsonToken.START_ARRAY => parseArr(parser, Vector.empty)
     case JsonToken.VALUE_STRING => Str(parser.getValueAsString)
-    case JsonToken.VALUE_NUMBER_FLOAT => NumDec(BigDecimal(parser.getValueAsDouble))
-    case JsonToken.VALUE_NUMBER_INT => NumInt(parser.getValueAsLong)
+    case JsonToken.VALUE_NUMBER_FLOAT => NumDec(BigDecimal.exact(parser.getDecimalValue))
+    case JsonToken.VALUE_NUMBER_INT => parser.getNumberType match {
+        case JParser.NumberType.BIG_INTEGER =>
+          NumDec(BigDecimal.exact(new java.math.BigDecimal(parser.getBigIntegerValue)))
+        case _ => NumInt(parser.getLongValue)
+      }
     case JsonToken.VALUE_NULL => Null
     case JsonToken.VALUE_TRUE => Bool(value = true)
     case JsonToken.VALUE_FALSE => Bool(value = false)

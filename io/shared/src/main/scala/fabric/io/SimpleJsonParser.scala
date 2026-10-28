@@ -23,109 +23,186 @@ package fabric.io
 
 import fabric._
 
-import scala.annotation.tailrec
-import scala.collection.mutable
+import scala.collection.immutable.VectorMap
 
 /**
-  * Dead simple Json parser meant to be faster than larger alternatives. Still
-  * needs some work to be faster.
+  * A JSON parser written in Scala that reads every number at full precision: an integer within Long as NumInt, any
+  * other number as NumDec holding its exact decimal value.
   */
 object SimpleJsonParser extends FormatParser {
   override def format: Format = Format.Json
 
-  override def apply(content: String): Json = {
-    def o(t: (Json, Int)): (Option[Json], Int) = (Some(t._1), t._2)
-    def parse(start: Int): (Option[Json], Int) = content.charAt(start) match {
-      case '{' => o(parseObj(start + 1))
-      case '"' => o(parseString(start + 1))
-      case '[' => o(parseArr(start + 1))
-      case 't' => o((bool(true), start + 4))
-      case 'f' => o((bool(false), start + 5))
-      case 'n' => o((Null, start + 4))
-      case ']' | '}' => (None, start + 1)
-      case c if c.isDigit => o(parseNumber(start))
-      case c if c.isWhitespace | c == ',' => parse(start + 1)
-      case c => throw new RuntimeException(
-          s"Unsupported Json start: $c (offset: $start) - $content"
-        )
-    }
+  override def apply(content: String): Json = parse(content, wholeDecimalsAsInt = false)
 
-    def parseString(
-      start: Int,
-      escape: Boolean = false,
-      offset: Int = 0,
-      b: mutable.StringBuilder = new mutable.StringBuilder
-    ): (Json, Int) = {
-      val char = content.charAt(start + offset)
-      if (!escape && char == '"') {
-        (Str(b.toString()), start + offset + 1)
+  /**
+    * @param wholeDecimalsAsInt
+    *   reads a decimal whose value is whole and within Long (`1.0`, `1e3`) as NumInt, as a parser holding numbers as
+    *   Doubles does
+    */
+  private[io] def parse(content: String, wholeDecimalsAsInt: Boolean): Json = {
+    val reader = new Reader(content, wholeDecimalsAsInt)
+    reader.skipWhitespace()
+    val json = reader.value()
+    reader.skipWhitespace()
+    if (reader.offset != content.length) reader.fail("Unexpected content after the value")
+    json
+  }
+
+  final private class Reader(content: String, wholeDecimalsAsInt: Boolean) {
+    var offset: Int = 0
+
+    def fail(message: String): Nothing = throw new RuntimeException(s"$message (offset: $offset) - $content")
+
+    def skipWhitespace(): Unit = while (
+      offset < content.length && {
+        val c = content.charAt(offset); c == ' ' || c == '\n' || c == '\r' || c == '\t'
+      }
+    ) offset += 1
+
+    private def expect(c: Char): Unit =
+      if (offset < content.length && content.charAt(offset) == c) offset += 1
+      else fail(s"Expected '$c'")
+
+    private def literal(word: String, json: Json): Json =
+      if (content.startsWith(word, offset)) {
+        offset += word.length
+        json
       } else {
-        val esc =
-          if (escape) {
-            // TODO: Re-evaluate this
-            if (char == 'n') {
-              b.append('\n')
-            } else {
-              b.append(char)
+        fail(s"Expected $word")
+      }
+
+    def value(): Json = {
+      if (offset >= content.length) fail("Unexpected end of content")
+      content.charAt(offset) match {
+        case '{' => obj()
+        case '[' => arr()
+        case '"' => Str(string())
+        case 't' => literal("true", Bool(value = true))
+        case 'f' => literal("false", Bool(value = false))
+        case 'n' => literal("null", Null)
+        case c if c == '-' || (c >= '0' && c <= '9') => number()
+        case c => fail(s"Unsupported Json start: $c")
+      }
+    }
+
+    private def obj(): Json = {
+      expect('{')
+      skipWhitespace()
+      var map = VectorMap.empty[String, Json]
+      if (offset < content.length && content.charAt(offset) == '}') {
+        offset += 1
+      } else {
+        var more = true
+        while (more) {
+          skipWhitespace()
+          if (offset >= content.length || content.charAt(offset) != '"') fail("Expected a key")
+          val key = string()
+          skipWhitespace()
+          expect(':')
+          skipWhitespace()
+          map = map.updated(key, value())
+          skipWhitespace()
+          if (offset < content.length && content.charAt(offset) == ',') offset += 1
+          else {
+            expect('}')
+            more = false
+          }
+        }
+      }
+      Obj(map)
+    }
+
+    private def arr(): Json = {
+      expect('[')
+      skipWhitespace()
+      val b = Vector.newBuilder[Json]
+      if (offset < content.length && content.charAt(offset) == ']') {
+        offset += 1
+      } else {
+        var more = true
+        while (more) {
+          skipWhitespace()
+          b += value()
+          skipWhitespace()
+          if (offset < content.length && content.charAt(offset) == ',') offset += 1
+          else {
+            expect(']')
+            more = false
+          }
+        }
+      }
+      Arr(b.result())
+    }
+
+    private def string(): String = {
+      expect('"')
+      val b = new java.lang.StringBuilder
+      var start = offset
+      var done = false
+      while (!done) {
+        if (offset >= content.length) fail("Unterminated string")
+        content.charAt(offset) match {
+          case '"' =>
+            b.append(content, start, offset)
+            offset += 1
+            done = true
+          case '\\' =>
+            b.append(content, start, offset)
+            if (offset + 1 >= content.length) fail("Unterminated escape")
+            content.charAt(offset + 1) match {
+              case '"' => b.append('"')
+              case '\\' => b.append('\\')
+              case '/' => b.append('/')
+              case 'b' => b.append('\b')
+              case 'f' => b.append('\f')
+              case 'n' => b.append('\n')
+              case 'r' => b.append('\r')
+              case 't' => b.append('\t')
+              case 'u' =>
+                if (offset + 6 > content.length) fail("Incomplete unicode escape")
+                val hex = content.substring(offset + 2, offset + 6)
+                val code =
+                  try Integer.parseInt(hex, 16)
+                  catch { case _: NumberFormatException => fail(s"Invalid unicode escape: \\u$hex") }
+                b.append(code.toChar)
+                offset += 4
+              case c => fail(s"Invalid escape: \\$c")
             }
-            false
-          } else if (char == '\\') {
-            true
-          } else {
-            b.append(char)
-            false
-          }
-        parseString(start, esc, offset + 1, b)
+            offset += 2
+            start = offset
+          case _ => offset += 1
+        }
       }
+      b.toString
     }
 
-    def parseKey(offset: Int): (Option[String], Int) = parse(offset) match {
-      case (Some(Str(key, _)), off) =>
-        val colonIndex = content.indexOf(':', off)
-        assert(
-          colonIndex != -1,
-          s"Unable to find colon after key in object! (key: $key, value: ${content.substring(off)})"
-        )
-        (Some(key), colonIndex + 1)
-      case (None, off) => (None, off)
-      case (Some(json), _) => throw new RuntimeException(s"Expected key, but got: $json")
-    }
-    def parseArr(offset: Int): (Json, Int) = {
-      var list = List.empty[Json]
-      var adjust = offset
-      @tailrec
-      def recurse(start: Int): Unit = parse(start) match {
-        case (None, off) => adjust = off // Finished
-        case (Some(json), off) =>
-          list = json :: list
-          recurse(off)
-      }
-      recurse(offset)
-      (Arr(list.reverse.toVector), adjust)
-    }
-    def parseObj(offset: Int): (Json, Int) = {
-      var list = List.empty[(String, Json)]
-      var adjust = offset
-      @tailrec
-      def recurse(start: Int): Unit = parseKey(start) match {
-        case (None, off1) => adjust = off1 // Finished
-        case (Some(key), off1) => parse(off1) match {
-            case (Some(json), off2) =>
-              list = key -> json :: list
-              recurse(off2)
-            case (None, _) => throw new RuntimeException(
-                s"Unable to find value for key: $key"
-              )
-          }
-      }
-      recurse(offset)
-      (Obj(list.reverse*), adjust)
-    }
-    def parseNumber(offset: Int): (Json, Int) = content.substring(offset).takeWhile(c => c.isDigit || c == '.') match {
-      case s if s.contains('.') => (num(BigDecimal(s)), offset + s.length)
-      case s => (num(s.toLong), offset + s.length)
+    private def digits(): Unit = {
+      val start = offset
+      while (offset < content.length && { val c = content.charAt(offset); c >= '0' && c <= '9' }) offset += 1
+      if (offset == start) fail("Expected a digit")
     }
 
-    parse(0)._1.getOrElse(throw new RuntimeException(s"Not valid JSON: $content"))
+    private def number(): Json = {
+      val start = offset
+      if (content.charAt(offset) == '-') offset += 1
+      digits()
+      var decimal = false
+      if (offset < content.length && content.charAt(offset) == '.') {
+        offset += 1
+        digits()
+        decimal = true
+      }
+      if (offset < content.length && (content.charAt(offset) == 'e' || content.charAt(offset) == 'E')) {
+        offset += 1
+        if (offset < content.length && (content.charAt(offset) == '+' || content.charAt(offset) == '-')) offset += 1
+        digits()
+        decimal = true
+      }
+      val text = content.substring(start, offset)
+      val bd = new java.math.BigDecimal(text)
+      val whole = !decimal || (wholeDecimalsAsInt && (bd.signum() == 0 || bd.stripTrailingZeros().scale() <= 0))
+      if (whole && bd.precision() - bd.scale() <= 19 && bd.toBigInteger.bitLength() < 64) NumInt(bd.longValueExact())
+      else NumDec(BigDecimal.exact(bd))
+    }
   }
 }
