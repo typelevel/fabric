@@ -53,5 +53,32 @@ class SimpleJsonParserSpec extends AnyWordSpec with Matchers {
       val json = SimpleJsonParser("""{"name": "Matt Hicks", "age": 41}""")
       json should be(obj("name" -> "Matt Hicks", "age" -> 41))
     }
+    "parse negative numbers, exponents and full-precision numbers" in {
+      val json = SimpleJsonParser("[-3, -2.5, 1e3, 1.0, 123456789012345678901234567890, 0.000000000000000001]")
+      json should be(
+        arr(
+          num(-3),
+          num(BigDecimal("-2.5")),
+          num(BigDecimal("1e3")),
+          num(BigDecimal("1.0")),
+          num(BigDecimal("123456789012345678901234567890")),
+          num(BigDecimal("0.000000000000000001"))
+        )
+      )
+      SimpleJsonParser("1e3") shouldBe a[NumDec]
+      SimpleJsonParser("-9223372036854775808") should be(NumInt(Long.MinValue))
+      SimpleJsonParser("9223372036854775808") shouldBe a[NumDec]
+    }
+    "parse escapes in strings and keys" in {
+      val json = SimpleJsonParser("""{"a\"b": "x\ny\té\\\/\"", "e": []}""")
+      json should be(obj("a\"b" -> "x\ny\té\\/\"", "e" -> arr()))
+    }
+    "parse literals and nested values with whitespace" in {
+      val json = SimpleJsonParser(""" { "a" : [ true , false , null , { } ] } """)
+      json should be(obj("a" -> arr(true, false, Null, obj())))
+    }
+    "refuse trailing content" in {
+      an[RuntimeException] should be thrownBy SimpleJsonParser("1 2")
+    }
   }
 }
