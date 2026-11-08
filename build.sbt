@@ -54,7 +54,7 @@ val jacksonVersion: String = "2.21.4"
 
 val apacheCommonsTextVersion: String = "1.15.0"
 
-val typesafeConfigVersion: String = "1.4.9"
+val typesafeConfigVersion: String = "1.4.10"
 
 val jsoniterJavaVersion: String = "0.9.23"
 
