@@ -77,7 +77,9 @@ object JSJsonParser extends FormatParser {
     case v: js.Array[_] => Arr(v.toVector.map(a => parse(a.asInstanceOf[js.Any])))
     case v: Int => num(v)
     case v: Long => num(v)
-    case v: js.BigInt => num(v.toString())
+    // typeof rather than a type pattern: `case v: js.BigInt` is `instanceof BigInt`, which throws a ReferenceError on an
+    // engine without BigInt (Chromium 38, webOS 3), and every object and string reaches this case
+    case v if js.typeOf(v.asInstanceOf[js.Any]) == "bigint" => num(v.toString())
     case v: js.Object =>
       val d = v.asInstanceOf[js.Dictionary[js.Any]]
       d.toMap.map { case (key, value) => key -> parse(value) }
